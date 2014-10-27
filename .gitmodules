@@ -1,0 +1,12 @@
+[submodule "third_party/libtins"]
+	path = third_party/libtins
+	url = https://github.com/mfontanini/libtins.git
+[submodule "third_party/json11"]
+	path = third_party/json11
+	url = https://github.com/dropbox/json11.git
+[submodule "third_party/libfluid_msg"]
+	path = third_party/libfluid_msg
+	url = https://github.com/ARCCN/libfluid_msg.git
+[submodule "third_party/libfluid_base"]
+	path = third_party/libfluid_base
+	url = https://github.com/OpenNetworkingFoundation/libfluid_base.git

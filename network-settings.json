@@ -1,0 +1,9 @@
+{
+
+"default": {
+    "services": [
+        "simple-learning-switch"
+    ]
+}
+
+}
