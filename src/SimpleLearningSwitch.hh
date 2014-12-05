@@ -4,26 +4,23 @@
 #include <unordered_map>
 
 #include "Application.hh"
+#include "Loader.hh"
 #include "OFMessageHandler.hh"
 #include "FluidUtils.hh"
 
 class SimpleLearningSwitch : public Application, OFMessageHandlerFactory {
-Q_OBJECT
+SIMPLE_APPLICATION(SimpleLearningSwitch, "simple-learning-switch")
 public:
-    APPLICATION(SimpleLearningSwitch);
-
-    void init(AppProvider* provider, const Config& config) override;
-    void startUp(AppProvider* provider) override;
+    void init(Loader* loader, const Config& config) override;
     std::string orderingName() const override;
     OFMessageHandler* makeOFMessageHandler() override;
 
 private:
     class Handler: public OFMessageHandler {
     public:
-        Action processMiss(shared_ptr<OFConnection> ofconn, Flow* flow) override;
+        Action processMiss(OFConnection* ofconn, Flow* flow) override;
     private:
-        // conn_id -> MAC -> seen_port for ONE switch
-        std::unordered_map<int, std::unordered_map<
-            EthAddress, uint32_t> > packet_seen;
+        // MAC -> port mapping for EVERY switch
+        std::unordered_map<EthAddress, uint32_t> seen_port;
     };
 };

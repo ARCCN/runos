@@ -1,22 +1,13 @@
 #include "SimpleLearningSwitch.hh"
-#include "AppProvider.hh"
 #include "Controller.hh"
 
-REGISTER_APPLICATION(SimpleLearningSwitch, "simple-learning-switch", {"controller", ""})
+REGISTER_APPLICATION(SimpleLearningSwitch, {"controller", ""})
 
-SimpleLearningSwitch::SimpleLearningSwitch()
-{ }
-SimpleLearningSwitch::~SimpleLearningSwitch()
-{ }
-
-void SimpleLearningSwitch::init(AppProvider *provider, const Config &config)
+void SimpleLearningSwitch::init(Loader *loader, const Config &config)
 {
-    Controller* ctrl = Controller::get(provider);
+    Controller* ctrl = Controller::get(loader);
     ctrl->registerHandler(this);
 }
-
-void SimpleLearningSwitch::startUp(AppProvider *provider)
-{  }
 
 std::string SimpleLearningSwitch::orderingName() const
 { return "forwarding"; }
@@ -24,36 +15,43 @@ std::string SimpleLearningSwitch::orderingName() const
 OFMessageHandler* SimpleLearningSwitch::makeOFMessageHandler()
 { return new Handler(); }
 
-OFMessageHandler::Action SimpleLearningSwitch::Handler::processMiss(shared_ptr<OFConnection> ofconn, Flow* flow)
+OFMessageHandler::Action SimpleLearningSwitch::Handler::processMiss(OFConnection* ofconn, Flow* flow)
 {
-    of13::EthSrc src;
-    of13::EthDst dst;
-    of13::InPort inport;
+    static EthAddress broadcast("ff:ff:ff:ff:ff:ff");
 
     // Learn on packet data
-    flow->read(src);
-    flow->read(inport);
+    EthAddress eth_src = flow->loadEthSrc();
+    uint32_t   in_port = flow->pkt()->readInPort();
     // Forward by packet destination
-    flow->load(dst);
+    EthAddress eth_dst = flow->loadEthDst();
 
-    if (src.value() == EthAddress("ff:ff:ff:ff:ff:ff")) {
+    if (eth_src == broadcast) {
         DLOG(WARNING) << "Broadcast source address, dropping";
         return Stop;
     }
 
-    // TODO: how to immediately enforce this like policy?
-    auto& l2table = packet_seen[ofconn->get_id()];
-    l2table[src.value()] = inport.value();
+    seen_port[eth_src] = in_port;
 
     // forward
-    auto it = l2table.find(dst.value());
-    if (it != l2table.end()) {
-        flow->forward(it->second);
+    auto it = seen_port.find(eth_dst);
+
+    if (it != seen_port.end()) {
+        flow->idleTimeout(60);
+        flow->timeToLive(5 * 60);
+        flow->add_action(new of13::OutputAction(it->second, 0));
         return Continue;
     } else {
-        // it seems flood without worring about stp
-        // TODO: change this decision after learning complete
-        flow->forward(of13::OFPP_ALL);
+        LOG(INFO) << "Flooding for unknown address " << eth_dst.to_string();
+
+        if (eth_dst == broadcast) {
+            flow->idleTimeout(0);
+            flow->timeToLive(0);
+        } else {
+            flow->setFlags(Flow::Disposable);
+        }
+
+        // Should be replaced with STP ports
+        flow->add_action(new of13::OutputAction(of13::OFPP_ALL, 128));
         return Continue;
     }
 }

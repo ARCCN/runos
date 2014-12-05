@@ -1,111 +1,205 @@
-#include <QtDebug>
-#include <tins/rawpdu.h>
+#include <chrono>
 
 #include "Flow.hh"
+#include "Match.hh"
 
-Flow::Flow(shared_ptr<of13::PacketIn> pi) :
-    m_pi(pi),
-    m_packet(Tins::RawPDU( (uint8_t*)packetData(), packetLen() )
-                         .to<Tins::EthernetII>()),
-    m_state(New)
+using std::chrono::time_point;
+using std::chrono::steady_clock;
+using std::chrono::duration;
+
+typedef time_point<steady_clock> timepoint_t;
+typedef Flow::FlowState FlowState;
+typedef Flow::FlowFlags FlowFlags;
+
+struct FlowImpl {
+    // Initialization
+    Packet*               pkt;
+
+    // State
+    FlowState             state;
+    FlowFlags             flags;
+    Trace                 trace;
+
+    // Timeouts
+    timepoint_t           live_until;
+    uint16_t              idle_timeout;
+
+    // Decisions
+    ActionList actions;
+
+    FlowImpl(Packet* pkt_)
+        : pkt(pkt_),
+          state(Flow::New),
+          flags((FlowFlags) 0),
+          live_until(timepoint_t::max())
+    { }
+};
+
+Flow::Flow(Packet* pkt, QObject* parent)
+    : QObject(parent),
+      m(new FlowImpl(pkt))
+{ }
+
+Flow::~Flow()
+{ delete m; }
+
+FlowState Flow::state() const
+{ return m->state; }
+
+FlowFlags Flow::flags() const
+{ return m->flags; }
+
+void Flow::setFlags(FlowFlags flags)
+{ m->flags = static_cast<FlowFlags>(m->flags | flags); }
+
+Trace& Flow::trace()
+{ return m->trace; }
+
+Packet* Flow::pkt()
+{ return m->pkt; }
+
+bool Flow::outdated()
+{ return steady_clock::now() > m->live_until; }
+
+void Flow::add_action(Action* action)
+{ m->actions.add_action(action); }
+
+void Flow::add_action(Action& action)
+{ m->actions.add_action(action); }
+
+void Flow::setLive()
 {
+    auto old_state = m->state;
+    if (m->state == Live)
+        return;
+
+    m->state = Live;
+    m->pkt = 0;
+
+    emit stateChanged(m->state, old_state);
 }
 
-const void* Flow::packetData() const
+uint16_t Flow::idleTimeout(uint16_t seconds)
 {
-    return m_pi->data();
+    if (seconds == 0) // infinite
+        return m->idle_timeout;
+    if (m->idle_timeout == 0)
+        return m->idle_timeout = seconds;
+    return m->idle_timeout = std::min(seconds, m->idle_timeout);
 }
 
-size_t Flow::packetLen() const
+void Flow::timeToLive(uint32_t seconds, bool force)
 {
-    return m_pi->data_len();
+    auto timepoint = (seconds > 0) ?
+            (steady_clock::now() + std::chrono::seconds(seconds)) :
+            timepoint_t::max();
+
+    if (force) {
+        m->live_until = timepoint;
+    } else if (m->state == New && timepoint < m->live_until) {
+        m->live_until = timepoint;
+    }
 }
 
-void Flow::setInstalled(uint64_t cookie)
+uint16_t Flow::hardTimeout()
 {
-    m_packet = Tins::EthernetII();
-    m_pi.reset();
+    if (m->live_until == timepoint_t::max())
+        return 0;
 
-    m_state = Live;
-    m_cookie = cookie;
-
-    emit flowInstalled();
+    duration<double> ttl = m->live_until - steady_clock::now();
+    double hard_timeout = ceil(ttl.count());
+    if (hard_timeout > UINT16_MAX)
+        return UINT16_MAX;
+    else
+        return (uint16_t) hard_timeout;
 }
 
-void Flow::setRemoved()
+void Flow::initFlowMod(of13::FlowMod *fm)
 {
-    m_state = Dead;
-    m_cookie = 0;
+    fm->idle_timeout(m->idle_timeout);
+    fm->hard_timeout(hardTimeout());
 
-    emit flowRemoved();
+    uint16_t flags = 0;
+
+    // TODO: make it optional or debug mode only
+    flags |= of13::OFPFF_CHECK_OVERLAP;
+
+    if (m->flags & TrackFlowRemoval)
+        flags |= of13::OFPFF_SEND_FLOW_REM;
+
+    fm->flags(flags);
+
+    of13::ApplyActions applyActions;
+    applyActions.actions(m->actions);
+    of13::InstructionSet instructions;
+    instructions.add_instruction(applyActions);
+    fm->instructions(instructions);
 }
 
-
-void Flow::read(of13::InPort &in_port)
+void Flow::initPacketOut(of13::PacketOut *po)
 {
-    in_port.value(m_pi->match().in_port()->value());
+    po->in_port(m->pkt->readInPort());
+    po->actions(m->actions);
 }
 
-void Flow::load(of13::InPort &in_port)
+void Flow::load(of13::OXMTLV& tlv)
 {
-    read(in_port);
-    if (m_match.in_port() == 0)
-        m_match.add_oxm_field(in_port.clone());
+    m->pkt->read(tlv);
+    m->trace.push_back(TraceEntry(TraceEntry::Load, tlv));
 }
 
-void Flow::read(of13::EthSrc &eth_src)
-{
-    eth_src.value(EthAddress(m_packet.src_addr().begin()));
-}
+#define LOAD_IMPL(field) \
+    decltype(of13::field().value()) Flow::load##field() \
+    { \
+        auto value = m->pkt->read##field(); \
+        m->trace.push_back(TraceEntry(TraceEntry::Load, of13::field(value))); \
+        return value; \
+    }
 
-void Flow::load(of13::EthSrc &eth_src)
-{
-    // TODO: implement masking
-    assert(!eth_src.has_mask());
+#define MATCH_IMPL(field) \
+    bool Flow::match(const of13::field& val) \
+    { \
+        bool res = oxm_match<of13::field>(val, m->pkt->read##field()); \
+        m->trace.push_back(TraceEntry(TraceEntry::Test, val, res)); \
+        return res; \
+    }
 
-    read(eth_src);
-    if (m_match.eth_src() == nullptr)
-        m_match.add_oxm_field(eth_src.clone());
-}
+LOAD_IMPL(InPort);
+LOAD_IMPL(InPhyPort);
+LOAD_IMPL(Metadata);
 
-void Flow::read(of13::EthDst &eth_dst)
-{
-    eth_dst.value(EthAddress(m_packet.dst_addr().begin()));
-}
+LOAD_IMPL(EthSrc);
+LOAD_IMPL(EthDst);
+LOAD_IMPL(EthType);
 
-void Flow::load(of13::EthDst &eth_dst)
-{
-    // TODO: implement masking
-    assert(!eth_dst.has_mask());
+LOAD_IMPL(ARPOp);
+LOAD_IMPL(ARPSPA);
+LOAD_IMPL(ARPSHA);
+LOAD_IMPL(ARPTHA);
+LOAD_IMPL(ARPTPA);
 
-    read(eth_dst);
-    if (m_match.eth_dst() == nullptr)
-        m_match.add_oxm_field(eth_dst.clone());
-}
+LOAD_IMPL(IPv4Src);
+LOAD_IMPL(IPv4Dst);
+LOAD_IMPL(IPECN);
+LOAD_IMPL(IPDSCP);
+LOAD_IMPL(IPProto);
 
-void Flow::forward(uint32_t port_no)
-{
-    m_forward_port = port_no;
-}
+MATCH_IMPL(InPort);
+MATCH_IMPL(InPhyPort);
+MATCH_IMPL(Metadata);
 
-void Flow::mirror(uint32_t port_no)
-{
-    m_mirror_ports.push_back(port_no);
-}
+MATCH_IMPL(EthSrc);
+MATCH_IMPL(EthDst);
+MATCH_IMPL(EthType);
 
-of13::FlowMod Flow::compile()
-{
-    ActionSet actions;
-    actions.add_action(new of13::OutputAction(m_forward_port, 0));
-    for (auto port : m_mirror_ports)
-        actions.add_action(new of13::OutputAction(port, 0));
+MATCH_IMPL(ARPOp);
+MATCH_IMPL(ARPSPA);
+MATCH_IMPL(ARPSHA);
+MATCH_IMPL(ARPTHA);
+MATCH_IMPL(ARPTPA);
 
-    of13::WriteActions writeActions;
-    writeActions.actions(actions);
-
-    of13::FlowMod fm;
-    fm.match(m_match);
-    fm.add_instruction(writeActions);
-
-    return fm;
-}
+MATCH_IMPL(IPv4Src);
+MATCH_IMPL(IPv4Dst);
+MATCH_IMPL(IPDSCP);
+MATCH_IMPL(IPECN);
+MATCH_IMPL(IPProto);

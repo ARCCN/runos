@@ -13,7 +13,7 @@ struct hash<EthAddress> : private hash<string> {
     typedef std::size_t result_type;
 
     result_type operator()(argument_type const& s) const {
-        return std::hash<string>::operator()(s.to_string());
+        return std::hash<string>()(s.to_string());
     }
 };
 

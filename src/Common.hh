@@ -11,17 +11,18 @@
 using namespace fluid_base;
 using namespace fluid_msg;
 
-// Implement missing macro
 #ifndef NDEBUG
-#define DLOG_FIRST_N(severity, n) LOG_FIRST_N(severity, n)
+#define SMART_CAST static_cast
 #else
-#define DLOG_FIRST_N(severity, n)
-    true ? (void) 0 : google::LogMessageVoidify() & LOG(severity)
+#define SMART_CAST dynamic_cast
 #endif
 
-using std::shared_ptr;
-using std::weak_ptr;
-using std::unique_ptr;
-using std::static_pointer_cast;
-using std::dynamic_pointer_cast;
-using std::const_pointer_cast;
+#define FORMAT_DPID std::hex << std::setw(16) << std::setfill('0')
+
+Q_DECLARE_METATYPE(uint32_t)
+Q_DECLARE_METATYPE(uint64_t)
+Q_DECLARE_METATYPE(of13::FeaturesReply)
+Q_DECLARE_METATYPE(of13::PortStatus)
+Q_DECLARE_METATYPE(of13::Port);
+Q_DECLARE_METATYPE(std::shared_ptr<of13::Error>)
+Q_DECLARE_SMART_POINTER_METATYPE(std::shared_ptr)

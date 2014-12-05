@@ -22,7 +22,7 @@ public:
     * @param flow   Flow interface used to read and modify flow data.
     * @return Whether or not flow processing should be stopped.
     */
-    virtual Action processMiss(shared_ptr<OFConnection> ofconn, Flow* flow) = 0;
+    virtual Action processMiss(OFConnection* ofconn, Flow* flow) = 0;
 
     virtual ~OFMessageHandler() { }
 };
@@ -38,12 +38,12 @@ public:
     virtual std::string orderingName() const = 0;
 
     /**
-    * @return True, if handler `name` is prerequirement for this handler.
+    * @return True if handler `name` is prerequirement for this handler.
     */
     virtual bool isPrereq(const std::string &name) const { return false; }
 
     /**
-    * @returns True, if processor `stageId` is postrequirement for this handler.
+    * @returns True if processor `stageId` is postrequirement for this handler.
     */
     virtual bool isPostreq(const std::string &name) const { return false; }
 

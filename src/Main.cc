@@ -1,11 +1,9 @@
 #include "Common.hh"
 #include <fstream>
 #include <sstream>
-
-#include <QtCore>
 #include <json11.hpp>
 
-#include "AppProvider.hh"
+#include "Loader.hh"
 
 using namespace json11;
 
@@ -26,7 +24,15 @@ Config loadConfig(const std::string& fileName,
     return config;
 }
 
+
 int main(int argc, char* argv[]) {
+    qRegisterMetaType<uint32_t>("uint32_t");
+    qRegisterMetaType<uint64_t>("uint64_t");
+    qRegisterMetaType<of13::PortStatus>();
+    qRegisterMetaType<of13::FeaturesReply>();
+    qRegisterMetaType< std::shared_ptr<of13::Error> >();
+    qRegisterMetaType<of13::Port>();
+
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
 
@@ -38,8 +44,8 @@ int main(int argc, char* argv[]) {
     }
     Config config = loadConfig(configFile, "default");
 
-    AppProvider appProvider(config);
-    appProvider.startAll();
+    Loader loader(config);
+    loader.startAll();
 
     return app.exec();
 }

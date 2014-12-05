@@ -1,0 +1,14 @@
+RuNOS 0.2
+=========
+
+This release introduce many new features, new interfaces and significant improvements of
+existing APIs. Now you can start writing your apps for RuNOS!
+
+    - Initial implementation of maple engine that automatically assigns rule priorities.
+    - Fast and easy to use packet field reading and matching API.
+    - Initial flow lifecycle management (currently without tracking of flow removal).
+    - Improved performance of OF message handling.
+    - Allow applications to specify their interface.
+    - LLDP link discovery application.
+    - Initial topology-driven learning switch.
+    - Now applications can live in their own threads.

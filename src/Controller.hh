@@ -2,6 +2,7 @@
 
 #include "Common.hh"
 #include "Application.hh"
+#include "Loader.hh"
 #include "OFMessageHandler.hh"
 #include "OFTransaction.hh"
 
@@ -10,11 +11,13 @@
 */
 class Controller : public Application {
     Q_OBJECT
+    SIMPLE_APPLICATION(Controller, "controller")
 public:
-    APPLICATION(Controller);
+    Controller();
+    ~Controller();
 
-    void init(AppProvider* provider, const Config& config) override;
-    void startUp(AppProvider* provider) override;
+    void init(Loader* loader, const Config& config) override;
+    void startUp(Loader* loader) override;
 
     /**
     * Registers new message handler for each worker thread.
@@ -26,31 +29,28 @@ public:
      * Allocate unique OFMsg::xid and return's a wrapper class
      * to handle this transaction responses.
      * You can use this to make non-overlapped at time queries.
+     *
+     * @param caller Parent object.
      */
-    OFTransaction* registerStaticTransaction();
+    OFTransaction* registerStaticTransaction(Application* caller);
 
 signals:
 
     /**
     * New switch connection is ready to use.
     */
-    void switchUp(shared_ptr<OFConnection> ofconn, of13::FeaturesReply fr);
+    void switchUp(OFConnection* ofconn, of13::FeaturesReply fr);
 
     /**
     * Switch reports about port status changes.
     */
-    void portStatus(shared_ptr<OFConnection> ofconn, of13::PortStatus ps);
+    void portStatus(OFConnection* ofconn, of13::PortStatus ps);
 
     /**
     * Switch connection failed or closed.
     * @param ofconn OpenFlow connection. You should drop references to it to free memory.
     */
-    void switchDown(shared_ptr<OFConnection> ofconn);
+    void switchDown(OFConnection* ofconn);
 private:
     class ControllerImpl *impl;
 };
-
-Q_DECLARE_METATYPE(of13::FeaturesReply)
-Q_DECLARE_METATYPE(of13::PortStatus)
-Q_DECLARE_METATYPE(shared_ptr<of13::Error>)
-Q_DECLARE_METATYPE(shared_ptr<OFConnection>)

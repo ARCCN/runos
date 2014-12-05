@@ -1,129 +1,167 @@
 #pragma once
 
 #include "Common.hh"
-#include <tins/ethernetII.h>
+#include "TraceTree.hh"
+#include "Packet.hh"
 
 /**
-* @brief Represents installed or future flow on a switch.
-*
-* This class provides an abstract way for OFMessageHandler to read and modify flow information.
-* Using this abstraction multiple applications can handle overlapped traffic classes without worring
-* about how flow-mod will affect other applications.
-*
-* When flow has established you can use this class to monitor flow lifecycle and stats.
-*
-* This class currently is in active development and may be changed significantly in the future.
-*
+  @brief Represents installed or future flow on a switch.
+
+  This class provides an abstract way for OFMessageHandler to read and modify
+  flow information. Using this abstraction multiple applications can handle
+  overlapped traffic classes without worring about how flow-mod will affect
+  other applications.
+
+  When flow has established you can use this class to monitor flow lifecycle and stats.
 */
 class Flow: public QObject {
     Q_OBJECT
 public:
+    enum FlowState {
+        // Table-miss packet-in received, but no flow mod issued yet
+        New,
+        // Flow installed on the switch
+        Live,
+        // Flow removed from the switch but can be reactivated 
+        // Warning: only actual when TrackFlowRemoval is on.
+        Shadowed
+    };
+
+    enum FlowFlags {
+        TrackFlowRemoval = 1,
+        TrackFlowStats = 2,
+        Disposable = 4
+    };
+
     /* This object should be constructed by Controller */
     Flow() = delete;
     Flow(Flow &other) = delete;
     Flow& operator=(const Flow& other) = delete;
-    friend class ControllerImpl;
 
-    /*
-        New: table-miss packet-in received, but no flow mod issued yet
-        Live: flow installed on the switch
-        Dead: flow removed from the switch
-
-        New --------> Live --------> Dead ------> (destruction)
-                       ^               |
-                       |               |
-                       +---------------+
+    /**
+     * Set specified set of flags to ON.
+     * Other flags keeps unchanged.
      */
-    enum FlowState {
-        New, Live, Dead
-    };
-
-    enum FlowFlags {
-        TrackFlowState = 1,
-        TrackFlowStats = 2
-    };
-
     void setFlags(FlowFlags flags);
 
     /**
-    * Use it with restrictions described in the `read` method.
-    * @return Raw packet-in data limited to `miss_send_len` bytes.
-    */
-    const void* packetData() const;
+     * Configures flow idle timeout which corresponds to OpenFlow idle timeout.
+     * When called multiple times smallest value will be chosen.
+     */
+    uint16_t idleTimeout(uint16_t seconds = 0);
 
     /**
-    * Use it with restrictions described in the `read` method.
-    * @return Raw packet-in data length.
-    */
-    size_t packetLen() const;
-
-    /*
-     * Extracts packet field, applying all modifications.
-     *  This method doesn't add new match field, so you SHOULD NOT use it
-     *  to decide what to do with this flow. Use it to collect stats,
-     *  to learn from slow path and other situations that can not affect
-     *  decision and program's control flow.
+     * Setup the maximum flow lifetime like OpenFlow hard timeout.
+     * Note that during this period flow entry can be removed due,
+     * for example, idle timeout and then installed again without
+     * OFMessageHandler processing.
+     *
+     * @param seconds Value to set. If multiple processors requests
+     *   different values, smallest value will be set.
+     * @return Current actual value of hard timeout.
      */
-    void read(of13::InPort &in_port);
-    void read(of13::EthSrc &eth_src);
-    void read(of13::EthDst &eth_dst);
-    void read(of13::EthType &eth_type);
+    void timeToLive(uint32_t seconds, bool force = false);
 
-    /*
+    /**
+     * Returns raw packet field reader.
+     *
+     * It doesn't add new match field, so you SHOULD NOT use it
+     * to decide what to do with a flow. Use it to collect stats,
+     * to learn from slow path, and other situations that can not affect
+     * decision and program's control flow.
+     */
+    Packet* pkt();
+
+    //@{
+    /**
      * Loads packet field and add it to flow match.
-     *  In the future, it will accept masks to load only subset of fields.
-     *  You should use this data to make decisions about flow.
-    */
-    void load(of13::InPort &in_port);
-    void load(of13::EthSrc &eth_src);
-    void load(of13::EthDst &eth_dst);
-    void load(of13::EthType &eth_type);
+     * You should use this data to make flow decisions.
+     */
+    void load(of13::OXMTLV& tlv);
+    // OpenFlow
+    uint32_t        loadInPort();
+    uint32_t        loadInPhyPort();
+    uint64_t        loadMetadata();
+    // Ethernet
+    EthAddress      loadEthSrc();
+    EthAddress      loadEthDst();
+    uint16_t        loadEthType();
+    // ARP
+    uint16_t        loadARPOp();
+    IPAddress       loadARPSPA();
+    IPAddress       loadARPTPA();
+    EthAddress      loadARPSHA();
+    EthAddress      loadARPTHA();
+    // IP
+    IPAddress       loadIPv4Src();
+    IPAddress       loadIPv4Dst();
+    uint8_t         loadIPDSCP();
+    uint8_t         loadIPECN();
+    uint8_t         loadIPProto();
+    //@}
 
+    //@{
     /**
      * Tests if a packet field matches specified value.
-     *  This allows you to implement if-else checks on a packet fields.
-     *  Unlike `load`, this methods provide you a way to implement handlers
-     *  for the particular value of packet field, but delegate decision
-     *  logic for all others values.
+     *
+     * This allows to implement if-else statements on a packet fields.
+     * Unlike `load`, this methods provide you a way to implement handlers
+     * only for the particular value of packet.
      */
-    bool test(of13::InPort in_port);
-    bool test(of13::EthSrc eth_src);
-    bool test(of13::EthDst eth_dst);
-    bool test(of13::EthType eth_type);
+    // OpenFlow
+    bool match(const of13::InPort& val);
+    bool match(const of13::InPhyPort& val);
+    bool match(const of13::Metadata& val);
+    // Ethernet
+    bool match(const of13::EthSrc& val);
+    bool match(const of13::EthDst& val);
+    bool match(const of13::EthType& val);
+    // ARP
+    bool match(const of13::ARPOp& val);
+    bool match(const of13::ARPTHA& val);
+    bool match(const of13::ARPTPA& val);
+    bool match(const of13::ARPSHA& val);
+    bool match(const of13::ARPSPA& val);
+    // IP
+    bool match(const of13::IPv4Src& val);
+    bool match(const of13::IPv4Dst& val);
+    bool match(const of13::IPDSCP& val);
+    bool match(const of13::IPECN& val);
+    bool match(const of13::IPProto& val);
+    //@}
 
-    void forward(uint32_t port_no);
-    void mirror(uint32_t port_no);
     //void modify(const of13::OXMTLV* tlv);
+    void add_action(Action* action);
+    void add_action(Action& action);
 
-    /* Getters */
-    inline FlowState state() const { return m_state; }
+    /**
+     * Checks if flow is outdated and should be destroyed.
+     */
+    bool outdated();
+
+    //@{
+    /** Getters */
+    FlowState state() const;
+    FlowFlags flags() const;
+    Trace& trace();
+    //@}
 
 signals:
-    void statsUpdated();
-    void flowInstalled();
-    void flowRemoved();
+    void stateChanged(FlowState new_state, FlowState old_state);
 
 protected:
-    Flow(shared_ptr<of13::PacketIn> pi);
+    friend class SwitchScope;
 
-    void setInstalled(uint64_t cookie);
-    void setRemoved();
+    Flow(Packet* pkt, QObject* parent = 0);
+    ~Flow();
 
-    of13::FlowMod compile();
+    void initFlowMod(of13::FlowMod* fm);
+    void initPacketOut(of13::PacketOut* po);
+
+    void setLive();
+    void setShadow();
+    uint16_t hardTimeout();
+
 private:
-    // TODO: short task: test if old connection is usable after control link fails
-    // TODO: long task: replace it with switch abstraction
-    shared_ptr<of13::PacketIn>       m_pi;
-    Tins::EthernetII                 m_packet;
-
-    FlowState             m_state;
-    FlowFlags             m_flags;
-
-    /* Generated cookie for a installed flow */
-    uint64_t              m_cookie;
-    /* Pending match */
-    of13::Match           m_match;
-    uint32_t              m_forward_port;
-    std::vector<uint32_t> m_mirror_ports;
+    struct FlowImpl *m;
 };
-

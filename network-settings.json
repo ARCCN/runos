@@ -2,8 +2,21 @@
 
 "default": {
     "services": [
-        "simple-learning-switch"
-    ]
+        "learning-switch"
+    ],
+
+    "loader": {
+        "threads": 10
+    },
+
+    "link-discovery": {
+        "poll-interval": 10,
+        "pin-to-thread": 9
+    },
+
+    "switch-manager": {
+        "pin-to-thread": 9
+    }
 }
 
 }

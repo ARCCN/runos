@@ -4,140 +4,131 @@
 #include <list>
 #include <mutex>
 #include <thread>
+#include <sstream>
 
 #include <fluid/OFServer.hh>
-#include "AppProvider.hh"
+
 #include "Controller.hh"
+#include "TraceTree.hh"
 #include "Flow.hh"
+#include "Packet.hh"
+#include "OFMsgUnion.hh"
 
-REGISTER_APPLICATION(Controller, "controller", {""})
+REGISTER_APPLICATION(Controller, {""})
 
-struct Pipeline {
-    Pipeline(size_t n = 1) : last_cookie(1) { }
-    std::list<OFMessageHandler*> processors;
-    int last_cookie;
+typedef std::list<OFMessageHandler*> HandlerPipeline;
+
+// TODO: Can we implement similar SwitchStorage?
+class SwitchScope {
+public:
+    TraceTree trace_tree;
+    OFConnection* ofconn;
+    HandlerPipeline pipeline;
+
+    void processTableMiss(of13::PacketIn& pi);
 };
 
-class ControllerImpl : public OFServer
-{
-    Controller* app;
-
+class ControllerImpl : public OFServer {
     const uint32_t min_xid = 0xff;
+    Controller *app;
 
 public:
     bool started;
-    // Pipeline
-    std::unordered_map< std::thread::id, Pipeline > pipeline;
-    std::vector< OFMessageHandlerFactory* > pipeline_factory;
+    std::vector<OFMessageHandlerFactory *> pipeline_factory;
+    std::unordered_map<uint64_t, SwitchScope> switch_scope;
+
     // OFResponse
-    std::vector<OFTransaction*> static_ofresponse;
+    std::vector<OFTransaction *> static_ofresponse;
     uint32_t min_session_xid; // Make sure that we don't intersect with libfluid_base
     //uint32_t last_xid;
 
-    ControllerImpl(Controller* _app,
-               const char* address,
-               const int port,
-               const int nthreads = 4,
-               const bool secure = false,
-               const struct OFServerSettings ofsc = OFServerSettings())
+    ControllerImpl(Controller *_app,
+            const char *address,
+            const int port,
+            const int nthreads = 4,
+            const bool secure = false,
+            const struct OFServerSettings ofsc = OFServerSettings())
             : OFServer(address, port, nthreads, secure, ofsc),
               app(_app), started(false),
-              min_session_xid(min_xid) //, last_xid(min_xid)
+              min_session_xid(min_xid) // last_xid(min_xid)
     { }
 
-    void message_callback(OFConnection* ofconn, uint8_t type, void* data, size_t len) override
+    ~ControllerImpl()
+    { }
+
+    void message_callback(OFConnection *ofconn, uint8_t type, void *data, size_t len) override
     {
-        auto conn = *reinterpret_cast< shared_ptr<OFConnection>* >(ofconn->get_application_data());
-        OFMsg* msg;
+        SwitchScope *ctx = reinterpret_cast<SwitchScope *>(ofconn->get_application_data());
 
-        shared_ptr<of13::PacketIn> pi;
-        shared_ptr<of13::Error>    error;
-        of13::FeaturesReply  fr;
-        of13::PortStatus     ps;
-
-        // Construct message object
-        switch (type) {
-        case of13::OFPT_PACKET_IN:
-            pi = std::make_shared<of13::PacketIn>();
-            msg = pi.get();
-            break;
-        case of13::OFPT_FEATURES_REPLY:
-            msg = &fr;
-            break;
-        case of13::OFPT_PORT_STATUS:
-            msg = &ps;
-            break;
-        case of13::OFPT_MULTIPART_REPLY:
-            msg = new of13::MultipartReply();
-            break;
-        case of13::OFPT_BARRIER_REPLY:
-            msg = new of13::BarrierReply();
-            break;
-        case of13::OFPT_ERROR:
-            error = std::make_shared<of13::Error>();
-            msg = error.get();
-            break;
-        default:
-            LOG(WARNING) << "Unhandled message type " << type
-                    <<" received from connection " << ofconn->get_id();
+        if (ctx == nullptr && type != of13::OFPT_FEATURES_REPLY) {
+            LOG(ERROR) << "Switch send message before feature reply";
+            OFMsg::free_buffer(static_cast<uint8_t *>(data));
             return;
         }
 
-        // Parse data
-        if (msg->unpack(static_cast<uint8_t*>(data)) != 0) {
-            LOG(WARNING) << "Malformed message received from connection " << ofconn->get_id();
-        }
-        if (type != of13::OFPT_MULTIPART_REPLY) {
-            free_data(data);
-            data = nullptr;
-        }
+        try {
+            OFMsgUnion msg(type, data, len);
 
-        // Send it to handlers
-        switch (type) {
-        case of13::OFPT_PACKET_IN:
-            if (pi->reason() == of13::OFPR_NO_MATCH) {
-                processTableMiss(conn, pi);
-            } else {
-                LOG(ERROR) << "TODO: to-controller packet-ins"; // TODO
-            }
-            break;
-        case of13::OFPT_FEATURES_REPLY:
-            emit app->switchUp(conn, fr);
-            break;
-        case of13::OFPT_PORT_STATUS:
-            emit app->portStatus(conn, ps);
-            break;
-        default: {
-            uint32_t xid = msg->xid();
-            OFTransaction *transaction;
-
-            if (xid < min_xid)
-                break;
-
-            if (xid < min_session_xid) {
-                transaction = static_ofresponse[xid - min_xid];
-            } else {
-                // TODO: session ofresponse's
-            }
-
-            if (transaction) {
-                if (type == of13::OFPT_ERROR) {
-                    emit transaction->error(conn, error);
+            switch (type) {
+            case of13::OFPT_PACKET_IN:
+                if (TraceTree::isTableMiss(msg.packetIn)) {
+                    ctx->processTableMiss(msg.packetIn);
                 } else {
-                    emit transaction->response(conn, msg, static_cast<uint8_t*>(data));
+                    LOG(ERROR) << "TODO: to-controller packet-ins"; // TODO
+                }
+                break;
+            case of13::OFPT_FEATURES_REPLY:
+                ctx = createSwitchScope(ofconn, msg.featuresReply.datapath_id());
+                ofconn->set_application_data(ctx);
+                emit app->switchUp(ctx->ofconn, msg.featuresReply);
+                break;
+            case of13::OFPT_PORT_STATUS:
+                if (ctx == nullptr) break;
+                emit app->portStatus(ctx->ofconn, msg.portStatus);
+                break;
+            case of13::OFPT_FLOW_REMOVED:
+                // TODO
+                break;
+            default: {
+                uint32_t xid = msg.base()->xid();
+                if (xid < min_xid)
+                    break;
+
+                OFTransaction *transaction = nullptr;
+                if (xid < min_session_xid) {
+                    transaction = static_ofresponse[xid - min_xid];
+                } else {
+                    // TODO: session ofresponse's
+                }
+
+                if (transaction) {
+                    auto msg_copy = std::make_shared<OFMsgUnion>(type, data, len);
+
+                    if (type == of13::OFPT_ERROR) {
+                        emit transaction->error(ctx->ofconn, msg_copy);
+                    } else {
+                        emit transaction->response(ctx->ofconn, msg_copy);
+                    }
                 }
             }
+            }
+        } catch (const OFMsgParseError &e) {
+            LOG(WARNING) << "Malformed message received from connection " << ofconn->get_id();
+        } catch (const OFMsgUnhandledType &e) {
+            LOG(WARNING) << "Unhandled message type " << e.msg_type()
+                    << " received from connection " << ofconn->get_id();
         }
-        }
+
+        free_data(data);
     }
 
-    void connection_callback(OFConnection* ofconn, OFConnection::Event type) override
+    void connection_callback(OFConnection *ofconn, OFConnection::Event type) override
     {
-        auto conn = reinterpret_cast< shared_ptr<OFConnection>* >(ofconn->get_application_data());
+        SwitchScope *ctx = reinterpret_cast<SwitchScope *>(ofconn->get_application_data());
 
         if (type == OFConnection::EVENT_STARTED) {
             LOG(INFO) << "Connection id=" << ofconn->get_id() << " started";
-            ofconn->set_application_data(new shared_ptr<OFConnection>(ofconn));
+            ofconn->set_application_data(nullptr);
         }
 
         else if (type == OFConnection::EVENT_ESTABLISHED) {
@@ -150,109 +141,198 @@ public:
 
         else if (type == OFConnection::EVENT_CLOSED) {
             LOG(INFO) << "Connection id=" << ofconn->get_id() << " closed by the user";
-            emit app->switchDown(*conn);
-            /*delete conn;*/ ofconn->set_application_data(nullptr);
+            if (ctx) {
+                ofconn->set_application_data(nullptr);
+                emit app->switchDown(ctx->ofconn);
+                ctx->ofconn = nullptr;
+            }
         }
 
         else if (type == OFConnection::EVENT_DEAD) {
             LOG(INFO) << "Connection id=" << ofconn->get_id() << " closed due to inactivity";
-            emit app->switchDown(*conn);
-            /*delete conn;*/ ofconn->set_application_data(nullptr);
+            if (ctx) {
+                ofconn->set_application_data(nullptr);
+                emit app->switchDown(ctx->ofconn);
+                ctx->ofconn = nullptr;
+            }
         }
     }
 
     void sortPipeline()
     {
         std::sort(pipeline_factory.begin(), pipeline_factory.end(),
-                [] (const OFMessageHandlerFactory* a, const OFMessageHandlerFactory* b) -> bool {
-                    bool a_before_b = b->isPrereq(a->orderingName());
-                    bool a_after_b  = b->isPostreq(a->orderingName());
-                    bool b_before_a = a->isPrereq(b->orderingName());
-                    bool b_after_a  = a->isPostreq(b->orderingName());
+                  [](const OFMessageHandlerFactory *a, const OFMessageHandlerFactory *b) -> bool {
+                      bool a_before_b = b->isPrereq(a->orderingName());
+                      bool a_after_b = b->isPostreq(a->orderingName());
+                      bool b_before_a = a->isPrereq(b->orderingName());
+                      bool b_after_a = a->isPostreq(b->orderingName());
 
-                    if ( ( a_before_b && a_after_b  ) ||
-                            ( b_before_a && b_after_a  ) ||
-                            ( a_before_b && b_before_a ) ||
-                            ( a_after_b  && b_after_a  ))
-                    {
-                        LOG(FATAL) << "Wrong pipeline order constraints on "
-                                << a->orderingName() << " and " << b->orderingName();
-                    }
+                      if ((a_before_b && a_after_b) ||
+                              (b_before_a && b_after_a) ||
+                              (a_before_b && b_before_a) ||
+                              (a_after_b && b_after_a)) {
+                          LOG(FATAL) << "Wrong pipeline ordering constraints between "
+                                  << a->orderingName() << " and " << b->orderingName();
+                      }
 
-                    return a_before_b || b_after_a;
-                }
+                      return a_before_b || b_after_a;
+                  }
         );
 
-        DLOG(INFO) << "Flow processors registered: ";
-        for (auto& factory : pipeline_factory)
-            DLOG(INFO) << "   " << factory->orderingName();
+        LOG(INFO) << "Flow processors registered: ";
+        for (auto &factory : pipeline_factory)
+            LOG(INFO) << "  * " << factory->orderingName();
     }
 
-    Pipeline& getPipeline(std::thread::id tid)
+    SwitchScope *createSwitchScope(OFConnection *ofconn, uint64_t dpid)
     {
-        auto it = pipeline.find(tid);
-        if (it != pipeline.end())
-            return it->second;
+        static std::mutex mutex;
 
-        DLOG(INFO) << "Creating new pipeline with " << pipeline_factory.size()
-                << " flow processor(s)";
-        Pipeline new_pipeline(pipeline_factory.size());
-        for (auto& factory : pipeline_factory) {
-            new_pipeline.processors.push_back(factory->makeOFMessageHandler());
+        auto it = switch_scope.find(dpid);
+        if (it != switch_scope.end())
+            goto ret;
+
+        mutex.lock();
+        it = switch_scope.find(dpid);
+        if (it != switch_scope.end()) {
+            mutex.unlock();
+            goto ret;
         }
 
-        return pipeline[tid] = new_pipeline;
+        it = switch_scope.emplace(std::piecewise_construct,
+                                  std::forward_as_tuple(dpid),
+                                  std::forward_as_tuple()).first;
+
+        {
+            auto& swctx = it->second;
+            // Create pipeline
+            for (auto &factory : pipeline_factory) {
+                swctx.pipeline.push_back(factory->makeOFMessageHandler());
+            }
+            swctx.trace_tree.cleanFlowTable(ofconn);
+        }
+        mutex.unlock();
+
+        ret:
+        SwitchScope *ctx = &it->second;
+        if (ctx->ofconn != nullptr) {
+            LOG(ERROR) << "Overwriting switch scope on active connection";
+        }
+        ctx->ofconn = ofconn;
+
+        return ctx;
     }
+};
 
-    void processTableMiss(shared_ptr<OFConnection> ofconn, shared_ptr<of13::PacketIn> pi)
-    {
-        DLOG(INFO) << "Table miss on connection id=" << ofconn->get_id();
+void SwitchScope::processTableMiss(of13::PacketIn& pi)
+{
+    auto conn_id = ofconn->get_id();
+    auto pkt     = new Packet(pi);
+    auto leaf    = trace_tree.find(pkt);
 
-        Pipeline& pipeline = getPipeline(std::this_thread::get_id());
-        Flow* flow = new Flow(pi);
+    DVLOG(10) << "Table miss on connection id=" << conn_id;
 
-        for (const auto& processor : pipeline.processors) {
-            DLOG(INFO) << " processing step...";
-            if (processor->processMiss(ofconn,flow) == OFMessageHandler::Stop)
+    if (leaf == nullptr) {
+        // The flow is not in the trace tree.
+        // This means that it is new or outdated (deleted by hard timeout).
+
+        // Create new Flow object and pass it through handlers.
+        // Handlers will define:
+        //  1) Flow space: which fields are used to make decision.
+        //  2) Decision: forward to port, modify fields, drop.
+        //  3) Timeout: how many time decision is valid.
+        Flow* flow = new Flow(pkt);
+        for (auto& handler : pipeline) {
+            if (handler->processMiss(ofconn, flow) == OFMessageHandler::Stop)
                 break;
         }
 
-        DLOG(INFO) << "Installing rule to the switch";
-        of13::FlowMod fm = flow->compile();
+        if (flow->flags() & Flow::Disposable) {
+            // Sometimes we don't need to create a new flow on the switch.
+            // So, reply to the packet-in using packet-out message.
+            DVLOG(9) << "Sending packet-out";
 
-        fm.cookie(((uint64_t)ofconn->get_id() << 32ULL) + pipeline.last_cookie++);
-        fm.cookie_mask(0);
-        fm.command(of13::OFPFC_ADD);
+            of13::PacketOut po;
+            po.xid(pi.xid());
+            po.buffer_id(pi.buffer_id());
+            flow->initPacketOut(&po);
 
-        fm.idle_timeout(20); // FIXME: move to config
-        fm.hard_timeout(0); // FIXME move to config
+            uint8_t* buffer = po.pack();
+            ofconn->send(buffer, po.length());
+            OFMsg::free_buffer(buffer);
 
-        fm.buffer_id(pi->buffer_id());
-        fm.xid(pi->xid());
+            flow->deleteLater();
+        } else {
+            // In other cases we need to add newly created Flow into the
+            // trace tree and rebuild it [TODO: incrementaly].
+            DVLOG(5) << "Rebuilding flow table on conn = " << conn_id;
 
-        // FIXME: use config
-        fm.flags(fm.flags() | of13::OFPFF_CHECK_OVERLAP);
+            static const struct Barrier {
+                uint8_t* data;
+                size_t len;
+                Barrier() {
+                    of13::BarrierRequest br;
+                    data = br.pack();
+                    len = br.length();
+                }
+                ~Barrier() { OFMsg::free_buffer(data); }
+            } barrier;
 
-        uint8_t* buffer = fm.pack();
-        ofconn->send(buffer, fm.length());
-        flow->setInstalled(fm.cookie());
+            // Initialize flow mod
+            of13::FlowMod* fm = new of13::FlowMod();
+            fm->xid(pi.xid());
+            fm->buffer_id(pi.buffer_id());
+            fm->command(of13::OFPFC_ADD);
+            flow->initFlowMod(fm);
 
+            // Add new leaf to the trace tree
+            trace_tree.augment(flow, fm);
+            if (VLOG_IS_ON(10)) {
+                std::stringstream ss;
+                trace_tree.dump(ss);
+                VLOG(10) << "Current trace tree on connection " << ofconn->get_id() << ": "
+                    << std::endl << ss.str();
+            }
+
+            // Rebuild flow table from scratch.
+            // We will do incremental update in the future.
+            trace_tree.cleanFlowTable(ofconn);
+            ofconn->send(barrier.data, barrier.len);
+            unsigned rules = trace_tree.buildFlowTable(ofconn);
+
+            DVLOG(5) << rules << " rules generated for switch on conn = " << conn_id;
+
+            // FIXME: Can flow be expired and free'd at this point?
+            flow->setLive();
+        }
+
+    } else {
+        // Flow removed from the switch by idle timeout, but
+        // still valid (by hard timeout). Reinstall it without
+        // touching handlers.
+
+        DVLOG(5) << "Reinstalling rule from the trace tree";
+        // Flow removed by idleTimeout but still actual
+        of13::FlowMod* fm = leaf->fm;
+        fm->xid(pi.xid());
+        fm->buffer_id(pi.buffer_id());
+        leaf->flow->initFlowMod(fm);
+
+        uint8_t* buffer = fm->pack();
+        ofconn->send(buffer, fm->length());
         OFMsg::free_buffer(buffer);
-    }
 
-};
+        leaf->flow->setLive();
+    }
+}
 
 /* Application interface */
 Controller::Controller()
     : impl(nullptr)
 { }
 
-void Controller::init(AppProvider*, const Config& rootConfig)
+void Controller::init(Loader*, const Config& rootConfig)
 {
-    qRegisterMetaType<of13::PortStatus>();
-    qRegisterMetaType<of13::FeaturesReply>();
-    qRegisterMetaType< shared_ptr<of13::Error> >();
-    qRegisterMetaType< shared_ptr<OFConnection> >();
 
     auto config = config_cd(rootConfig, "controller");
 
@@ -274,7 +354,7 @@ Controller::~Controller() {
     delete impl;
 }
 
-void Controller::startUp(AppProvider*)
+void Controller::startUp(Loader*)
 {
     impl->sortPipeline();
     impl->start(/* block: */ false);
@@ -287,11 +367,11 @@ void Controller::registerHandler(OFMessageHandlerFactory *factory)
         LOG(ERROR) << "Registering handler after startup";
         return;
     }
-    DLOG(INFO) << "Registring flow processor " << factory->orderingName();
+    VLOG(10) << "Registring flow processor " << factory->orderingName();
     impl->pipeline_factory.push_back(factory);
 }
 
-OFTransaction* Controller::registerStaticTransaction()
+OFTransaction* Controller::registerStaticTransaction(Application *caller)
 {
     if (impl->started) {
         LOG(ERROR) << "Registering static xid after startup";
@@ -299,15 +379,16 @@ OFTransaction* Controller::registerStaticTransaction()
     }
 
     uint32_t xid = impl->min_session_xid++;
-    OFTransaction* ofr = new OFTransaction(xid, this);
-    impl->static_ofresponse.push_back(ofr);
 
-    QObject::connect(ofr, &QObject::destroyed, [xid, this]() {
-        std::mutex mutex;
+    OFTransaction* ret = new OFTransaction(xid, caller);
+    impl->static_ofresponse.push_back(ret);
+
+    QObject::connect(ret, &QObject::destroyed, [xid, this]() {
+        static std::mutex mutex;
         mutex.lock();
         impl->static_ofresponse[xid] = 0;
         mutex.unlock();
     });
 
-    return ofr;
+    return ret;
 }
