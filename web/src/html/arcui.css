@@ -1,0 +1,69 @@
+@import url(http://fonts.googleapis.com/css?family=PT+Sans:400,700,400italic,700italic|PT+Sans+Narrow:400,700|PT+Serif+Caption:400,400italic|PT+Mono|PT+Serif:400,700,400italic,700italic|PT+Sans+Caption:400,700&subset=latin,cyrillic);
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video{margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline}
+article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}
+body{line-height:1}
+ol,ul{list-style:none}
+blockquote,q{quotes:none}
+blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}
+table{border-collapse:collapse;border-spacing:0}
+.transition{transition:all .1s ease-out}
+@font-face{font-family:'FontAwesome';src:url('images/fontawesome-webfont.eot');src:url('images/fontawesome-webfont.eot') format('embedded-opentype'),url('images/fontawesome-webfont.woff') format('woff'),url('images/fontawesome-webfont.ttf') format('truetype'),url('images/fontawesome-webfont.svg') format('svg');font-weight:normal;font-style:normal}html{font-size:62.5%;-webkit-font-smoothing:antialiased}html input,html button,html select{-moz-appearance:none;-webkit-appearance:none;appearance:none;-webkit-font-smoothing:antialiased;outline:none;font-family:'PT Sans Narrow';font-size:1em;padding:0;margin:0;border:none;background:none}
+body{background:#EEE;color:black;font-family:'PT Sans Narrow';font-size:1.6em;height:100%;padding:5px;text-align:center;text-shadow:0 1px white;text-transform:uppercase}body *,body *:before,body *:after{box-sizing:border-box}
+body a{text-decoration:none;color:black}
+body.start{padding:0;background:linear-gradient(to top right, #281a71, #dd1772)}
+.sign-in{position:absolute;display:inline-block;text-align:center;padding:.5em;border-radius:5px;background:rgba(0,0,0,0.25);border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 1px 2px rgba(0,0,0,0.5)}.sign-in input{font-family:'PT Sans Narrow';font-size:2em;display:block;color:white}
+.sign-in button{font-family:'PT Sans Narrow';margin-top:1em;width:auto;border-radius:5px;background:#dd1772;text-shadow:0 -1px 2px rgba(0,0,0,0.5);color:white;font-weight:bold;font-size:1.1em;padding:.5em;box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 1px 2px rgba(0,0,0,0.5);cursor:pointer;text-transform:uppercase;position:relative;transition:background .3s ease-out}.sign-in button:hover{background:#281a71}
+.sign-in button:active{box-shadow:inset 0 1px 0 rgba(255,255,255,0.25);top:1px}
+nav{text-align:left;width:14rem;position:absolute;padding:.5rem}nav .logo{display:block;text-align:center}nav .logo img{width:100%}
+nav h5{margin:1em 0 0;font-size:1.5em}
+nav a{display:block;padding:.5em;border:1px solid transparent}nav a.current{border:1px solid rgba(0,0,0,0.25);border-radius:3px 0 0 3px;background:#FAFAFA;position:relative;z-index:1}nav a.current:before{content:'';width:1.1rem;height:2.13em;border:1px solid rgba(0,0,0,0.25);border-left:none;border-right:none;background:#FAFAFA;position:absolute;right:-1.1rem;top:-1px}
+header{text-align:right;position:absolute;z-index:1;pointer-events:none;top:1rem;right:1rem}header .user{pointer-events:auto;opacity:0.5;color:white;text-shadow:0 1px rgba(0,0,0,0.88);display:inline-block;padding:.25em;background:#555;border:1px solid rgba(0,0,0,0.25);border-radius:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 1px 2px rgba(0,0,0,0.5)}header .user:hover{opacity:1}
+main{background:#FAFAFA;border-radius:5px;box-shadow:0 1px 3px rgba(0,0,0,0.5);margin-left:14.5rem;padding:.5rem;min-height:47rem;height:100%;position:relative;z-index:0}
+body.info main{text-align:left;padding:1em;padding-bottom:.5em}body.info main h1{font-family:'PT Sans';font-size:2em}
+body.info main h2{padding:1em 0 .5em;font-family:'PT Sans';font-size:1.5em}
+body.info main ul li u,body.info main ul li i,body.info main ul li b{padding:.2em;display:inline-block;vertical-align:middle;margin:.2em;font-weight:bold}
+body.info main ul li u{text-align:right;font-weight:normal;color:#AAA;text-decoration:none}
+body.info main ul li i{text-transform:none;font-family:'PT Mono';color:#281a71}
+body.info main ul li b{font-weight:normal;text-shadow:none;background:#281a71;color:white;border:1px solid #191048;border-radius:3px}
+body.info main canvas{padding:.5em 1em;padding-left:0}
+body.switch main{text-align:left;padding:1em;padding-bottom:.5em}body.switch main h1{font-family:'PT Sans';font-size:2em}
+body.switch main h2{padding:1em 0 .5em;font-family:'PT Sans';font-size:1.5em}
+body.switch main ul li u,body.switch main ul li i,body.switch main ul li b{padding:.2em;display:inline-block;vertical-align:middle;margin:.2em;font-weight:bold}
+body.switch main ul li u{text-align:right;font-weight:normal;color:#AAA;text-decoration:none}
+body.switch main ul li i{text-transform:none;font-family:'PT Mono';color:#281a71}
+body.switch main ul li b{font-weight:normal;text-shadow:none;background:#281a71;color:white;border:1px solid #191048;border-radius:3px}
+body.enterprise canvas.map{background:#BADA55;position:absolute;top:0;left:0;border-radius:5px;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
+body.enterprise div{display:none;position:absolute}body.enterprise div.group-name{border-radius:5px;background:rgba(0,0,0,0.5);z-index:1;top:0;left:0;width:100%;height:100%}body.enterprise div.group-name input{font-family:'PT Sans Narrow';font-size:2em;position:absolute}
+body.enterprise div.tooltip{font-size:1.3em;text-transform:none;color:white;text-shadow:0 1px rgba(0,0,0,0.88);background:rgba(0,0,0,0.8);padding:.5em;border:2px solid black;border-radius:10px;text-align:left}
+body.enterprise ul{display:none;position:absolute;text-align:left;text-transform:none;z-index:1}body.enterprise ul.menu{background:linear-gradient(#444, #333);border:1px solid rgba(0,0,0,0.88);padding:5px 0;border-radius:5px;opacity:.95;color:#EEE;text-shadow:0 -1px rgba(0,0,0,0.88);box-shadow:0 3px 5px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.25),inset 1px 0 0 rgba(255,255,255,0.15),inset -1px 0 0 rgba(255,255,255,0.15);-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}body.enterprise ul.menu li{text-align:center;display:block;position:relative;padding:0 .5em}body.enterprise ul.menu li.action{padding:5px 2em 5px 2em;text-align:left;cursor:pointer;white-space:nowrap}body.enterprise ul.menu li.action:hover{background:linear-gradient(#1b7ee0, #1664b2)}
+body.enterprise ul.menu li.action:before{width:1.5em;left:.5em}
+body.enterprise ul.menu li.action.firewall:before{content:'\f132';font-family:'FontAwesome';position:absolute;text-align:center}
+body.enterprise ul.menu li.action.from:before{content:'\f08b';font-family:'FontAwesome';position:absolute;text-align:center}
+body.enterprise ul.menu li.action.to:before{content:'\f090';font-family:'FontAwesome';position:absolute;text-align:center}
+body.enterprise ul.menu li.action.settings:before{content:'\f013';font-family:'FontAwesome';position:absolute;text-align:center}
+body.enterprise ul.menu li.action.delete:before{content:'\f05e';font-family:'FontAwesome';position:absolute;text-align:center}
+body.enterprise ul.menu li.action.loadBalancer:before{content:'\f0ec';font-family:'FontAwesome';position:absolute;text-align:center}
+body.enterprise ul.menu li.action.ftp:before{content:'\f019';font-family:'FontAwesome';position:absolute;text-align:center;font-size:.9em}
+body.enterprise ul.menu li.action.ssh:before{content:'\f120';font-family:'FontAwesome';position:absolute;text-align:center;font-size:.9em}
+body.enterprise ul.menu li.action.mail:before{content:'\f003';font-family:'FontAwesome';position:absolute;text-align:center;font-size:.9em}
+body.enterprise ul.menu li.action.http:before{content:'\f0ac';font-family:'FontAwesome';position:absolute;text-align:center;font-size:.9em}
+body.enterprise ul.menu li.separator{padding:0;width:100%;height:1px;margin:5px 0;background:#111;box-shadow:0 1px #555}
+body.enterprise ul.menu li.edit input{margin:0 auto;color:#EEE;text-shadow:0 -1px rgba(0,0,0,0.88);text-align:center;border-bottom:1px dashed transparent}body.enterprise ul.menu li.edit input:hover{border-bottom:1px dashed rgba(0,0,0,0.88);box-shadow:0 1px #555}
+body.enterprise ul.menu li.edit input:focus{border-bottom:1px solid rgba(0,0,0,0.88);box-shadow:0 1px #555}
+body.enterprise ul.menu li i{display:inline-block;position:absolute;right:0;top:0;width:2em;padding:5px;text-align:center}body.enterprise ul.menu li i.off:after{content:'\f00c';font-family:'FontAwesome';position:absolute;text-align:center;position:static;color:rgba(255,255,255,0.33)}
+body.enterprise ul.menu li i.on:after{content:'\f00c';font-family:'FontAwesome';position:absolute;text-align:center;position:static;color:#c6ff40}
+div.hostinfo,div.firewall,div.loadBalancer{text-transform:none;text-shadow:none;background:#ddd;background:linear-gradient(#eee, #ddd);border:1px solid rgba(0,0,0,0.88);box-shadow:0 3px 5px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.25),inset 1px 0 0 rgba(255,255,255,0.15),inset -1px 0 0 rgba(255,255,255,0.15);color:#111;margin:0 auto;opacity:.98;padding:.4em;border-radius:5px;position:absolute;top:3em;left:2.5%;width:95%}div.hostinfo h1,div.firewall h1,div.loadBalancer h1{font-size:1.3em}
+div.hostinfo h2,div.firewall h2,div.loadBalancer h2{text-transform:uppercase;font-size:1.2em;opacity:.9;padding-bottom:.3em;border-bottom:1px solid rgba(0,0,0,0.25);box-shadow:0 1px rgba(0,0,0,0.05)}
+div.hostinfo h3,div.firewall h3,div.loadBalancer h3{text-transform:uppercase;font-size:1.1em;opacity:.9;padding-top:1em}
+div.hostinfo p,div.firewall p,div.loadBalancer p{text-align:left}
+div.hostinfo button,div.firewall button,div.loadBalancer button{color:#111;cursor:pointer}div.hostinfo button.remove,div.firewall button.remove,div.loadBalancer button.remove{display:none;position:absolute;width:1em;height:1em;font-size:1.6em}div.hostinfo button.remove:before,div.firewall button.remove:before,div.loadBalancer button.remove:before{content:'\f057';font-family:'FontAwesome';position:absolute;text-align:center;position:relative;top:-3px;left:0;color:#e01b53}
+div.hostinfo button.add,div.firewall button.add,div.loadBalancer button.add{width:90%;background:rgba(0,0,0,0.1);border-radius:5px;box-shadow:inset 0 0 3px rgba(0,0,0,0.25);border:1px solid rgba(0,0,0,0.5);padding:.3em}div.hostinfo button.add:hover,div.firewall button.add:hover,div.loadBalancer button.add:hover{background:rgba(0,0,0,0.05)}
+div.hostinfo button.add:active,div.firewall button.add:active,div.loadBalancer button.add:active{padding-top:.4em;padding-bottom:.2em;box-shadow:inset 0 1px 3px rgba(0,0,0,0.25)}
+div.hostinfo button.add:before,div.firewall button.add:before,div.loadBalancer button.add:before{content:'\f196';font-family:'FontAwesome';position:absolute;text-align:center;position:relative;right:.5em;top:1px}
+div.hostinfo table,div.firewall table,div.loadBalancer table{border:1px solid rgba(0,0,0,0.25)}div.hostinfo table thead,div.firewall table thead,div.loadBalancer table thead{background:rgba(0,0,0,0.25);font-weight:bold}
+div.hostinfo table th,div.firewall table th,div.loadBalancer table th,div.hostinfo table td,div.firewall table td,div.loadBalancer table td{padding:.3em}
+div.hostinfo table tbody tr,div.firewall table tbody tr,div.loadBalancer table tbody tr{border-bottom:1px solid rgba(0,0,0,0.25)}div.hostinfo table tbody tr:hover,div.firewall table tbody tr:hover,div.loadBalancer table tbody tr:hover{background:rgba(224,27,83,0.25)}
+table{margin:0 auto;width:95%}table thead,table tbody,table tfoot{display:block;width:100%}
+table tr{display:table;table-layout:fixed;width:100%}
+table th,table td{display:table-cell;vertical-align:middle}
+table tbody,table tfoot{overflow:scroll;overflow-x:hidden}table tbody::-webkit-scrollbar,table tfoot::-webkit-scrollbar{display:none}

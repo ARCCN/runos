@@ -6,7 +6,7 @@
 #include "Common.hh"
 #include "Topology.hh"
 
-REGISTER_APPLICATION(Topology, {"link-discovery", ""})
+REGISTER_APPLICATION(Topology, {"link-discovery", "rest-listener", ""})
 
 using namespace boost;
 
@@ -15,6 +15,47 @@ struct link_property {
     switch_and_port target;
     int weight;
 };
+
+class Link : public AppObject {
+    switch_and_port source;
+    switch_and_port target;
+    int weight;
+    uint64_t obj_id;
+
+public:
+    Link(switch_and_port _source, switch_and_port _target, int _weight, uint64_t _id):
+        source(_source), target(_target), weight(_weight), obj_id(_id) {}
+
+    JSONparser formJSON() override;
+    JSONparser formFloodlightJSON();
+    uint64_t id() const;
+};
+
+uint64_t Link::id() const {
+    return obj_id;
+}
+
+JSONparser Link::formJSON()
+{
+    JSONparser res;
+    res.addValue("ID", id());
+    res.addValue("connect", source.dpid);
+    res.addValue("connect", target.dpid);
+    res.addValue("bandwidth", weight);
+    return res;
+}
+
+JSONparser Link::formFloodlightJSON()
+{
+    JSONparser res;
+    res.addValue("src-switch", AppObject::uint64_to_string(source.dpid));
+    res.addValue("src-port", source.port);
+    res.addValue("dst-switch", AppObject::uint64_to_string(target.dpid));
+    res.addValue("dst-port", target.port);
+    res.addValue("type", "internal");
+    res.addValue("direction", "bidirectional");
+    return res;
+}
 
 typedef adjacency_list< vecS, vecS, undirectedS, no_property, link_property>
     TopologyGraph;
@@ -47,16 +88,21 @@ void Topology::init(Loader *loader, const Config &config)
                      this, SLOT(linkDiscovered(switch_and_port, switch_and_port)));
     QObject::connect(ld, SIGNAL(linkBroken(switch_and_port, switch_and_port)),
                      this, SLOT(linkBroken(switch_and_port, switch_and_port)));
+
+    RestListener::get(loader)->newListener("topology", r);
 }
 
 Topology::Topology()
 {
     m = new TopologyImpl;
+    r = new TopologyRest("Topology", "topology.html");
+    r->makeEventApp();
 }
 
 Topology::~Topology()
 {
     delete m;
+    delete r;
 }
 
 void Topology::linkDiscovered(switch_and_port from, switch_and_port to)
@@ -72,12 +118,20 @@ void Topology::linkDiscovered(switch_and_port from, switch_and_port to)
     auto u = m->vertex(from.dpid);
     auto v = m->vertex(to.dpid);
     add_edge(u, v, link_property{from, to, 1}, m->graph);
+
+    Link* link = new Link(from, to, 5, rand()%1000 + 2000);
+    r->topo.push_back(link);
+    Event* ev = new Event("topology", Event::Add, link);
+    r->addEvent(ev);
 }
 
 void Topology::linkBroken(switch_and_port from, switch_and_port to)
 {
     QWriteLocker locker(&m->graph_mutex);
     remove_edge(m->vertex(from.dpid), m->vertex(to.dpid), m->graph);
+
+    //TODO: remove from r->topo
+    //TODO: create Event::Delete event
 }
 
 data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
@@ -116,4 +170,38 @@ data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
     }
 
     return ret;
+}
+
+std::string TopologyRest::handle(std::vector<std::string> params)
+{
+    if (params[0] == "GET") {
+        if (params[2] == "links") {
+            JSONparser out;
+            for (auto it = topo.begin(); it != topo.end(); it++)
+                out.addValue("links", (*it)->formJSON());
+            return out.get();
+        }
+        if (params[2] == "f_links") {
+            JSONparser out(true);
+            for (auto it = topo.begin(); it != topo.end(); it++)
+                out.addToArray((*it)->formFloodlightJSON());
+            return out.get();
+        }
+        if (params[2] == "external_links") {
+            return "[]";
+        }
+    }
+}
+
+int TopologyRest::count_objects()
+{
+    return topo.size();
+}
+
+TopologyRest::~TopologyRest()
+{
+    for (auto it = topo.begin(); it != topo.end(); it++) {
+        //TODO: check if all element are deleted
+        delete *it;
+    }
 }

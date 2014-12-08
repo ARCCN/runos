@@ -15,6 +15,7 @@ set(CMAKE_AUTOMOC ON)
 
 # Locally installed libraries
 find_package(Qt5Core)
+find_package(Qt5Network)
 find_package(Boost REQUIRED COMPONENTS graph)
 find_package(PkgConfig)
 pkg_check_modules(GLOG REQUIRED libglog)
@@ -58,14 +59,23 @@ add_executable(runos
     src/Main.cc
     # Third-party
     third_party/json11/json11.cpp
+    # REST
+    src/RestListener.cc
+    src/Event.cc
+    src/AppObject.cc
+    src/HostManager.cc
+    src/ControllerApp.cc
+    src/JsonParser.cc
 )
 
 target_link_libraries(runos
     tcmalloc
     Qt5::Core
+    Qt5::Network
     tins
     fluid_base
     libfluid_msg.a
     ${GLOG_LIBRARIES}
     ${Boost_LIBRARIES}
+    ${QT_QTNETWORK_LIBRARY}
 )

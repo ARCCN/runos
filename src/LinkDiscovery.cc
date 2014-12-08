@@ -167,6 +167,9 @@ OFMessageHandler::Action LinkDiscovery::Handler::processMiss(OFConnection *ofcon
 {
     if (flow->match(of13::EthType(LLDP_ETH_TYPE))) {
         Switch* sw = app->m_switch_manager->getSwitch(ofconn);
+        if (sw == nullptr)
+            return Stop;
+
         lldp_packet lldp;
 
         flow->idleTimeout(0);
@@ -186,7 +189,9 @@ OFMessageHandler::Action LinkDiscovery::Handler::processMiss(OFConnection *ofcon
         source.port = ntoh32(lldp.port_id_sub_component);
         target.dpid = sw->id();
         target.port = flow->pkt()->readInPort();
-        DVLOG(5) << "LLDP packet received on " << sw->port(target.port).name();
+        try{
+            DVLOG(5) << "LLDP packet received on " << sw->port(target.port).name();
+        } catch (...) {}
 
         if (!(source < target))
             std::swap(source, target);

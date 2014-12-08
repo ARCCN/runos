@@ -28,6 +28,7 @@ Config loadConfig(const std::string& fileName,
 int main(int argc, char* argv[]) {
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint64_t>("uint64_t");
+    qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<of13::PortStatus>();
     qRegisterMetaType<of13::FeaturesReply>();
     qRegisterMetaType< std::shared_ptr<of13::Error> >();

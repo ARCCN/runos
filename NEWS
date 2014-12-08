@@ -1,7 +1,21 @@
+RuNOS 0.3
+=========
+
+This release introduces additional tools for user interaction with applications via REST 
+API. Now you can add your REST API for your application and utilize API of other apps.
+
+    - Added REST API for SwitchManager and Topology application.
+    - Added possibility to watch network topology in GUI (Web).
+    - Now user can get information about working switches and network topology.
+    - Added DeviceManager apps and its REST API for discovering host devices.
+    - Controller can handle REST requests in Floodlight format.
+    - Introduced event model for apps. User can get only changes occurred in apps.
+    - Applications can provide own webpages for user.
+
 RuNOS 0.2
 =========
 
-This release introduce many new features, new interfaces and significant improvements of
+This release introduces many new features, new interfaces and significant improvements of
 existing APIs. Now you can start writing your apps for RuNOS!
 
     - Initial implementation of maple engine that automatically assigns rule priorities.

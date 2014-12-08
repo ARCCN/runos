@@ -34,6 +34,7 @@ class ControllerImpl : public OFServer {
 
 public:
     bool started;
+    Config config;
     std::vector<OFMessageHandlerFactory *> pipeline_factory;
     std::unordered_map<uint64_t, SwitchScope> switch_scope;
 
@@ -348,6 +349,7 @@ void Controller::init(Loader*, const Config& rootConfig)
                     .echo_interval(config_get(config, "echo_interval", 15))
                     .liveness_check(config_get(config, "liveness_check", true))
     );
+    impl->config = config;
 }
 
 Controller::~Controller() {
@@ -359,6 +361,11 @@ void Controller::startUp(Loader*)
     impl->sortPipeline();
     impl->start(/* block: */ false);
     impl->started = true;
+
+    emit sendInfo(config_get(impl->config, "address", "0.0.0.0").c_str(),
+                  config_get(impl->config, "port", 6653),
+                  config_get(impl->config, "nthreads", 4),
+                  config_get(impl->config, "secure", false));
 }
 
 void Controller::registerHandler(OFMessageHandlerFactory *factory)

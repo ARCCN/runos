@@ -95,7 +95,7 @@ OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofco
         flow->add_action(new of13::OutputAction(out_port, 0));
         return Continue;
     } else {
-        LOG(INFO) << "Flooding for address " << eth_dst.to_string();
+        DVLOG(5) << "Flooding for address " << eth_dst.to_string();
 
         if (eth_dst == broadcast) {
             flow->idleTimeout(0);

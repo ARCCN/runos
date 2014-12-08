@@ -2,7 +2,7 @@
 
 #include "Switch.hh"
 
-REGISTER_APPLICATION(SwitchManager, {"controller", ""})
+REGISTER_APPLICATION(SwitchManager, {"controller", "rest-listener", ""})
 
 struct SwitchImpl {
     OFConnection* conn;
@@ -30,11 +30,15 @@ struct SwitchManagerImpl {
 SwitchManager::SwitchManager()
 {
     m = new SwitchManagerImpl;
+    r = new SwitchManagerRest("Switch Manager", "switch.html");
+    r->m = this;
+    r->makeEventApp();
 }
 
 SwitchManager::~SwitchManager()
 {
     delete m;
+    delete r;
 }
 
 Switch* SwitchManager::getSwitch(OFConnection* ofconn) const
@@ -67,6 +71,11 @@ void SwitchManager::init(Loader* loader, const Config& config)
     QObject::connect(controller, &Controller::portStatus,
                      this, &SwitchManager::onPortStatus);
 
+    QObject::connect(this, &SwitchManager::switchDiscovered,
+                     r, &SwitchManagerRest::onSwitchDiscovered);
+    QObject::connect(this, &SwitchManager::switchDown,
+                     r, &SwitchManagerRest::onSwitchDown);
+
     m->pdescr = controller->registerStaticTransaction(this);
     QObject::connect(m->pdescr, &OFTransaction::response,
                      this, &SwitchManager::onPortDescriptions);
@@ -78,6 +87,8 @@ void SwitchManager::init(Loader* loader, const Config& config)
         // Send request again
         conn->send(error.data(), error.data_len());
     });
+
+    RestListener::get(loader)->newListener("switch-manager", r);
 }
 
 void SwitchManager::onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr)
@@ -104,7 +115,6 @@ void SwitchManager::onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr)
         m->switch_by_conn[conn_id] = &it->second;
         it->second.setUp(ofconn, fr);
     }
-
 }
 
 void SwitchManager::onSwitchDown(OFConnection* ofconn)
@@ -115,6 +125,8 @@ void SwitchManager::onSwitchDown(OFConnection* ofconn)
 
     Switch* dp = it->second;
     dp->setDown();
+
+    emit switchDown(dp);
 }
 
 void SwitchManager::onPortStatus(OFConnection* ofconn, of13::PortStatus ps)
@@ -262,6 +274,44 @@ void Switch::requestPortDescriptions()
     m->mgr->m->pdescr->request(m->conn, &req);
 }
 
+JSONparser Switch::formJSON()
+{
+    JSONparser res;
+    res.addValue("ID", id());
+    res.addValue("DPID", AppObject::uint64_to_string(id()));
+    res.addValue("IP", "10.0.0.1");
+    //addValue -> other Switch parameters...
+    return res;
+}
+
+JSONparser Switch::formFloodlightJSON()
+{
+    JSONparser res;
+    res.addValue("harole", "MASTER");
+    for (of13::Port port : ports()) {
+        JSONparser json_port;
+        json_port.addValue("portNumber", port.port_no());
+        json_port.addValue("hardwareAddress", port.hw_addr().to_string());
+        json_port.addValue("name", port.name());
+        json_port.addValue("config", port.config());
+        json_port.addValue("state", port.state());
+        json_port.addValue("currentFeatures", port.curr());
+        json_port.addValue("advertisedFeatures", port.advertised());
+        json_port.addValue("supportedFeatures", port.supported());
+        json_port.addValue("peerFeatures", port.peer());
+        res.addValue("ports", json_port);
+    }
+    res.addValue("buffers", nbuffers());
+    res.addValue("description", "NONE");
+    res.addValue("capabilities", capabilites());
+    res.addValue("inetAddress", "NONE");
+    res.addValue("connectedSince", static_cast<uint64_t>(connectedSince()));
+    res.addValue("dpid", uint64_to_string(id()));
+    res.addValue("actions", "NONE");
+    res.addValue("attributes", "NONE");
+    return res;
+}
+
 void Switch::portDescArrived(of13::MultipartReplyPortDescription &desc)
 {
     for (auto& port : desc.ports()) {
@@ -320,4 +370,51 @@ std::vector<of13::Port> Switch::ports() const
                        return p.second;
                    });
     return ret;
+}
+
+void SwitchManagerRest::onSwitchDiscovered(Switch *dp)
+{
+    Event* ev = new Event("switch-manager", Event::Add, dp);
+    addEvent(ev);
+    dp->connectedSince(time(NULL));
+}
+
+void SwitchManagerRest::onSwitchDown(Switch *dp)
+{
+    Event* ev = new Event("switch-manager", Event::Delete, dp);
+    addEvent(ev);
+}
+
+std::string SwitchManagerRest::handle(std::vector<std::string> params)
+{
+    if (params[0] != "GET")
+        return "{ \"error\": \"error\" }";
+    if (params[2] == "switches") {
+        if (params[3] == "all") {
+            auto sw = m->switches();
+            JSONparser out;
+            for (auto it = sw.begin(); it != sw.end(); it++)
+                out.addValue("switches", (*it)->formJSON());
+            return out.get();
+        }
+    }
+
+    //Floodlight
+    if (params[2] == "core" &&
+            params[3] == "controller" &&
+            params[4] == "switches" &&
+            params[5] == "json") {
+
+        auto sw = m->switches();
+        JSONparser out(true);
+        for (auto it = sw.begin(); it != sw.end(); it++)
+            out.addToArray((*it)->formFloodlightJSON());
+        return out.get();
+
+    }
+}
+
+int SwitchManagerRest::count_objects()
+{
+    return m->switches().size();
 }

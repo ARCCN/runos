@@ -5,14 +5,15 @@ This components should be installed in the system:
 * Utilities: cmake, autoconf, libtool, pkg-config
 * libfluid dependencies: libevent openssl
 * libtins dependencies: openssl libpcap
-* Libraries: QtCore 5, google-glog, boost::graph
+* Libraries: QtCore 5, google-glog, boost::graph, uglifyjs
+* UglifyJS dependencies: npm, nodejs
 
 You can use this line on Ubuntu 14.04 to install all required packages:
 
 ```
-$ sudo apt-get install build-essential cmake autoconf libtool \
-    pkg-config libgoogle-glog-dev libpcap-dev libevent-dev \ 
-    libssl-dev qtbase5-dev libboost-graph-dev libgoogle-perftools-dev
+$ sudo apt-get install build-essential cmake autoconf libtool npm \
+    pkg-config libgoogle-glog-dev libpcap-dev libevent-dev nodejs \ 
+    libssl-dev qtbase5-dev libboost-graph-dev libgoogle-perftools-dev \
 ```
 
 # Building
@@ -28,6 +29,11 @@ $ cmake -DCMAKE_BUILD_TYPE=Release ..
 $ make prefix
 # Build RuNOS
 $ make
+# Install UglifyJS
+$ npm install -g uglify-js
+# Generate webfiles
+$ cd .. # Go out of build dir
+$ ./gen_web.sh
 ```
 
 # Running
@@ -188,3 +194,134 @@ Finally, implement the handler:
     }
 
 Now compile RuNOS and test that all packets from ``00:11:22:33:44:55`` had been dropped.
+
+# REST Applications
+
+## List of available REST services
+
+The format of the RunOS REST requests:
+`<HTTP-method> /api/<app_name>/<list_of_params>`
+   `<HTTP-method>` is GET, POST, DELETE of PUT
+   `<app_name>` is calling name of the application
+   `<list_of_params>` is list of the parameters separated by a slash
+   In POST and PUT request you can pass parameters in the body of the request using JSON format. 
+
+Current version of RunOS has 4 REST services:
+* switch-manager
+* topology
+* device-manager
+* controller-manager
+
+### 'Switch Manager'
+
+* `GET /api/switch-manager/switches/all` 	(RunOS version)
+* `GET /wm/core/controller/switches/json` 	(Floodlight version)
+Return the list of connected switches
+
+### 'Topology'
+
+* `GET /api/topology/links` 			(RunOS version)
+* `GET /wm/topology/links/json` 		(Floodlight version)
+Return the list of all the inter-switch links
+
+* `GET /wm/topology/external-links/json` 	(Floodlight)
+Return external links
+
+### 'Device Manager'
+
+* `GET /api/device-manager/devices` 		(RunOS)
+* `GET /wm/device/`				(Floodlight)
+List of all devices tracked by the controller
+
+### 'Controller App'
+
+* `GET /wm/core/controller/summary/json`	(Floodlight)
+Controller summary (# of Switches, # of Links, etc)
+
+* `GET /wm/core/memory/json`			(Floodlight)
+Current controller memory usage
+
+* `GET /wm/core/health/json`			(Floodlight)
+Status/Health of REST API
+
+* `GET /wm/core/system/uptime/json`		(Floodlight)
+Controller uptime
+
+* `GET /api/controller-manager/info`		(RunOS)
+Return the main controller's info: address, port, count of threads, secure mode
+
+### Other
+
+* `GET /apps`
+List of available applications with REST API.
+
+Also you can get events in the applications that subscribed to event model.
+In this case you should specify list of required applications and your last registered number of events.
+* `GET /timeout/<app_list>/<last_event>`
+  `<app_list>` is `app_1&app_2&...&app_n`
+  `<last_event>` is unsigned integer value
+
+
+## Examples
+
+For testing your and other REST application's requests and replies you can use `cURL`.
+You can install this component by `sudo apt-get install curl` command in Ubuntu.
+
+In mininet topology `--topo tree,2`, for example:
+
+Request: `$ curl $CONTROLLER_IP:$LISTEN_PORT/wm/topology/links/json`
+Reply: `[{ "src-switch": "00:00:00:00:00:00:00:01", "src-port": 2, "dst-switch": "00:00:00:00:00:00:00:03", "dst-port": 3, "type": "internal", "direction": "bidirectional" }, { "src-switch": "00:00:00:00:00:00:00:01", "src-port": 1, "dst-switch": "00:00:00:00:00:00:00:02", "dst-port": 3, "type": "internal", "direction": "bidirectional" }]`
+
+## Adding REST for your RunOS app
+
+To make REST for your application `class MyApp`:
+
+* create you REST class for your application:
+
+    #include "rest.h"
+    #include "appobject.h"
+    #include <string>
+
+    class MyAppRest : public Rest {
+        MyAppRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
+        std::string handle(std::vector<std::string> params) override;
+    }
+
+* add your REST to your application:
+
+    class MyApp {
+    private:
+        MyAppRest* rest;
+    }
+
+* in constructor or `init()` function in `class MyApp` create instance of MyAppRest:
+
+    rest = new MyAppRest("My App Name", "myapp_webui.html");
+
+* in `startUp()` function emit conroller's method `newListener(std::string, Rest*)` to notify a new listener:
+
+    # 'myapp' is a calling name for your application
+    # rest is a instance of MyAppRest
+    emit ctrl->newListener('myapp', rest);
+
+* method `MyApp::handle` proccesses input REST requests.
+  This method gets the list of parameters and returns reply in JSON format.
+
+* each REST application may have own webpage, i.e. WebUI for application
+  To connect REST application to webpage you must specify this page in Rest constructor:
+
+    MyAppRest* rest = new MyAppRest("Displayed application's name", "myapp_webui.html");
+
+  File `"myapp_webui.html"` must be located in /web/deploy/ directory.
+  If your application has not WebUI, write "none" instead webpage.
+
+* if your application supports event model, you can enable it by the command:
+
+    rest->makeEventApp();
+
+In current version events can signal about appearance or disappearance some objects:
+
+    # some_object is object inherited class AppObject
+    Event* ev = new Event("myapp", Event::Add, some_object);
+or
+    Event* ev = new Event("myapp", Event::Delete, some_object);

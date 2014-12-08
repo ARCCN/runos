@@ -1,12 +1,18 @@
 #pragma once
 
+#include <time.h>
+
 #include "Common.hh"
 #include "Application.hh"
 #include "Controller.hh"
+#include "Rest.hh"
+#include "RestListener.hh"
+#include "Event.hh"
+#include "AppObject.hh"
 
 class SwitchManager;
 
-class Switch: public QObject {
+class Switch: public QObject, AppObject {
 Q_OBJECT
 public:
     Switch(SwitchManager* mgr, OFConnection* conn, of13::FeaturesReply fr);
@@ -23,6 +29,8 @@ public:
 
     void send(OFMsg* msg);
     void requestPortDescriptions();
+    JSONparser formJSON() override;
+    JSONparser formFloodlightJSON();
 
 signals:
     void portUp(Switch* dp, of13::Port port);
@@ -40,7 +48,24 @@ protected:
 
 private:
     friend class SwitchManager;
+    friend class SwitchManagerRest;
     struct SwitchImpl* m;
+};
+
+/**
+ * REST interface for SwitchManager
+ */
+class SwitchManagerRest : public Rest {
+    Q_OBJECT
+    friend class SwitchManager;
+    class SwitchManager* m;
+public:
+    SwitchManagerRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
+    std::string handle(std::vector<std::string> params) override;
+    int count_objects() override;
+protected slots:
+    void onSwitchDiscovered(Switch* dp);
+    void onSwitchDown(Switch* dp);
 };
 
 class SwitchManager: public Application  {
@@ -55,9 +80,11 @@ public:
     Switch* getSwitch(OFConnection* ofconn) const;
     Switch* getSwitch(uint64_t dpid);
     std::vector<Switch*> switches();
+    Rest* rest() {return dynamic_cast<Rest*>(r); }
 
 signals:
     void switchDiscovered(Switch* dp);
+    void switchDown(Switch* dp);
 
 protected slots:
     void onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr);
@@ -68,4 +95,5 @@ protected slots:
 private:
     friend class Switch;
     struct SwitchManagerImpl* m;
+    SwitchManagerRest* r;
 };
