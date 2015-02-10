@@ -9,8 +9,7 @@
     ],
 
     "rest-listener" : {
-         "port" : 8000,
-         "web_directory": "web/deploy/"
+         "port" : 8000
     },
 
     "loader": {

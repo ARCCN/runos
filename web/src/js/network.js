@@ -33,7 +33,7 @@ Net = function () {
     }
 
     function init () {
-        Server.ajax('GET', '/timeout/switch-manager&topology&device-manager/' + last_ev, setNet);
+        Server.ajax('GET', '/timeout/switch-manager&topology&host-manager/' + last_ev, setNet);
 
         function setNet (response) {        
             var timeout = response && response.timeout || [],
@@ -43,8 +43,8 @@ Net = function () {
                     _switches = item["switch-manager"];
                 else if (item.topology)
                     _links = item.topology;
-                else if (item["device-manager"])
-                    _hosts = item["device-manager"];
+                else if (item["host-manager"])
+                    _hosts = item["host-manager"];
             });
 
             var i, len;
