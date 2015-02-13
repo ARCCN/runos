@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Applied Research Center for Computer Networks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <unordered_map>
 
 #include "Switch.hh"
@@ -93,9 +109,8 @@ void SwitchManager::init(Loader* loader, const Config& config)
 
 void SwitchManager::onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr)
 {
-    QWriteLocker locker(&m->switch_lock);
-
     int conn_id = ofconn->get_id();
+    QWriteLocker locker(&m->switch_lock);
 
     if (m->switch_by_conn.find(conn_id) != m->switch_by_conn.end()) {
         LOG(WARNING) << "Unexpected FeaturesReply received";
@@ -110,11 +125,17 @@ void SwitchManager::onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr)
                 std::forward_as_tuple(fr.datapath_id()),
                 std::forward_as_tuple(this, ofconn, fr)
         ).first;
+        locker.unlock();
+
         emit switchDiscovered(m->switch_by_conn[conn_id] = &it->second);
     } else {
         m->switch_by_conn[conn_id] = &it->second;
+        locker.unlock();
+
         it->second.setUp(ofconn, fr);
     }
+
+    it->second.requestPortDescriptions();
 }
 
 void SwitchManager::onSwitchDown(OFConnection* ofconn)
@@ -177,7 +198,6 @@ Switch::Switch(SwitchManager* mgr,
     m->nbuffers = fr.n_buffers();
     m->ntables = fr.n_tables();
     m->capabilities = fr.capabilities();
-    requestPortDescriptions();
 }
 
 Switch::~Switch()
@@ -208,7 +228,6 @@ void Switch::setUp(OFConnection* conn, of13::FeaturesReply fr)
     m->capabilities = fr.capabilities();
 
     emit up(this);
-    requestPortDescriptions();
 }
 
 void Switch::portStatus(of13::PortStatus ps)
@@ -227,6 +246,8 @@ void Switch::portStatus(of13::PortStatus ps)
         }
 
         DVLOG(2) << "Created port " << idstr() << ':' << port_no;
+        locker.unlock();
+
         emit portUp(this, port);
         break;
     }
@@ -237,6 +258,8 @@ void Switch::portStatus(of13::PortStatus ps)
         }
 
         DVLOG(2) << "Deleted port " << idstr() << ':' << port_no;
+        locker.unlock();
+
         emit portDown(this, port_no);
         break;
     }
@@ -250,6 +273,8 @@ void Switch::portStatus(of13::PortStatus ps)
         it->second = port;
 
         DVLOG(2) << "Modified port " << idstr() << ':' << port_no;
+        locker.unlock();
+
         emit portModified(this, port, old_port);
         break;
     }

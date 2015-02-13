@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Applied Research Center for Computer Networks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <vector>
 #include <unordered_map>
 #include <mutex>
@@ -39,11 +55,16 @@ public:
         QObject::connect(this, &AppInitializer::initializeApp,
                          this, &AppInitializer::initializeAppImpl,
                          Qt::QueuedConnection);
+        QObject::connect(this, &AppInitializer::startApp,
+                         this, &AppInitializer::startAppImpl,
+                         Qt::QueuedConnection);
     }
 signals:
     void initializeApp(Loader*, Application*, std::mutex*);
+    void startApp(Loader*, Application*, std::mutex*);
 protected slots:
     void initializeAppImpl(Loader*, Application*, std::mutex*);
+    void startAppImpl(Loader*, Application*, std::mutex*);
 private:
     const Config& config;
 };
@@ -51,6 +72,12 @@ private:
 void AppInitializer::initializeAppImpl(Loader* loader, Application* app, std::mutex* end_mutex)
 {
     app->init(loader, config);
+    end_mutex->unlock();
+}
+
+void AppInitializer::startAppImpl(Loader* loader, Application* app, std::mutex* end_mutex)
+{
+    app->startUp(loader);
     end_mutex->unlock();
 }
 
@@ -137,7 +164,11 @@ void Loader::startAll()
         
         try {
             LOG(INFO) << "  startUp(" << servicePair.first << ")";
-            info.app->startUp(this);
+            AppThread* app_thread = qobject_cast<AppThread*>(info.app->thread());
+            std::mutex start_mutex;
+            start_mutex.lock();
+            emit app_thread->initializer.startApp(m->this_, info.app, &start_mutex);
+            start_mutex.lock();
             info.state = APP_STARTED;
         } catch(...) {
             LOG(FATAL) << "Failed to start " << servicePair.first;

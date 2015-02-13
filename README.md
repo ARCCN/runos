@@ -11,8 +11,8 @@ This components should be installed in the system:
 You can use this line on Ubuntu 14.04 to install all required packages:
 
 ```
-$ sudo apt-get install build-essential cmake autoconf libtool npm \
-    pkg-config libgoogle-glog-dev libpcap-dev libevent-dev nodejs \ 
+$ sudo apt-get install build-essential cmake autoconf libtool \
+    pkg-config libgoogle-glog-dev libpcap-dev libevent-dev \ 
     libssl-dev qtbase5-dev libboost-graph-dev libgoogle-perftools-dev \
 ```
 
@@ -21,16 +21,27 @@ $ sudo apt-get install build-essential cmake autoconf libtool npm \
 ```
 # Initialize third-party libraries
 $ third_party/bootstrap.sh
+
 # Create out of source build directory
 $ mkdir -p build; cd build
 # Configure
 $ cmake -DCMAKE_BUILD_TYPE=Release ..
+
 # Build third-party libraries
 $ make prefix
 # Build RuNOS
 $ make
-# Install UglifyJS
-$ npm install -g uglify-js
+
+# If you have old versions of Node.js or UglifyJS,
+# you should remove them
+$ sudo npm un uglify-js -g
+$ sudo apt-get remove node nodejs npm
+# Install Node.js, npm and UglifyJS via package manager
+# (according to https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
+$ curl -sL https://deb.nodesource.com/setup | sudo bash -
+$ sudo apt-get install nodejs
+$ sudo npm install uglify-js -g
+
 # Generate webfiles
 $ cd .. # Go out of build dir
 $ ./gen_web.sh
@@ -55,7 +66,27 @@ You can use this arguments for MiniNet:
 $ sudo mn --topo $YOUR_TOPO --switch ovsk,protocols=OpenFlow13 --controller remote,ip=$CONTROLLER_IP,port=6653
 ```
 
+To run web UI, open the following link in your browser:
+```
+http://$CONTROLLER_IP:8000/topology.html
+```
+
 Be sure your MiniNet installation supports OpenFlow 1.3. See https://wiki.opendaylight.org/view/OpenDaylight_OpenFlow_Plugin::Test_Environment#Setup_CPqD_Openflow_1.3_Soft_Switch for more instructions.
+
+# Using QtCreator
+1. Execute Building section, but use
+   `cmake -DCMAKE_BUILD_TYPE=Debug ..` instead `Release`
+2. In QtCreator `File->Open File or Project`
+   and select `CMakeLists.txt` as project file
+3. In build section: select build directory as `./build`
+4. In run section:
+    * select working direcory as `./` (project path)
+    * set Run Environment:
+        * `LD_LIBRARY_PATH` to `$PDW/prefix/lib` for Linux
+        * `DYLD_LIBRARY_PATH` to `$PWD/prefix/lib` for OS X
+        * `GLOG_logtostderr` to `1`
+        * `GLOG_colorlogtostderr` to `1`
+5. Compile and run!
 
 # Writing your first RuNOS app
 
@@ -278,31 +309,31 @@ To make REST for your application `class MyApp`:
 
 * create you REST class for your application:
 
-    #include "rest.h"
-    #include "appobject.h"
-    #include <string>
-
-    class MyAppRest : public Rest {
-        MyAppRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
-        std::string handle(std::vector<std::string> params) override;
-    }
+        #include "rest.h"
+        #include "appobject.h"
+        #include <string>
+        class MyAppRest : public Rest {
+            MyAppRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
+            std::string handle(std::vector<std::string> params) override;
+        }
 
 * add your REST to your application:
 
-    class MyApp {
-    private:
-        MyAppRest* rest;
-    }
+        class MyApp {
+        private:
+            MyAppRest* rest;
+        }
 
-* in constructor or `init()` function in `class MyApp` create instance of MyAppRest:
+* in constructor or `init()` function in `class MyApp` create instance of `MyAppRest`:
 
-    rest = new MyAppRest("My App Name", "myapp_webui.html");
+        rest = new MyAppRest("My App Name", "myapp_webui.html");
+
 
 * in `startUp()` function emit conroller's method `newListener(std::string, Rest*)` to notify a new listener:
 
-    # 'myapp' is a calling name for your application
-    # rest is a instance of MyAppRest
-    emit ctrl->newListener('myapp', rest);
+        # 'myapp' is a calling name for your application
+        # rest is a instance of MyAppRest
+        emit ctrl->newListener('myapp', rest);
 
 * method `MyApp::handle` proccesses input REST requests.
   This method gets the list of parameters and returns reply in JSON format.
@@ -310,18 +341,18 @@ To make REST for your application `class MyApp`:
 * each REST application may have own webpage, i.e. WebUI for application
   To connect REST application to webpage you must specify this page in Rest constructor:
 
-    MyAppRest* rest = new MyAppRest("Displayed application's name", "myapp_webui.html");
+        MyAppRest* rest = new MyAppRest("Displayed application's name", "myapp_webui.html");
 
-  File `"myapp_webui.html"` must be located in /web/deploy/ directory.
-  If your application has not WebUI, write "none" instead webpage.
+  File `"myapp_webui.html"` must be located in `/web/deploy/` directory.
+  If your application has not WebUI, write `"none"` instead webpage.
 
 * if your application supports event model, you can enable it by the command:
 
-    rest->makeEventApp();
+        rest->makeEventApp();
 
 In current version events can signal about appearance or disappearance some objects:
 
-    # some_object is object inherited class AppObject
-    Event* ev = new Event("myapp", Event::Add, some_object);
-or
-    Event* ev = new Event("myapp", Event::Delete, some_object);
+        # some_object is object inherited class AppObject
+        Event* ev = new Event("myapp", Event::Add, some_object);
+        #or
+        Event* ev = new Event("myapp", Event::Delete, some_object);

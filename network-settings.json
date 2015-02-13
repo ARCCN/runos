@@ -12,17 +12,21 @@
          "port" : 8000
     },
 
+    "controller": {
+         "nthreads": 4
+    },
+
     "loader": {
-        "threads": 10
+        "threads": 2
     },
 
     "link-discovery": {
         "poll-interval": 10,
-        "pin-to-thread": 9
+        "pin-to-thread": 1
     },
 
     "switch-manager": {
-        "pin-to-thread": 9
+        "pin-to-thread": 1
     }
 }
 

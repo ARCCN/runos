@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Applied Research Center for Computer Networks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
@@ -256,6 +272,8 @@ void SwitchScope::processTableMiss(of13::PacketIn& pi)
             of13::PacketOut po;
             po.xid(pi.xid());
             po.buffer_id(pi.buffer_id());
+            if (pi.buffer_id() == 0)
+                po.data(pi.data(), pi.data_len());
             flow->initPacketOut(&po);
 
             uint8_t* buffer = po.pack();
@@ -283,6 +301,17 @@ void SwitchScope::processTableMiss(of13::PacketIn& pi)
             of13::FlowMod* fm = new of13::FlowMod();
             fm->xid(pi.xid());
             fm->buffer_id(pi.buffer_id());
+            if (pi.buffer_id() == 0) {
+                of13::PacketOut po;
+                po.xid(pi.xid());
+                po.buffer_id(0);
+                po.data(pi.data(), pi.data_len());
+                flow->initPacketOut(&po);
+
+                uint8_t* buffer = po.pack();
+                ofconn->send(buffer, po.length());
+                OFMsg::free_buffer(buffer);
+            }
             fm->command(of13::OFPFC_ADD);
             flow->initFlowMod(fm);
 
