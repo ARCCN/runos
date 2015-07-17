@@ -25,13 +25,15 @@
 #include "OFMessageHandler.hh"
 #include "ILinkDiscovery.hh"
 #include "FluidUtils.hh"
+#include "STP.hh"
 
 class LearningSwitch : public Application, OFMessageHandlerFactory {
 SIMPLE_APPLICATION(LearningSwitch, "learning-switch")
 public:
     void init(Loader* loader, const Config& config) override;
     std::string orderingName() const override { return "forwarding"; }
-    OFMessageHandler* makeOFMessageHandler() override { return new Handler(this); }
+    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override 
+    { return std::unique_ptr<OFMessageHandler>(new Handler(this)); }
     bool isPrereq(const std::string &name) const;
 
 
@@ -51,6 +53,7 @@ private:
 
     class Topology* topology;
     class SwitchManager* switch_manager;
+    class STP* stp;
 
     std::mutex db_lock;
     std::unordered_map<EthAddress, switch_and_port> db;

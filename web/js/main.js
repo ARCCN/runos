@@ -26,8 +26,6 @@
 	window.addEventListener('resize', function() {
     		var width = document.body.clientWidth;
 		var height = document.body.clientHeight;
-		//alert(width + ' ' + height);
-		//window.requestAnimationFrame(main);
 	});
 
 	document.addEventListener('DOMContentLoaded', function() {
@@ -46,7 +44,6 @@
 				now = Date.now();
 				HCI.init();
 				Net.init();
-				// setTimeout(Net.save, 5000);
 				onIconsLoaded(function() {
 					window.requestAnimationFrame(main);
 				});

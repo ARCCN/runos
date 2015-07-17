@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <json11.hpp>
+#include "json11.hpp"
 
 // TODO: implement full-featured interface
 typedef json11::Json::object Config;

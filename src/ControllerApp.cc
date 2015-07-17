@@ -28,7 +28,7 @@ struct ControllerInfo {
     bool secure;
     time_t started;
 
-    JSONparser formJSON();
+    json11::Json to_json() const;
 };
 
 ControllerApp::ControllerApp()
@@ -70,19 +70,17 @@ std::string ControllerRest::handle(std::vector<std::string> params)
     if (params[0] != "GET")
         return "{ \"error\": \"error\" }";
 
-    if (params[4] == "summary") {
-        JSONparser res;
-        if (apps_list.count("switch-manager"))
-            res.addValue("# Switches", apps_list["switch-manager"]->count_objects());
-        if (apps_list.count("host-manager"))
-            res.addValue("# hosts", apps_list["host-manager"]->count_objects());
-        res.addValue("# quarantine ports", 0);
-        if (apps_list.count("topology"))
-            res.addValue("# inter-switch links", apps_list["topology"]->count_objects());
-        return res.get();
+    if (params[2] == "core" && params[3] == "controller" && params[4] == "summary") {
+        json11::Json summary = json11::Json::object {
+            {"# Switches", apps_list.count("switch-manager") ? apps_list["switch-manager"]->count_objects() : 0 },
+            {"# hosts", apps_list.count("host-manager") ? apps_list["host-manager"]->count_objects() : 0 },
+            {"# inter-switch links", apps_list.count("topology") ? apps_list["topology"]->count_objects() : 0},
+            {"# quarantine ports", 0 }
+        };
+        return summary.dump();
     }
     if (params[2] == "info") {
-        return ctrl->info->formJSON().get();
+        return ctrl->info->to_json().dump();
     }
 
     if (params[3] == "health") {
@@ -96,15 +94,17 @@ std::string ControllerRest::handle(std::vector<std::string> params)
     if (params[3] == "system") {
         return "Not used";
     }
+
+    return "{}";
 }
 
-JSONparser ControllerInfo::formJSON()
+json11::Json ControllerInfo::to_json() const
 {
-    JSONparser json;
-    json.addValue("address", address);
-    json.addValue("port", port);
-    json.addValue("nthreads", nthreads);
-    json.addValue("secure", secure);
-    json.addValue("started", static_cast<uint64_t>(started));
-    return json;
+    return json11::Json::object {
+        {"address", address},
+        {"port", port},
+        {"nthreads", nthreads},
+        {"secure", secure},
+        {"started", AppObject::uint64_to_string(static_cast<uint64_t>(started))}
+    };
 }

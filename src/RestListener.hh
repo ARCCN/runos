@@ -19,12 +19,13 @@
 #include <QtNetwork>
 #include <QTcpSocket>
 #include <unordered_map>
+#include <fstream>
+#include <iostream>
 
-#include <JsonParser.hh>
-#include <Rest.hh>
-#include <Application.hh>
-#include <Controller.hh>
-#include <Loader.hh>
+#include "Rest.hh"
+#include "Application.hh"
+#include "Controller.hh"
+#include "Loader.hh"
 
 #define PROTO_FILE "proto"
 #define DEBUG 1
@@ -97,39 +98,25 @@ private:
     int listen_port;
     std::string web_dir;
 
-    /**
-     * Parsing HTTP header
-     */
+    /// Parsing HTTP header
     Req getHTTPheader(QString head);
 
-    /**
-     * Parsing GET request
-     */
+    /// Parsing GET request
     bool parsingGET(QString page, std::vector<std::string> *params);
 
-    /**
-     * Parsing POST request
-     */
+    /// Parsing POST request
     bool parsingPOST(Req req, QString body, std::vector<std::string> *params);
 
-    /**
-     * Sending parsed request to the some REST-application and returning application's reply
-     */
+    /// Sending parsed request to the some REST-application and returning application's reply
     QString proccessRequest(std::vector<std::string> params);
 
-    /**
-     * Sending requested webpage (filename) to the client
-     */
+    /// Sending requested webpage (filename) to the client
     void sendFile(QTcpSocket* sock, QString filename);
 
-    /**
-     * Sending the REST reply to the client
-     */
+    /// Sending the REST reply to the client
     void sendMsg(QTcpSocket* sock, QString msg);
 
-    /**
-     * Translating request to Floodlight format
-     */
+    /// Translating request to Floodlight format
     void translateRequest(std::vector<std::string>* params);
 
     /**
@@ -144,14 +131,9 @@ private:
      */
     void timeoutHandler(QTcpSocket* sock, Req req, std::vector<std::string> params);
 private slots:
-
-    /**
-     * New TCP request
-     */
+    /// New TCP request
     void new_request();
 
-    /**
-     * Called when client's socket ready to read information
-     */
+    /// Called when client's socket ready to read information
     void slotReadClient();
 };

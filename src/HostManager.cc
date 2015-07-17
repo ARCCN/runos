@@ -26,6 +26,7 @@ struct HostImpl {
 };
 
 struct HostManagerImpl {
+    // mac address -> Host
     std::unordered_map<std::string, Host*> hosts;
 };
 
@@ -42,45 +43,45 @@ Host::~Host()
 uint64_t Host::id() const
 { return m->id; }
 
-std::string Host::mac()
+std::string Host::mac() const
 { return m->mac; }
 
-uint64_t Host::switchID()
+uint64_t Host::switchID() const
 { return m->switchID; }
 
-uint32_t Host::switchPort()
+uint32_t Host::switchPort() const
 { return m->switchPort; }
 
-JSONparser Host::formJSON()
+json11::Json Host::to_json() const
 {
-    JSONparser res;
-    res.addValue("ID", id());
-    res.addValue("mac", mac());
-    res.addValue("switch_id", switchID());
-    res.addValue("switch_port", switchPort());
-    return res;
+    return json11::Json::object {
+        {"ID", id_str()},
+        {"mac", mac()},
+        {"switch_id", uint64_to_string(switchID())},
+        {"switch_port", (int)switchPort()}
+    };
 }
 
-JSONparser Host::formFloodlightJSON()
+json11::Json Host::formFloodlightJSON()
 {
-    JSONparser res;
-    res.addValue("entityClass", "DefaultEntityClass");
-    res.addValue("mac", mac());
-    res.addValue("ipv4", "[]");
-    res.addValue("vlan", "[]");
+    json11::Json attach = json11::Json::object {
+        {"switchDPID", AppObject::uint64_to_string(switchID())},
+        {"port", (int)switchPort()},
+        {"errorStatus", "null"}
+    };
 
-    JSONparser attach;
-    attach.addValue("switchDPID", AppObject::uint64_to_string(switchID()));
-    attach.addValue("port", switchPort());
-    attach.addValue("errorStatus", "null");
-
-    res.addValue("attachmentPoint", attach);
-    res.addValue("lastSeen", static_cast<uint64_t>(connectedSince()));
-    return res;
+    return json11::Json::object {
+        {"entityClass", "DefaultEntityClass"},
+        {"mac", mac()},
+        {"ipv4", "[]"},
+        {"vlan", "[]"},
+        {"attachmentPoint", attach},
+        {"lastSeen", uint64_to_string(static_cast<uint64_t>(connectedSince()))}
+    };
 }
 
 void Host::switchID(uint64_t id)
-{  m->switchID = id; }
+{ m->switchID = id; }
 
 void Host::switchPort(uint32_t port)
 { m->switchPort = port; }
@@ -106,7 +107,6 @@ void HostManager::init(Loader *loader, const Config &config)
                      this, &HostManager::onSwitchDiscovered);
 
     RestListener::get(loader)->newListener("host-manager", r);
-
 }
 
 void HostManager::onSwitchDiscovered(Switch* dp)
@@ -118,6 +118,7 @@ Host* HostManager::addHost(std::string mac)
 {
     Host* dev = new Host(mac);
     m->hosts[mac] = dev;
+    emit hostDiscovered(dev);
     return dev;
 }
 
@@ -148,14 +149,12 @@ Host* HostManager::getHost(std::string mac)
 
 void HostManager::newPort(Switch *dp, of13::Port port)
 {
-    if (port.port_no() > of13::OFPP_MAX)
-        return;
     switch_macs.push_back(port.hw_addr().to_string());
 }
 
 OFMessageHandler::Action HostManager::Handler::processMiss(OFConnection* ofconn, Flow* flow)
 {
-    EthAddress eth_src = flow->loadEthSrc();
+    EthAddress eth_src = flow->pkt()->readEthSrc();
     std::string eth_mac = eth_src.to_string();
     if (app->isSwitch(eth_mac))
         return Continue;
@@ -173,8 +172,7 @@ OFMessageHandler::Action HostManager::Handler::processMiss(OFConnection* ofconn,
         Host* dev = app->addHost(eth_mac);
         app->attachHost(eth_mac, sw->id(), in_port);
 
-        Event* ev = new Event("host-manager", Event::Add, dev);
-        app->r->addEvent(ev);
+        app->r->addEvent(Event::Add, dev);
         dev->connectedSince(time(NULL));
         mutex.unlock();
 
@@ -200,18 +198,17 @@ std::string HostManagerRest::handle(std::vector<std::string> params)
     if (params[0] != "GET")
         return "{ \"error\": \"error\" }";
     if (params[2] == "hosts") {
-        JSONparser out;
-        for (auto& it : m->hosts())
-            out.addValue("hosts", it.second->formJSON());
-        return out.get();
+        return json11::Json(m->hosts()).dump();
+    }
+    if (params[2] == "f_hosts") {
+        std::vector<json11::Json> res;
+        for (auto it : m->hosts()) {
+            res.push_back(it.second->formFloodlightJSON());
+        }
+        return json11::Json(res).dump();
     }
 
-    if (params[2] == "f_hosts") {
-        JSONparser out(true);
-        for (auto& it : m->hosts())
-            out.addToArray(it.second->formFloodlightJSON());
-        return out.get();
-    }
+    return "{}";
 }
 
 int HostManagerRest::count_objects()

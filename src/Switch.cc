@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <unordered_map>
-
 #include "Switch.hh"
+
+#include <unordered_map>
 
 REGISTER_APPLICATION(SwitchManager, {"controller", "rest-listener", ""})
 
@@ -140,6 +140,8 @@ void SwitchManager::onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr)
 
 void SwitchManager::onSwitchDown(OFConnection* ofconn)
 {
+    if (!ofconn)
+        return;
     auto it = m->switch_by_conn.find(ofconn->get_id());
     if (it == m->switch_by_conn.end())
         return;
@@ -154,6 +156,15 @@ void SwitchManager::onPortStatus(OFConnection* ofconn, of13::PortStatus ps)
 {
     // don't acquire lock because operation lives in qt loop
     m->switch_by_conn.at(ofconn->get_id())->portStatus(ps);
+}
+
+void SwitchManagerRest::onSwitchDiscovered(Switch *dp) {
+    addEvent(Event::Add, dp);
+    dp->connectedSince(time(NULL));
+}
+
+void SwitchManagerRest::onSwitchDown(Switch *dp) {
+    addEvent(Event::Delete, dp);
 }
 
 void SwitchManager::onPortDescriptions(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> reply)
@@ -299,42 +310,42 @@ void Switch::requestPortDescriptions()
     m->mgr->m->pdescr->request(m->conn, &req);
 }
 
-JSONparser Switch::formJSON()
-{
-    JSONparser res;
-    res.addValue("ID", id());
-    res.addValue("DPID", AppObject::uint64_to_string(id()));
-    res.addValue("IP", "10.0.0.1");
-    //addValue -> other Switch parameters...
-    return res;
+json11::Json Switch::to_json() const {
+    return json11::Json::object {
+        {"ID", id_str()},
+        {"DPID", AppObject::uint64_to_string(id())}
+    };
 }
 
-JSONparser Switch::formFloodlightJSON()
-{
-    JSONparser res;
-    res.addValue("harole", "MASTER");
+json11::Json Switch::to_floodlight_json() const {
+    std::vector<json11::Json> ports_vec;
     for (of13::Port port : ports()) {
-        JSONparser json_port;
-        json_port.addValue("portNumber", port.port_no());
-        json_port.addValue("hardwareAddress", port.hw_addr().to_string());
-        json_port.addValue("name", port.name());
-        json_port.addValue("config", port.config());
-        json_port.addValue("state", port.state());
-        json_port.addValue("currentFeatures", port.curr());
-        json_port.addValue("advertisedFeatures", port.advertised());
-        json_port.addValue("supportedFeatures", port.supported());
-        json_port.addValue("peerFeatures", port.peer());
-        res.addValue("ports", json_port);
+        json11::Json json_port = json11::Json::object {
+            {"portNumber", (int)port.port_no()},
+            {"hardwareAddress", port.hw_addr().to_string()},
+            {"name", port.name()},
+            {"config", (int)port.config()},
+            {"state", (int)port.state()},
+            {"currentFeatures", (int)port.curr()},
+            {"advertisedFeatures", (int)port.advertised()},
+            {"supportedFeatures", (int)port.supported()},
+            {"peerFeatures", (int)port.peer()}
+        };
+        ports_vec.push_back(json_port);
     }
-    res.addValue("buffers", nbuffers());
-    res.addValue("description", "NONE");
-    res.addValue("capabilities", capabilites());
-    res.addValue("inetAddress", "NONE");
-    res.addValue("connectedSince", static_cast<uint64_t>(connectedSince()));
-    res.addValue("dpid", uint64_to_string(id()));
-    res.addValue("actions", "NONE");
-    res.addValue("attributes", "NONE");
-    return res;
+
+    return json11::Json::object {
+        {"harole", "MASTER"},
+        {"ports", json11::Json(ports_vec)},
+        {"buffers", (int)nbuffers()},
+        {"description", "NONE"},
+        {"capabilities", (int)capabilites()},
+        {"inetAddress", "NONE"},
+        {"connectedSince", uint64_to_string(static_cast<uint64_t>(connectedSince()))},
+        {"dpid", uint64_to_string(id())},
+        {"actions", "NONE"},
+        {"attributes", "NONE"}
+    };
 }
 
 void Switch::portDescArrived(of13::MultipartReplyPortDescription &desc)
@@ -379,6 +390,11 @@ uint32_t Switch::capabilites() const
     return m->capabilities;
 }
 
+OFConnection* Switch::ofconn() const
+{
+    return m->conn;
+}
+
 of13::Port Switch::port(uint32_t port_no) const
 {
     QReadLocker locker(&m->port_lock);
@@ -397,30 +413,13 @@ std::vector<of13::Port> Switch::ports() const
     return ret;
 }
 
-void SwitchManagerRest::onSwitchDiscovered(Switch *dp)
-{
-    Event* ev = new Event("switch-manager", Event::Add, dp);
-    addEvent(ev);
-    dp->connectedSince(time(NULL));
-}
-
-void SwitchManagerRest::onSwitchDown(Switch *dp)
-{
-    Event* ev = new Event("switch-manager", Event::Delete, dp);
-    addEvent(ev);
-}
-
 std::string SwitchManagerRest::handle(std::vector<std::string> params)
 {
     if (params[0] != "GET")
         return "{ \"error\": \"error\" }";
     if (params[2] == "switches") {
         if (params[3] == "all") {
-            auto sw = m->switches();
-            JSONparser out;
-            for (auto it = sw.begin(); it != sw.end(); it++)
-                out.addValue("switches", (*it)->formJSON());
-            return out.get();
+            return json11::Json(m->switches()).dump();
         }
     }
 
@@ -430,13 +429,16 @@ std::string SwitchManagerRest::handle(std::vector<std::string> params)
             params[4] == "switches" &&
             params[5] == "json") {
 
+        std::vector<json11::Json> res;
         auto sw = m->switches();
-        JSONparser out(true);
-        for (auto it = sw.begin(); it != sw.end(); it++)
-            out.addToArray((*it)->formFloodlightJSON());
-        return out.get();
+        for (auto it = sw.begin(); it != sw.end(); it++) {
+            res.push_back((*it)->to_floodlight_json());
+        }
+        return json11::Json(res).dump();
 
     }
+
+    return "{}";
 }
 
 int SwitchManagerRest::count_objects()

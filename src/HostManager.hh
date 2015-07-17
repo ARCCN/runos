@@ -16,20 +16,18 @@
 
 #pragma once
 
+#include <vector>
+#include <mutex>
+#include <unordered_map>
+#include <time.h>
 #include "Controller.hh"
 #include "Common.hh"
 #include "Application.hh"
 #include "Switch.hh"
 #include "OFMessageHandler.hh"
-
 #include "Rest.hh"
-#include "AppObject.hh"
 #include "RestListener.hh"
-
-#include <vector>
-#include <mutex>
-#include <unordered_map>
-#include <time.h>
+#include "AppObject.hh"
 
 /**
  * Host object corresponding end host
@@ -39,11 +37,11 @@ class Host : public AppObject {
     struct HostImpl* m;
 public:
     uint64_t id() const override;
-    JSONparser formJSON() override;
-    JSONparser formFloodlightJSON();
-    std::string mac();
-    uint64_t switchID();
-    uint32_t switchPort();
+    json11::Json to_json() const override;
+    json11::Json formFloodlightJSON();
+    std::string mac() const;
+    uint64_t switchID() const;
+    uint32_t switchPort()const;
     void switchID(uint64_t id);
     void switchPort(uint32_t port);
 
@@ -77,9 +75,9 @@ public:
 
     void init(Loader* loader, const Config& config) override;
     std::string orderingName() const override { return "host-finder"; }
-    OFMessageHandler* makeOFMessageHandler() override { return new Handler(this); }
+    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override
+    { return std::unique_ptr<OFMessageHandler>(new Handler(this)); }
     bool isPrereq(const std::string &name) const;
-
     std::unordered_map<std::string, Host*> hosts();
     Host* getHost(std::string mac);
     Rest* rest() {return dynamic_cast<Rest*>(r); }
@@ -87,6 +85,8 @@ public:
 public slots:
     void onSwitchDiscovered(Switch* dp);
     void newPort(Switch* dp, of13::Port port);
+signals:
+    void hostDiscovered(Host* dev);
 private:
     struct HostManagerImpl* m;
     std::vector<std::string> switch_macs;

@@ -1,3 +1,6 @@
+<img src="https://raw.githubusercontent.com/ARCCN/runos/master/logo_runos_small.jpg" alt="RUNOS logo" width="50%" height="50%">
+
+
 # Build prerequirements
 
 This components should be installed in the system:
@@ -13,7 +16,21 @@ You can use this line on Ubuntu 14.04 to install all required packages:
 ```
 $ sudo apt-get install build-essential cmake autoconf libtool \
     pkg-config libgoogle-glog-dev libpcap-dev libevent-dev \ 
-    libssl-dev qtbase5-dev libboost-graph-dev libgoogle-perftools-dev \
+    libssl-dev qtbase5-dev libboost-graph-dev libgoogle-perftools-dev curl \
+```
+
+You need to install the latest JavaScript packages:
+
+```
+# If you have old versions of Node.js or UglifyJS,
+# you should remove them
+$ sudo npm un uglify-js -g
+$ sudo apt-get remove node nodejs npm
+# Install Node.js, npm and UglifyJS via package manager
+# (according to https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
+$ curl -sL https://deb.nodesource.com/setup | sudo bash -
+$ sudo apt-get install nodejs
+$ sudo npm install uglify-js -g
 ```
 
 # Building
@@ -28,28 +45,14 @@ $ mkdir -p build; cd build
 $ cmake -DCMAKE_BUILD_TYPE=Release ..
 
 # Build third-party libraries
-$ make prefix
+$ make prefix -j2
 # Build RuNOS
-$ make
-
-# If you have old versions of Node.js or UglifyJS,
-# you should remove them
-$ sudo npm un uglify-js -g
-$ sudo apt-get remove node nodejs npm
-# Install Node.js, npm and UglifyJS via package manager
-# (according to https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
-$ curl -sL https://deb.nodesource.com/setup | sudo bash -
-$ sudo apt-get install nodejs
-$ sudo npm install uglify-js -g
-
-# Generate webfiles
-$ cd .. # Go out of build dir
-$ ./gen_web.sh
+$ make -j2
 ```
 
 # Running
 
-Setup environment variables (run once per bash session):
+Setup environment variables (run once per shell session):
 ```
 # Run it INSIDE build directory
 $ source ../debug_run_env.sh
@@ -63,7 +66,8 @@ $ build/runos
 
 You can use this arguments for MiniNet:
 ```
-$ sudo mn --topo $YOUR_TOPO --switch ovsk,protocols=OpenFlow13 --controller remote,ip=$CONTROLLER_IP,port=6653
+$ sudo mn --topo $YOUR_TOPO --switch ovsk,protocols=OpenFlow13 \
+            --controller remote,ip=$CONTROLLER_IP,port=6653
 ```
 
 To run web UI, open the following link in your browser:
@@ -71,7 +75,8 @@ To run web UI, open the following link in your browser:
 http://$CONTROLLER_IP:8000/topology.html
 ```
 
-Be sure your MiniNet installation supports OpenFlow 1.3. See https://wiki.opendaylight.org/view/OpenDaylight_OpenFlow_Plugin::Test_Environment#Setup_CPqD_Openflow_1.3_Soft_Switch for more instructions.
+Be sure your MiniNet installation supports OpenFlow 1.3.
+See https://wiki.opendaylight.org/view/OpenDaylight_OpenFlow_Plugin::Test_Environment#Setup_CPqD_Openflow_1.3_Soft_Switch for more instructions.
 
 # Using QtCreator
 1. Execute Building section, but use
@@ -258,11 +263,11 @@ Return the list of all the inter-switch links
 * `GET /wm/topology/external-links/json` 	(Floodlight)
 Return external links
 
-### 'Device Manager'
+### 'Host Manager'
 
-* `GET /api/device-manager/devices` 		(RunOS)
+* `GET /api/host-manager/hosts` 		(RunOS)
 * `GET /wm/device/`				(Floodlight)
-List of all devices tracked by the controller
+List of all end hosts tracked by the controller
 
 ### 'Controller App'
 
@@ -352,7 +357,7 @@ To make REST for your application `class MyApp`:
 
 In current version events can signal about appearance or disappearance some objects:
 
-        # some_object is object inherited class AppObject
-        Event* ev = new Event("myapp", Event::Add, some_object);
-        #or
-        Event* ev = new Event("myapp", Event::Delete, some_object);
+    # some_object is object inherited class AppObject
+    addEvent(Event::Add, some_object);
+or
+    addEvent(Event::Delete, some_object);

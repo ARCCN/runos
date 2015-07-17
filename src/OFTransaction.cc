@@ -17,7 +17,7 @@
 #include "OFTransaction.hh"
 
 OFTransaction::OFTransaction(uint32_t xid, QObject *parent)
-    : m_xid(xid), QObject(parent)
+    : QObject(parent), m_xid(xid)
 { }
 
 void OFTransaction::request(OFConnection* ofconn, OFMsg *msg)

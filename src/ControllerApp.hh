@@ -24,13 +24,10 @@
 #include "Switch.hh"
 #include "HostManager.hh"
 #include "Topology.hh"
-#include "Rest.hh"
-#include "JsonParser.hh"
 #include "RestListener.hh"
+#include "Rest.hh"
+#include "json11.hpp"
 
-/**
- * REST-class provides REST-interface support for controller-manager
- */
 class ControllerRest : public Rest {
     friend class ControllerApp;
     class ControllerApp* ctrl;
@@ -39,6 +36,9 @@ public:
     std::string handle(std::vector<std::string> params) override;
 };
 
+/**
+ * REST-class provides REST-interface support for controller-manager
+ */
 class ControllerApp : public Application {
     Q_OBJECT
     SIMPLE_APPLICATION(ControllerApp, "controller-manager")

@@ -87,6 +87,11 @@ HCI = function () {
             state.drag = false;
             UI.canvas.onmousemove = onMouseMove;
             UI.canvas.style.cursor = 'auto';
+            hovered = hover (event.clientX - x0, event.clientY - y0);
+			var req = new Object();
+			req.x_coord = hovered.x;
+			req.y_coord = hovered.y;
+	    	Server.ajax('PUT', 'api/webui/coord/' + hovered.id, req);
         } else if (state.select) {
             UI.canvas.onmousemove = onMouseMove;
             if (state.select.any) {

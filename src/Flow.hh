@@ -40,7 +40,9 @@ public:
         Live,
         // Flow removed from the switch but can be reactivated 
         // Warning: only actual when TrackFlowRemoval is on.
-        Shadowed
+        Shadowed,
+
+        Destroyed
     };
 
     enum FlowFlags {
@@ -146,7 +148,6 @@ public:
     bool match(const of13::IPProto& val);
     //@}
 
-    //void modify(const of13::OXMTLV* tlv);
     void add_action(Action* action);
     void add_action(Action& action);
 
@@ -160,6 +161,7 @@ public:
     FlowState state() const;
     FlowFlags flags() const;
     Trace& trace();
+    ActionList& get_action();
     //@}
 
 signals:
@@ -167,6 +169,7 @@ signals:
 
 protected:
     friend class SwitchScope;
+    friend class TraceTreeNode;
 
     Flow(Packet* pkt, QObject* parent = 0);
     ~Flow();
@@ -176,6 +179,7 @@ protected:
 
     void setLive();
     void setShadow();
+    void setDestroy();
     uint16_t hardTimeout();
 
 private:

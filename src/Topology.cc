@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
+#include "Topology.hh"
+
 #include <unordered_map>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths_no_color_map.hpp>
 
 #include "Common.hh"
-#include "Topology.hh"
 
 REGISTER_APPLICATION(Topology, {"link-discovery", "rest-listener", ""})
 
@@ -42,8 +43,8 @@ public:
     Link(switch_and_port _source, switch_and_port _target, int _weight, uint64_t _id):
         source(_source), target(_target), weight(_weight), obj_id(_id) {}
 
-    JSONparser formJSON() override;
-    JSONparser formFloodlightJSON();
+    json11::Json to_json() const;
+    json11::Json to_floodlight_json() const;
     uint64_t id() const;
 };
 
@@ -51,26 +52,30 @@ uint64_t Link::id() const {
     return obj_id;
 }
 
-JSONparser Link::formJSON()
-{
-    JSONparser res;
-    res.addValue("ID", id());
-    res.addValue("connect", source.dpid);
-    res.addValue("connect", target.dpid);
-    res.addValue("bandwidth", weight);
-    return res;
+json11::Json Link::to_json() const {
+    json11::Json src = json11::Json::object {
+        {"src_id", uint64_to_string(source.dpid)},
+        {"src_port", (int)source.port} };
+    json11::Json dst = json11::Json::object {
+        {"dst_id", uint64_to_string(target.dpid)},
+        {"dst_port", (int)target.port} };
+
+    return json11::Json::object {
+        {"ID", id_str()},
+        {"connect", json11::Json::array { src, dst } },
+        {"bandwidth", weight}
+    };
 }
 
-JSONparser Link::formFloodlightJSON()
-{
-    JSONparser res;
-    res.addValue("src-switch", AppObject::uint64_to_string(source.dpid));
-    res.addValue("src-port", source.port);
-    res.addValue("dst-switch", AppObject::uint64_to_string(target.dpid));
-    res.addValue("dst-port", target.port);
-    res.addValue("type", "internal");
-    res.addValue("direction", "bidirectional");
-    return res;
+json11::Json Link::to_floodlight_json() const {
+    return json11::Json::object {
+        {"src-switch", AppObject::uint64_to_string(source.dpid)},
+        {"src-port", (int)source.port},
+        {"dst-switch", AppObject::uint64_to_string(target.dpid)},
+        {"dst-port", (int)target.port},
+        {"type", "internal"},
+        {"direction", "bidirectional"}
+    };
 }
 
 typedef adjacency_list< vecS, vecS, undirectedS, no_property, link_property>
@@ -137,8 +142,7 @@ void Topology::linkDiscovered(switch_and_port from, switch_and_port to)
 
     Link* link = new Link(from, to, 5, rand()%1000 + 2000);
     r->topo.push_back(link);
-    Event* ev = new Event("topology", Event::Add, link);
-    r->addEvent(ev);
+    r->addEvent(Event::Add, link);
 }
 
 void Topology::linkBroken(switch_and_port from, switch_and_port to)
@@ -192,21 +196,20 @@ std::string TopologyRest::handle(std::vector<std::string> params)
 {
     if (params[0] == "GET") {
         if (params[2] == "links") {
-            JSONparser out;
-            for (auto it = topo.begin(); it != topo.end(); it++)
-                out.addValue("links", (*it)->formJSON());
-            return out.get();
+            return json11::Json(topo).dump();
         }
         if (params[2] == "f_links") {
-            JSONparser out(true);
+            std::vector<json11::Json> res;
             for (auto it = topo.begin(); it != topo.end(); it++)
-                out.addToArray((*it)->formFloodlightJSON());
-            return out.get();
+                res.push_back((*it)->to_floodlight_json());
+            return json11::Json(res).dump();
         }
         if (params[2] == "external_links") {
             return "[]";
         }
     }
+    
+    return "{}";
 }
 
 int TopologyRest::count_objects()

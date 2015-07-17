@@ -23,10 +23,10 @@
 #include "Loader.hh"
 #include "Common.hh"
 #include "ILinkDiscovery.hh"
-#include "Controller.hh"
 #include "Rest.hh"
 #include "RestListener.hh"
 #include "AppObject.hh"
+#include "json11.hpp"
 
 typedef std::vector< switch_and_port > data_link_route;
 
@@ -60,5 +60,5 @@ protected slots:
 
 private:
     struct TopologyImpl* m;
-    struct TopologyRest* r;
+    TopologyRest* r;
 };

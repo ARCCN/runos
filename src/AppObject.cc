@@ -17,17 +17,22 @@
 #include "AppObject.hh"
 #include "Common.hh"
 
+#define FORMAT_STRID std::setw(16) << std::setfill('0')
+
 bool operator==(const AppObject& o1, const AppObject& o2)
 { return o1.id() == o2.id(); }
 
-std::string AppObject::uint64_to_string(uint64_t dpid)
+std::string AppObject::id_str() const
+{ return uint64_to_string(id()); }
+
+std::string AppObject::uint64_to_string(uint64_t id)
 {
     std::ostringstream ss;
-    ss << FORMAT_DPID << dpid;
+    ss << FORMAT_STRID << id;
     return ss.str();
 }
 
-time_t AppObject::connectedSince()
+time_t AppObject::connectedSince() const
 { return since; }
 
 void AppObject::connectedSince(time_t time)

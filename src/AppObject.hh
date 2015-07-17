@@ -19,7 +19,7 @@
 #include <string>
 #include <time.h>
 
-#include "JsonParser.hh"
+#include "json11.hpp"
 
 /**
 * This abstract class is used in applications.
@@ -31,27 +31,30 @@ class AppObject
     time_t since;
 public:
     AppObject(): since(0) {}
+    virtual ~AppObject() { }
 
     /**
      * You must define JSON representation for your object
      */
-    virtual JSONparser formJSON() = 0;
+    virtual json11::Json to_json() const = 0;
 
     /**
      * 64-bit unique identifier for your object
      */
     virtual uint64_t id() const = 0;
 
+    std::string id_str() const;
+
     /**
      * Object's created time getter and setter
      */
-    time_t connectedSince();
+    time_t connectedSince() const;
     void connectedSince(time_t time);
 
     /**
      * Translate 64-bit identifier (DPID in switches) to string format
      */
-    static std::string uint64_to_string(uint64_t dpid);
+    static std::string uint64_to_string(uint64_t id);
 
     /**
      * Define the equality operator between objects

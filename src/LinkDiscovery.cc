@@ -17,11 +17,12 @@
 // TODO: security: add cookie to LLDP messages
 // TODO: test on unstable links (broken by timeout)
 
+#include "LinkDiscovery.hh"
+
 #include <tins/macros.h>
 #include <fluid/util/util.h>
 #include "LLDP.hh"
 #include "Controller.hh"
-#include "LinkDiscovery.hh"
 
 REGISTER_APPLICATION(LinkDiscovery, {"switch-manager", "controller", ""})
 
@@ -219,7 +220,8 @@ OFMessageHandler::Action LinkDiscovery::Handler::processMiss(OFConnection *ofcon
     }
 }
 
-Link::Link(switch_and_port const &source_, switch_and_port const &target_, valid_through_t const & valid_through_)
+DiscoveredLink::DiscoveredLink(switch_and_port const &source_,
+        switch_and_port const &target_, valid_through_t const & valid_through_)
     : source(source_), target(target_), valid_through(valid_through_)
 {
     if (!(source < target))
@@ -228,7 +230,7 @@ Link::Link(switch_and_port const &source_, switch_and_port const &target_, valid
 
 void LinkDiscovery::onLldpReceived(switch_and_port from, switch_and_port to)
 {
-    Link link(from, to, std::chrono::steady_clock::now() +
+    DiscoveredLink link(from, to, std::chrono::steady_clock::now() +
                         std::chrono::seconds(c_poll_interval * 2));
     bool isNew = true;
 
@@ -301,9 +303,9 @@ void LinkDiscovery::pollTimeout()
     }
 }
 
-OFMessageHandler *LinkDiscovery::makeOFMessageHandler()
+std::unique_ptr<OFMessageHandler> LinkDiscovery::makeOFMessageHandler()
 {
-    return new Handler(this);
+    return std::unique_ptr<OFMessageHandler>(new Handler(this));
 }
 
 std::string LinkDiscovery::orderingName() const

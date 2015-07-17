@@ -29,7 +29,7 @@ SIMPLE_APPLICATION(SimpleLearningSwitch, "simple-learning-switch")
 public:
     void init(Loader* loader, const Config& config) override;
     std::string orderingName() const override;
-    OFMessageHandler* makeOFMessageHandler() override;
+    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override;
 
 private:
     class Handler: public OFMessageHandler {

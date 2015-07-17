@@ -29,7 +29,7 @@
 #include "OFMessageHandler.hh"
 #include "ILinkDiscovery.hh"
 
-struct Link {
+struct DiscoveredLink {
     typedef std::chrono::time_point<std::chrono::steady_clock>
             valid_through_t;
 
@@ -37,7 +37,8 @@ struct Link {
     switch_and_port target;
     valid_through_t valid_through;
 
-    Link(const switch_and_port&, const switch_and_port&, const valid_through_t&);
+    DiscoveredLink(const switch_and_port&, const switch_and_port&,
+                   const valid_through_t&);
 };
 
 class LinkDiscovery : public Application, public ILinkDiscovery, private OFMessageHandlerFactory {
@@ -48,7 +49,7 @@ public:
     void startUp(Loader* provider) override;
 
     std::string orderingName() const override;
-    OFMessageHandler* makeOFMessageHandler() override;
+    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override;
     bool isPostreq(const std::string &name) const override;
 
 signals:
@@ -77,15 +78,15 @@ private:
     SwitchManager* m_switch_manager;
     QTimer* m_timer;
 
-    std::set<Link> m_links;
-    std::unordered_map<switch_and_port, std::set<Link>::iterator >
+    std::set<DiscoveredLink> m_links;
+    std::unordered_map<switch_and_port, std::set<DiscoveredLink>::iterator >
                    m_out_edges;
 
     void sendLLDP(Switch *dp, of13::Port port);
     void clearLinkAt(const switch_and_port & ap);
 };
 
-inline bool operator<(const Link& a, const Link& b) {
+inline bool operator<(const DiscoveredLink& a, const DiscoveredLink& b) {
     return a.valid_through < b.valid_through;
 }
 

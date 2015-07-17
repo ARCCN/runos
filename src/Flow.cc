@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <chrono>
-
 #include "Flow.hh"
+
+#include <chrono>
 #include "Match.hh"
 
 using std::chrono::time_point;
@@ -74,6 +74,9 @@ Trace& Flow::trace()
 Packet* Flow::pkt()
 { return m->pkt; }
 
+ActionList& Flow::get_action()
+{ return m->actions; }
+
 bool Flow::outdated()
 { return steady_clock::now() > m->live_until; }
 
@@ -90,7 +93,30 @@ void Flow::setLive()
         return;
 
     m->state = Live;
-    m->pkt = 0;
+    m->pkt = nullptr;
+
+    emit stateChanged(m->state, old_state);
+}
+
+void Flow::setShadow()
+{
+    auto old_state = m->state;
+    if (m->state == Shadowed)
+        return;
+
+    m->state = Shadowed;
+
+    emit stateChanged(m->state, old_state);
+}
+
+void Flow::setDestroy()
+{
+    auto old_state = m->state;
+    if (m->state == Destroyed)
+        return;
+
+    m->state = Destroyed;
+    m->pkt = nullptr;
 
     emit stateChanged(m->state, old_state);
 }

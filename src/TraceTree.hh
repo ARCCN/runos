@@ -93,16 +93,19 @@ public:
 
     TraceTreeNode* move(TraceEntry& op);
     LeafData* find(Packet* pkt);
+    Flow* find (uint64_t cookie);
     std::ostream& dump(std::ostream& out, size_t level);
 
     TraceTreeNode();
     ~TraceTreeNode();
 };
 
-class TraceTree {
+class TraceTree : public QObject {
+    Q_OBJECT
 public:
     TraceTree();
 
+    Flow* find(uint64_t cookie);
     TraceTreeNode::LeafData* find(Packet* pkt);
     void augment(Flow* flow, of13::FlowMod* fm_base);
     void cleanFlowTable(OFConnection* ofconn);

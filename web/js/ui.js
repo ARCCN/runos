@@ -42,7 +42,7 @@ UI = function () {
         var i, len, t,
             html = '';
         if (hovered.type === 'router') {
-            html += '<li class="edit"><input type="text" value="' + hovered.name + '"></li>';
+            html += '<li class="edit"><input type="text" value="' + hovered.name + '"><i class="off"></i></li>';
             // html += '<li>' + hovered.name + '</li>';
             html += '<li>' + hovered.ip + '</li>';
             html += '<li class="separator"></li>';
@@ -61,7 +61,7 @@ UI = function () {
                 html += '<li class="action settings">Сhannel Settings</li>';
             }
         } else if (hovered.type === 'host') {
-            html += '<li class="edit"><input type="text" value="' + hovered.name + '"></li>';
+            html += '<li class="edit"><input type="text" value="' + hovered.name + '"><i class="off"></i></li>';
             // html += '<li>' + hovered.name + '</li>';
             html += '<li>' + hovered.ip + '</li>';
             html += '<li class="separator"></li>';
@@ -72,6 +72,7 @@ UI = function () {
             // html += '<li class="action from">Route from here</li>';
         }
         UI.menu.innerHTML = html;
+        if (UI.menu.querySelector('.edit'))          { UI.menu.querySelector('.edit').onkeypress       = nameChanged; }
         if (UI.menu.querySelector('.settings'))      { UI.menu.querySelector('.settings').onclick      = showDetails; }
         if (UI.menu.querySelector('.delete'))        { UI.menu.querySelector('.delete').onclick        = deleteThis; }
         if (UI.menu.querySelector('.firewall'))      { UI.menu.querySelector('.firewall').onclick      = showFirewall; }
@@ -120,6 +121,23 @@ UI = function () {
                 } 
             }
             event.stopPropagation();
+        }
+
+        function nameChanged () {
+	        var hovered = HCI.getHovered();
+	        this.querySelector('i').style.display = 'block';
+	        this.querySelector('i').className = 'on';
+	        this.querySelector('i').onclick = sendNewName;
+	    }
+
+        function sendNewName () {
+            var hovered = HCI.getHovered(),
+		        req = new Object();
+	        req.name = hovered.name;
+		    Server.ajax('PUT', 'api/webui/name/' + hovered.id, req);
+	        this.className = 'off';
+	        this.onclick = '';
+	        this.style.display = 'none';
         }
     }
 
@@ -237,8 +255,8 @@ UI = function () {
             html += '<th>in_port</th>';
             html += '<th>mac_src</th>';
             html += '<th>mac_dst</th>';
-            html += '<th>vlan_id</th>';
-            html += '<th>vlan_prio</th>';
+            //html += '<th>vlan_id</th>';
+            //html += '<th>vlan_prio</th>';
             html += '<th>ip_src</th>';
             html += '<th>ip_dst</th>';
             html += '<th>ip_proto</th>';
@@ -248,14 +266,15 @@ UI = function () {
             html += '<th>action</th>';
         html += '</tr></thead>';
         html += '<tbody>';
-            for (i = 0, len = hovered.routingRules.length; i < len; ++i) {
-                t = hovered.routingRules[i];
+        
+        function fillRules(value, key, map) {
+            t = value;
                 html += '<tr>';
                     html += '<td>' + (t.in_port   ? t.in_port   : '') + '</td>';
                     html += '<td>' + (t.mac_src   ? t.mac_src   : '') + '</td>';
                     html += '<td>' + (t.mac_dst   ? t.mac_dst   : '') + '</td>';
-                    html += '<td>' + (t.vlan_id   ? t.vlan_id   : '') + '</td>';
-                    html += '<td>' + (t.vlan_prio ? t.vlan_prio : '') + '</td>';
+                    //html += '<td>' + (t.vlan_id   ? t.vlan_id   : '') + '</td>';
+                    //html += '<td>' + (t.vlan_prio ? t.vlan_prio : '') + '</td>';
                     html += '<td>' + (t.ip_src    ? t.ip_src    : '') + '</td>';
                     html += '<td>' + (t.ip_dst    ? t.ip_dst    : '') + '</td>';
                     html += '<td>' + (t.ip_proto  ? t.ip_proto  : '') + '</td>';
@@ -264,7 +283,9 @@ UI = function () {
                     html += '<td>' + (t.dst_port  ? t.dst_port  : '') + '</td>';
                     html += '<td>' + (t.action    ? t.action    : '') + '</td>';
                 html += '</tr>';
-            }
+        }
+        hovered.routingRules.forEach(fillRules);
+        
         html += '</tbody>';
         html += '<tfoot>';
             html += '<tr><td>';

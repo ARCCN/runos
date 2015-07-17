@@ -19,8 +19,9 @@
 #include <QtCore>
 #include <string>
 #include <unordered_map>
-#include "JsonParser.hh"
+
 #include "Event.hh"
+#include "json11.hpp"
 
 /**
  * Implements the REST-interface for applications
@@ -44,11 +45,12 @@ public:
      * Default constructor which define displayed name of application in GUI,
      * link to webpage of application, and type of application
      */
-    Rest(std::string name, std::string page, Type type): display_name(name), 
-                                                         webpage(page), 
-                                                         app_type(type), 
-                                                         has_event_model(false), 
-                                                         em(NULL) {}
+    Rest(std::string name, std::string page, Type type): has_event_model(false), 
+                                                         app_type(type),
+                                                         em(NULL),
+                                                         display_name(name),
+                                                         webpage(page) 
+    {}
 
     /**
      * Method is used for handling REST-requests
@@ -73,6 +75,14 @@ public:
     bool hasEventModel() {
         return has_event_model;
     }
+
+    json11::Json to_json() const {
+        return json11::Json::object{
+            {"name", display_name},
+            {"page", webpage}
+        };
+    }
+
 protected:
     /**
      * List of applications with whom your application can communicate
@@ -115,9 +125,9 @@ protected:
      * Add new event occurred in your application
      * Executing only if your application supprots event model
      */
-    void addEvent(Event* ev) {
+    void addEvent(Event::Type type, AppObject* obj) {
         if (has_event_model)
-            em->addEvent(ev);
+            em->addEvent(type, obj);
     }
     void addApp(std::string name, Rest* app) {
         if (app != NULL)

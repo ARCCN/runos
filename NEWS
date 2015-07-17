@@ -1,4 +1,15 @@
-RuNOS 0.3
+RUNOS 0.4
+=========
+
+This release introduces enhanced web interface: link load status (link blinking on load percentage (green, yellow, red) and ability to see flow table entries for switches.
+   
+   - Statistic service (web ui) - gathering stats from devices and send to the web interface.
+   - Flow manager (web ui, rest api) - caching flows in the controller.
+   - STP service for broadcast packets - calculating spaning tree for a network and pushing rules for broadcast packets. Note it doesn't work for disconnected network.
+   - Pure cbench mode - just test packet_in/packet_out I/O. It's different from Cbench app that uses the entire TraceTree pipeline.
+   - Manual how to run Runos with ha-linux setup to have a cold backup instance.
+
+RUNOS 0.3
 =========
 
 This release introduces additional tools for user interaction with applications via REST 
@@ -12,7 +23,7 @@ API. Now you can add your REST API for your application and utilize API of other
     - Introduced event model for apps. User can get only changes occurred in apps.
     - Applications can provide own webpages for user.
 
-RuNOS 0.2
+RUNOS 0.2
 =========
 
 This release introduces many new features, new interfaces and significant improvements of

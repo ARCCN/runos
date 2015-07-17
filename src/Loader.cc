@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+#include "Loader.hh"
+
 #include <vector>
 #include <unordered_map>
 #include <mutex>
 
 #include "Common.hh"
-#include "Loader.hh"
 #include "Application.hh"
 #include "Config.hh"
 
@@ -212,7 +213,7 @@ AppInfo* LoaderImpl::initialize(std::string serviceId)
     int specific_thread = config_get(config_cd(config, app->provides()),
             "pin-to-thread", -1);
 
-    if (specific_thread >= 0 && specific_thread < thread.size()) {
+    if (specific_thread >= 0 && (size_t) specific_thread < thread.size()) {
         app_thread = thread[specific_thread];
 
         VLOG(2) << "  moveToThread(" << app->provides() 

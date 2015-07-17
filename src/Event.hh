@@ -19,8 +19,9 @@
 #include <time.h>
 #include <string>
 #include <vector>
+#include <time.h>
 
-#include "JsonParser.hh"
+#include "json11.hpp"
 #include "AppObject.hh"
 
 /**
@@ -55,14 +56,12 @@ public:
      * Getters:
      *  - event identifier
      *  - event time
-     *  - event application (in which application)
      *  - event type
      *  - object corresponding to the event
      *  - JSON-description of the object
      */
     uint32_t id() const;
     time_t ev_time() const;
-    std::string app() const;
     Type type() const;
     AppObject* obj() const;
     std::string event() const;
@@ -70,10 +69,9 @@ public:
     /**
      * Main constructor in event model.
      * When event occurred, you must:
-     *  - create Event object: Event* ev = new Event("my_app", Event::Add, new_obj);
-     *  - save the event: my_app->addEvent(ev);
+     *  - add new event: my_app->addEvent(Event::Add, new_obj);
      */
-    Event(std::string app, Type type, AppObject* obj);
+    Event(Type type, AppObject* obj);
 
     Event();
     ~Event();
@@ -81,7 +79,7 @@ public:
     /**
      * Returns JSON-object corresponding the event
      */
-    JSONparser formJSON();
+    json11::Json to_json() const;
 
 private:
     struct EventImpl* m;
@@ -92,9 +90,11 @@ public:
     EventManager();
     ~EventManager();
 
-    void addEvent(Event* ev);
-    JSONparser timeout(std::string app, uint32_t last);
+    bool checkOverlap(Event *test_ev, uint32_t last_ev);
+    void addEvent(Event::Type type, AppObject* obj);
     std::vector<Event*> events();
+
+    std::pair<uint32_t, json11::Json> timeout(uint32_t last);
 private:
     struct EventManagerImpl* m;
 };

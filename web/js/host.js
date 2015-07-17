@@ -35,18 +35,52 @@ newHost = function () {
             computeLoad: computeLoad,
             draw: draw,
             isOver: isOver,
+            fixed_pos: false,
+            getLinksLoad: getLinksLoad,
         };
+        
+        Net.add(host);
 
         if (host.type === 'router') {
             host.firewall     = false;
             host.loadBalancer = false;
             host.balancingRules = [];
-            host.routingRules = [];
+            host.routingRules = new Map();
+            getLinksLoad(host.id);
         }
 
-        Net.add(host);
         return host;
     };
+    
+    function delay(f, ms) {
+        return function() {
+            var newArr = [].slice.call(arguments);
+            setTimeout(function() {  
+                f.apply(this, newArr);
+            }, ms);
+        };
+    }
+    
+    function getLinksLoad(id) {       
+        Server.ajax('GET', '/api/stats/port_info/' + id + '/all', setLoad);
+        
+        function setLoad (response) {
+            for (var i = 0, len = response.length; i < len; ++i) {
+                if (response[i].port_no <= 0)
+                    continue;
+                var link = Net.getLinkByPort(id, response[i].port_no);
+                if (link) {
+                    link.load = parseInt(response[i].tx_byte_speed) + parseInt(response[i].rx_byte_speed);
+                    //window.console.info('load on switch', id, 'port', response[i].port_no, 'is', link.load/link.bandwidth);
+                }
+            }
+        }
+        
+        if (Net.getHostByID(id)) {
+            var again = delay(getLinksLoad, 2000);
+            again(id);
+        }
+    }
 
     function draw () {
         /* jshint validthis:true */
@@ -60,6 +94,7 @@ newHost = function () {
             CTX.fillStyle = this.color;
             CTX.arc(0, 0, this.s/2, 0, 2*Math.PI);
             CTX.fill();
+            this.computeLoad();
         }
         CTX.drawImage(UI.icons[this.icon].img, -this.s/2, -this.s/2, this.s, this.s);
         if (this.isSelected) {
@@ -118,7 +153,8 @@ newHost = function () {
             this.color = load/bandwidth > 0.9 ? '#DF3A01' :
                          load/bandwidth > 0.7 ? '#DF7401' :
                          load/bandwidth > 0.5 ? '#DBA901' :
-                         load/bandwidth > 0.3 ? '#D7DF01' : '#A5DF00';
+                         load/bandwidth > 0.3 ? '#D7DF01' : 
+                         load/bandwidth > 0.0 ? '#A5DF00' : '#FFFFFF';
         }
     }
 

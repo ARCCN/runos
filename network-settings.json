@@ -5,7 +5,11 @@
         "learning-switch",
         "rest-listener",
         "host-manager",
-        "controller-manager"
+        "controller-manager",
+        "webui",
+        "switch-stats",
+        "stp",
+        "flow-manager"
     ],
 
     "rest-listener" : {
@@ -13,7 +17,8 @@
     },
 
     "controller": {
-         "nthreads": 4
+         "nthreads": 4,
+         "cbench": false
     },
 
     "loader": {
@@ -27,6 +32,11 @@
 
     "switch-manager": {
         "pin-to-thread": 1
+    },
+
+    "switch-stats": {
+	"poll-interval": 1,
+	"pin-to-thread": 1
     }
 }
 

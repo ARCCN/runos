@@ -1,0 +1,14 @@
+{
+    "webui": [
+        {  "method"   : "PUT",
+           "req"      : "coord",
+           "x_coord"  : "int",
+           "y_coord"  : "int"
+        },
+        {  "method"   : "PUT",
+           "req"      : "name",
+           "name"     : "string"
+        }
+    ]
+
+}

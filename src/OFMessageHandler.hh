@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <memory>
 #include "Flow.hh"
 
 /**
@@ -66,5 +67,5 @@ public:
     /**
     * @return Newly-created OFMessageHandler. Membership moves to the caller.
     */
-    virtual OFMessageHandler* makeOFMessageHandler() = 0;
+    virtual std::unique_ptr<OFMessageHandler> makeOFMessageHandler() = 0;
 };

@@ -26,7 +26,8 @@ public:
     void init(Loader* loader, const Config& config) override;
 
     std::string orderingName() const override { return "cbench"; }
-    OFMessageHandler* makeOFMessageHandler() override { return new Handler(); }
+    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override
+    { return std::unique_ptr<OFMessageHandler>(new Handler()); }
     // Hackish way to sure that it's the only processor registered
     bool isPrereq(const std::string& name) const override { return true; }
     bool isPostreq(const std::string& name) const override { return true; }

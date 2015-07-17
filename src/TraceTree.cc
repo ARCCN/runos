@@ -15,6 +15,7 @@
  */
 
 #include "TraceTree.hh"
+
 #include "Flow.hh"
 #include "Match.hh"
 #include "FluidDump.hh"
@@ -63,6 +64,7 @@ struct BuildFTContext {
     OFConnection *ofconn;
     std::vector<of13::OXMTLV*> match;
     uint16_t priority;
+    TraceTree* tree;
 
     uint64_t emitRule(Flow* flow, of13::FlowMod* fm);
     uint64_t emitBarrier();
@@ -75,9 +77,10 @@ unsigned TraceTree::buildFlowTable(OFConnection* ofconn)
     ctx.ofconn = ofconn;
     ctx.priority = 0;
     ctx.cookie = flowCookieBase;
+    ctx.tree = this;
 
     ctx.buildFlowTableStep(&root);
-    DCHECK_EQ(ctx.match.size(), 0);
+    DCHECK_EQ(ctx.match.size(), 0u);
 
     return (unsigned) (ctx.cookie - flowCookieBase);
 }
@@ -159,6 +162,7 @@ TraceTreeNode::Type TraceTreeNode::type()
 {
     if (m_type == Leaf && leaf.flow->outdated()) {
         assert(leaf.flow->state() != Flow::New);
+        leaf.flow->setDestroy();
         makeEmpty();
     }
     return m_type;
@@ -336,6 +340,40 @@ TraceTreeNode::LeafData* TraceTreeNode::find(Packet* pkt)
     default:
         return nullptr;
     }
+}
+
+Flow* TraceTree::find(uint64_t cookie)
+{
+    return root.find(cookie);
+}
+
+Flow* TraceTreeNode::find(uint64_t cookie)
+{
+    switch (type()) {
+    case Leaf:
+        if (leaf.fm->cookie() == cookie)
+            return leaf.flow;
+        else
+            return nullptr;
+    case Test: {
+        auto ret = test.negativeChild->find(cookie);
+        if (ret != nullptr)
+            return ret;
+
+        return test.positiveChild->find(cookie);
+    }
+    case Load: {
+        for (LoadData* l = &load; l != nullptr; l = l->next) {
+            auto ret = l->child->find(cookie);
+            if (ret != nullptr)
+                return ret;
+        }
+        return nullptr;
+    }
+    default:
+        return nullptr;
+    }
+    return nullptr;
 }
 
 TraceTreeNode::TraceTreeNode()

@@ -15,17 +15,19 @@
  */
 
 #include "LearningSwitch.hh"
+
 #include "Controller.hh"
 #include "Topology.hh"
 #include "Switch.hh"
 
-REGISTER_APPLICATION(LearningSwitch, {"controller", "switch-manager", "topology", ""})
+REGISTER_APPLICATION(LearningSwitch, {"controller", "switch-manager", "topology", "stp", ""})
 
 void LearningSwitch::init(Loader *loader, const Config &config)
 {
     Controller* ctrl = Controller::get(loader);
     topology = Topology::get(loader);
     switch_manager = SwitchManager::get(loader);
+    stp = STP::get(loader);
 
     ctrl->registerHandler(this);
 }
@@ -103,6 +105,8 @@ OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofco
             }
         }
     }
+    else
+        return Stop;
 
     // Forward
     if (out_port) {
@@ -121,7 +125,16 @@ OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofco
         }
 
         // Should be replaced with STP ports
-        flow->add_action(new of13::OutputAction(of13::OFPP_ALL, 128));
+        std::vector<uint32_t> ports = app->stp->getSTP(sw->id());
+        if (!ports.empty()) {
+            for (auto port : ports) {
+                if (port != in_port)
+                    flow->add_action(new of13::OutputAction(port, 128));
+            }
+        }
+        else {
+            flow->setFlags(Flow::Disposable);
+        }
         return Continue;
     }
 }

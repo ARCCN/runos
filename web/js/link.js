@@ -18,7 +18,7 @@
 
 /* globals newLink:true */
 newLink = function () {
-    var MaxBandwidth = 10e9;
+    var MaxBandwidth = 4e8;
     var MaxD = 5;
 
     return function (ex) {
@@ -26,9 +26,11 @@ newLink = function () {
         var link = {
             type      : 'link',
             id        : ex.id                     || 'DEFAULT',
-            bandwidth : ex.bandwidth              || 5e9,
+            bandwidth : ex.bandwidth              || 2e8,
             host1     : Net.getHostByID(ex.host1) || false,
             host2     : Net.getHostByID(ex.host2) || false,
+            host1_p   : ex.host1_p                || false,
+            host2_p   : ex.host2_p                || false,
             isSelected  : false,
             load        : false,
             draw            : draw,

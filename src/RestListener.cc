@@ -26,32 +26,18 @@ void Listeners::add_listener(std::string name, Rest *r)
 
 void Listeners::remove_listener(std::string name)
 {
-    //TODO: add mutex
     listeners.erase(name);
     LOG(INFO) << "REST listener (" <<  name << ") was removed";
 }
 
 std::string Listeners::formListenersJSON()
-{
-    JSONparser res;
-    for (auto& it : listeners) {
-        JSONparser l;
-        l.addValue("name", it.second->display_name);
-        l.addValue("page", it.second->webpage == "none" ? "#" : it.second->webpage);
-        res.addValue("applications", l);
-    }
-    return res.get();
-}
+{ return json11::Json(listeners).dump(); }
 
 std::unordered_map<std::string, Rest*> Listeners::getListeners()
-{
-    return listeners;
-}
+{ return listeners; }
 
 void RestListener::newListener(std::string name, Rest* rest)
-{
-    l->add_listener(name, rest);
-}
+{ l->add_listener(name, rest); }
 
 void RestListener::init(Loader *loader, const Config &config)
 {
@@ -154,43 +140,69 @@ bool RestListener::parsingGET(QString page, std::vector<std::string> *params)
     if (is_rest) {
         QStringList list = page.split("/");
         for (auto it : list.mid(2))
-            params->push_back(it.toStdString());
+            if (it != "")
+                params->push_back(it.toStdString());
     }
     return is_rest;
 }
 
+typedef json11::Json::array POST_Config;
+
 bool RestListener::parsingPOST(Req req, QString body, std::vector<std::string> *params)
 {
-    QVector<QString> body_params;
-    QString filepath(web_dir.c_str());
-    filepath.append(PROTO_FILE);
-    QFile file(filepath);
-    QString line;
+    std::stringstream buffer;
+    std::string parseMessage;
+    std::string app = (*params)[1];
+    std::string request = (*params)[2];
 
-    file.open(QIODevice::ReadOnly);
-    QTextStream stream(&file);
-    while (!stream.atEnd()) {
-        line = stream.readLine();
-        QStringList list = line.split(" ");
-        if (list[0] != req.method)
-            continue;
-        if (list[1] != req.page)
-            continue;
-        for (size_t i = 2; i < list.size(); i++)
-            body_params.push_back(list[i]);
-        break;
+    buffer << std::ifstream("proto.json").rdbuf();
+    POST_Config config =
+        json11::Json::parse(buffer.str(), parseMessage)[app].array_items();
+
+    if (!parseMessage.empty()) {
+        LOG(FATAL) << "Can't parse proto file : " << parseMessage;
     }
-    file.close();
 
-    JSONparser body_json;
-    body_json.fill(body.toStdString());
-    for (auto it : body_params) {
-        std::string s = body_json.getValue(it.toStdString());
-        if (s != "JSON::NON_VALUE")
-            params->push_back(s);
-        else {
-            LOG(WARNING) << "incorrect request: " << body_json.get();
+    std::unordered_map<std::string, std::string> post_params;
+    for (json11::Json json : config) {
+        if (!json.is_object())
+            continue;
+        json11::Json::object obj = json.object_items();
+        if (obj["method"].string_value() == req.method.toStdString() &&
+               obj["req"].string_value() == request) {
+
+            for (auto it : obj) {
+                if (it.first == "method" || it.first == "req")
+                    continue;
+                post_params[it.first] = it.second.string_value();
+            }
+        }
+    }
+
+    json11::Json::object body_json =
+            json11::Json::parse(body.toStdString(), parseMessage).object_items();
+
+    if (!parseMessage.empty()) {
+        LOG(WARNING) << "Can't parse input request : " << parseMessage;
+        return false;
+    }
+
+    for (auto it : post_params) {
+        auto found = body_json.find(it.first);
+        if (found == body_json.end()) {
+            LOG(WARNING) << "Can't find requered parameter : " << it.first;
             return false;
+        }
+        else {
+            if (it.second == "int") {
+                int param = found->second.int_value();
+                std::stringstream o;
+                o << param;
+                params->push_back(o.str());
+            }
+            else if (it.second == "string") {
+                params->push_back(found->second.string_value());
+            }
         }
     }
     return true;
@@ -305,12 +317,12 @@ void RestListener::timeoutHandler(QTcpSocket* sock, Req req, std::vector<std::st
         return;
     }
 
-    JSONparser res;
-    QString apps(params[1].c_str());
-    res.addKey("timeout");
+    std::map<std::string, json11::Json> result;
     auto listeners = l->getListeners();
-
+    QString apps(params[1].c_str());
     QStringList list = apps.split("&");
+    uint32_t last_event = atoi(params[2].c_str());
+    uint32_t last_apps_event = last_event;
     for (auto it : list) {
         std::string app = it.toStdString();
         if (listeners.count(app) == 0) {
@@ -321,10 +333,16 @@ void RestListener::timeoutHandler(QTcpSocket* sock, Req req, std::vector<std::st
             LOG(ERROR) << "Listener (" << app << ") does not use event model!";
             continue;
         }
-        uint32_t last_event = atoi(params[2].c_str());
-        res.addValue("timeout", listeners[app]->em->timeout(app, last_event));
+        uint32_t last_app_event;
+        json11::Json target;
+        std::tie(last_app_event, target) = listeners[app]->em->timeout(last_event);
+        if (last_apps_event < last_app_event)
+            last_apps_event = last_app_event;
+        result[app] = target;
     }
-    QString msg(res.get().c_str());
+    result["last_event"] = (int)last_apps_event;
+
+    QString msg(json11::Json(result).dump().c_str());
     sendMsg(sock, msg);
 }
 

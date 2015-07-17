@@ -115,13 +115,9 @@ std::string dump(of13::Match)
     return "";
 }
 
-std::string dump(of13::InstructionSet instructions)
+std::string dump(of13::InstructionSet)
 {
-    bool first = true;
-    std::string ret;
-
-
-    return ret;
+    return "";
 }
 
 std::string dump(of13::FlowMod *fm)

@@ -28,8 +28,8 @@ void SimpleLearningSwitch::init(Loader *loader, const Config &config)
 std::string SimpleLearningSwitch::orderingName() const
 { return "forwarding"; }
 
-OFMessageHandler* SimpleLearningSwitch::makeOFMessageHandler()
-{ return new Handler(); }
+std::unique_ptr<OFMessageHandler> SimpleLearningSwitch::makeOFMessageHandler()
+{ return std::unique_ptr<OFMessageHandler>(new Handler()); }
 
 OFMessageHandler::Action SimpleLearningSwitch::Handler::processMiss(OFConnection* ofconn, Flow* flow)
 {

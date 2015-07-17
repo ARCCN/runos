@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "Controller.hh"
+
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
@@ -21,10 +23,10 @@
 #include <mutex>
 #include <thread>
 #include <sstream>
+#include <memory>
 
 #include <fluid/OFServer.hh>
 
-#include "Controller.hh"
 #include "TraceTree.hh"
 #include "Flow.hh"
 #include "Packet.hh"
@@ -32,7 +34,7 @@
 
 REGISTER_APPLICATION(Controller, {""})
 
-typedef std::list<OFMessageHandler*> HandlerPipeline;
+typedef std::list< std::unique_ptr<OFMessageHandler> > HandlerPipeline;
 
 // TODO: Can we implement similar SwitchStorage?
 class SwitchScope {
@@ -42,6 +44,7 @@ public:
     HandlerPipeline pipeline;
 
     void processTableMiss(of13::PacketIn& pi);
+    void processFlowRemoved(Flow* flow, uint8_t reason);
 };
 
 class ControllerImpl : public OFServer {
@@ -50,6 +53,7 @@ class ControllerImpl : public OFServer {
 
 public:
     bool started;
+    bool cbench;
     Config config;
     std::vector<OFMessageHandlerFactory *> pipeline_factory;
     std::unordered_map<uint64_t, SwitchScope> switch_scope;
@@ -64,7 +68,7 @@ public:
             const int port,
             const int nthreads = 4,
             const bool secure = false,
-            const struct OFServerSettings ofsc = OFServerSettings())
+            const class OFServerSettings ofsc = OFServerSettings())
             : OFServer(address, port, nthreads, secure, ofsc),
               app(_app), started(false),
               min_session_xid(min_xid) // last_xid(min_xid)
@@ -75,7 +79,19 @@ public:
 
     void message_callback(OFConnection *ofconn, uint8_t type, void *data, size_t len) override
     {
+        if (cbench && type == of13::OFPT_PACKET_IN) {
+            OFMsg pi(static_cast<uint8_t*>(data));
+            of13::PacketOut po;
+            po.xid(pi.xid());
+            uint8_t* buffer;
+            buffer = po.pack();
+            ofconn->send(buffer, po.length());
+            OFMsg::free_buffer(buffer);
+            return;
+        }
+
         SwitchScope *ctx = reinterpret_cast<SwitchScope *>(ofconn->get_application_data());
+        Flow* flow;
 
         if (ctx == nullptr && type != of13::OFPT_FEATURES_REPLY) {
             LOG(ERROR) << "Switch send message before feature reply";
@@ -104,7 +120,10 @@ public:
                 emit app->portStatus(ctx->ofconn, msg.portStatus);
                 break;
             case of13::OFPT_FLOW_REMOVED:
-                // TODO
+                if (ctx == nullptr) break;
+                if (msg.flowRemoved.reason() == of13::OFPRR_DELETE) break;
+                flow = ctx->trace_tree.find(msg.flowRemoved.cookie());
+                ctx->processFlowRemoved(flow, msg.flowRemoved.reason());
                 break;
             default: {
                 uint32_t xid = msg.base()->xid();
@@ -224,7 +243,7 @@ public:
             auto& swctx = it->second;
             // Create pipeline
             for (auto &factory : pipeline_factory) {
-                swctx.pipeline.push_back(factory->makeOFMessageHandler());
+                swctx.pipeline.push_back(std::move(factory->makeOFMessageHandler()));
             }
             swctx.trace_tree.cleanFlowTable(ofconn);
         }
@@ -313,6 +332,7 @@ void SwitchScope::processTableMiss(of13::PacketIn& pi)
                 OFMsg::free_buffer(buffer);
             }
             fm->command(of13::OFPFC_ADD);
+            flow->setFlags(Flow::TrackFlowRemoval);
             flow->initFlowMod(fm);
 
             // Add new leaf to the trace tree
@@ -356,6 +376,16 @@ void SwitchScope::processTableMiss(of13::PacketIn& pi)
     }
 }
 
+void SwitchScope::processFlowRemoved(Flow *flow, uint8_t reason)
+{
+    if (flow) {
+        if (reason == of13::OFPRR_HARD_TIMEOUT)
+            flow->setDestroy();
+        if (reason == of13::OFPRR_IDLE_TIMEOUT)
+            flow->setShadow();
+    }
+}
+
 /* Application interface */
 Controller::Controller()
     : impl(nullptr)
@@ -390,6 +420,7 @@ void Controller::startUp(Loader*)
     impl->sortPipeline();
     impl->start(/* block: */ false);
     impl->started = true;
+    impl->cbench = config_get(impl->config, "cbench", false);
 
     emit sendInfo(config_get(impl->config, "address", "0.0.0.0").c_str(),
                   config_get(impl->config, "port", 6653),

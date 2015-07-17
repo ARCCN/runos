@@ -35,18 +35,19 @@ public:
     ~Switch();
 
     std::string idstr() const;
-    uint64_t id() const;
+    uint64_t id() const override;
     uint32_t nbuffers() const;
     uint8_t  ntables() const;
     uint32_t capabilites() const;
+    OFConnection* ofconn() const;
 
     of13::Port port(uint32_t port_no) const;
     std::vector<of13::Port> ports() const;
 
     void send(OFMsg* msg);
     void requestPortDescriptions();
-    JSONparser formJSON() override;
-    JSONparser formFloodlightJSON();
+    json11::Json to_json() const;
+    json11::Json to_floodlight_json() const;
 
 signals:
     void portUp(Switch* dp, of13::Port port);
