@@ -40,15 +40,15 @@ Net = function () {
         getPosition : getInfo,
         getLinkByPort : getLinkByPort,
     };
-    
+
     function getInfo (response) {
         if (!response.ID)
             return;
-            
+
         var obj = getHostByID(response.ID);
         obj.name = response.display_name;
 
-        if (response.x_coord < 0 || response.y_coord < 0) { 
+        if (response.x_coord < 0 || response.y_coord < 0) {
             var coords;
             if (obj.type === 'router')
                 coords = newPos();
@@ -65,7 +65,7 @@ Net = function () {
             obj.y = response.y_coord;
         }
     }
-    
+
     function newPos () {
         var res = new Object(),
             cx = Math.round(UI.centerX),
@@ -73,17 +73,17 @@ Net = function () {
             pi = 3.14,
             count = 0,
             rad = Math.min(UI.centerX/2, UI.centerY/2);
-            
+
         if (hosts.length == 0) {
             res.x = cx;
             res.y = cy;
             return res;
         }
-        
+
         for (var i = 0; i < hosts.length; i++)
             if (hosts[i].type === "router")
                 ++count;
-        
+
         for (var i = 0; i < count-1; i++) {
             if (!hosts[i].fixed_pos) {
                 hosts[i].x = Math.round(rad * Math.cos( 2*pi*i/count - pi/2 ) + cx);
@@ -92,9 +92,9 @@ Net = function () {
         }
         res.x = Math.round(rad * Math.cos (2*pi*(count-1)/count - pi/2) + cx);
         res.y = Math.round(rad * Math.sin (2*pi*(count-1)/count - pi/2) + cy);
-        return res;       
+        return res;
     }
-    
+
     function newDevPos (switch_id) {
         var res = new Object(),
             sw = getHostByID(switch_id),
@@ -104,42 +104,50 @@ Net = function () {
             pi = 3.14,
             angle = 0,
             rand = Math.floor(Math.random() * 8) * pi / 4;
-        
+
         angle = Math.atan( (sw.y - cy) / (sw.x - cx) );
 
         res.x = Math.round(rad * Math.cos( angle + rand ) + sw.x );
         res.y = Math.round(rad * Math.sin( angle + rand) + sw.y );
         return res;
     }
-    
+
     function appList (response) {
-        var html = '';
+        var ahtml = '', shtml = '';
+        var srv_elem = document.getElementsByName('srv')[0];
         var apps_elem = document.getElementsByName('apps')[0];
+        var body_class = document.title.toLowerCase();
         for (var app in response) {
             var page = (response[app].page == "none" ? "#" : response[app].page);
-            html += '<a href="' + page + '">' + response[app].name + '</a>';
+            var cur = (response[app].name.toLowerCase().indexOf(body_class) >= 0 || body_class.indexOf(response[app].name.toLowerCase()) >= 0 ? true : false);
+            if (response[app].type == "Application")
+				ahtml += '<a ' + (cur == true ? 'class = "current"' : '') + ' href="' + page + '">' + response[app].name + '</a>';
+			if (response[app].type == "Service")
+				shtml += '<a ' + (cur == true ? 'class = "current"' : '') + ' href="' + page + '">' + response[app].name + '</a>';
         }
-        apps_elem.innerHTML = html;
+        srv_elem.innerHTML = shtml;
+        apps_elem.innerHTML = ahtml;
     }
 
     function init () {
         Server.ajax('GET', '/timeout/switch-manager&topology&host-manager&flow/' + last_ev, setNet);
 
-        function setNet (response) {        
+        function setNet (response) {
             var _switches = [],
                 _hosts    = [],
                 _links    = [],
                 _flow     = [];
-            if (response["switch-manager"])
-                _switches = response["switch-manager"];
-            if (response["topology"])
-                _links = response["topology"];
-            if (response["host-manager"])
-                _hosts = response["host-manager"];
-            if (response["flow"])
-                _flow = response["flow"];
-            if (response["last_event"])
-              last_ev = response["last_event"]
+            var events = response["events"];
+            last_ev = response["last_event"]
+
+            if (events["switch-manager"])
+                _switches = events["switch-manager"];
+            if (events["topology"])
+                _links = events["topology"];
+            if (events["host-manager"])
+                _hosts = events["host-manager"];
+            if (events["flow"])
+                _flow = events["flow"];
 
             var i, len;
             for (i = 0, len = _switches.length; i < len; ++i) {
@@ -148,14 +156,14 @@ Net = function () {
                         id: _switches[i].obj_id,
                         name: _switches[i].obj_info.DPID,
                         icon: 'router',
-                    });    
-                    Server.ajax('GET', '/api/webui/webinfo/' + _switches[i].obj_id, getInfo);             
+                    });
+                    Server.ajax('GET', '/api/webui/webinfo/' + _switches[i].obj_id, getInfo);
                 }
                 else if (_switches[i].type == "Delete") {
                     var obj = getHostByID(_switches[i].obj_id);
                     for (var j = 0, llen = obj.links.length; j < llen; ++j) {
                         Net.del(obj.links[j]);
-                    }               
+                    }
                     Net.del(obj);
                 }
             }
@@ -182,7 +190,7 @@ Net = function () {
                         name: _hosts[i].obj_info.mac,
                         icon: 'aimac',
                     });
-                    Server.ajax('GET', '/api/webui/webinfo/' + _hosts[i].obj_id, getInfo); 
+                    Server.ajax('GET', '/api/webui/webinfo/' + _hosts[i].obj_id, getInfo);
                     newLink({
                         id: Math.random() * (2000 - 1000) + 1000,
                         host1: _hosts[i].obj_id,
@@ -207,13 +215,26 @@ Net = function () {
                     var eth_src = (_flow[i].obj_info.eth_src != "00:00:00:00:00:00" ? _flow[i].obj_info.eth_src : ''),
                         eth_dst = (_flow[i].obj_info.eth_dst != "ff:ff:ff:ff:ff:ff" ? _flow[i].obj_info.eth_dst : 'BROADCAST'),
                         out_port = (_flow[i].obj_info.out_port != -4 ? _flow[i].obj_info.out_port : 'ALL'),
-                        in_port = _flow[i].obj_info.in_port;
+                        in_port = _flow[i].obj_info.in_port,
+                        ip_src = _flow[i].obj_info.ip_src,
+                        ip_dst = _flow[i].obj_info.ip_dst;
+
+                    if (out_port.length == 0)
+						out_port = 'drop';
+                    else
+						out_port = 'output: ' + out_port;
+
+                    eth_dst = (eth_dst != "00:00:00:00:00:00" ? eth_dst : '');
+                    ip_src = (ip_src != "0.0.0.0" ? ip_src : '');
+                    ip_dst = (ip_dst != "0.0.0.0" ? ip_dst : '');
 
                     var rule = {id: _flow[i].obj_id,
                                 in_port: in_port,
                                 mac_src: eth_src,
                                 mac_dst: eth_dst,
-                                action: 'output: ' + out_port
+                                ip_src: ip_src,
+                                ip_dst: ip_dst,
+                                action: out_port
                                }
                     sw.routingRules.set(_flow[i].obj_id, rule);
 
@@ -222,7 +243,7 @@ Net = function () {
                     sw.routingRules.delete(_flow[i].obj_id);
                 }
             }
-            
+
         }
         setTimeout(init, 1000);
     }
@@ -287,7 +308,7 @@ Net = function () {
             }
         }
     }
-    
+
     function getLinkByPort(sw_id, port_no) {
         var sw = getHostByID(sw_id);
         if (sw && sw.type === 'router') {
@@ -336,11 +357,15 @@ Net = function () {
         }
         Server.ajax('POST', 'dummy', json);
     }
-    
+
     function clear() {
 		hosts.length = 0;
 		links.length = 0;
 		last_ev = 0;
+		if (UI.menu)
+			UI.menu.style.display = 'none';
+		if (UI.aux)
+			UI.aux.style.display = 'none';
 	}
-	
+
 }();

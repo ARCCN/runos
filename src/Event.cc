@@ -16,6 +16,10 @@
 
 #include "Event.hh"
 
+#include <map>
+#include <vector>
+#include "RestListener.hh"
+
 uint32_t EventIDs::last_event = 0;
 
 uint32_t EventIDs::getLastID()
@@ -28,26 +32,30 @@ struct EventImpl {
     time_t      ev_time;
     Event::Type type;
     AppObject*  obj;
+    uint32_t _hash;
+    Event* _brother;
+    std::string app;
 };
 
 struct EventManagerImpl {
-    std::vector<Event*> events;
+    std::list<Event*> events;
 };
 
-Event::Event()
-{
-    m = new EventImpl;
-    m->ev_time = time(NULL);
-    m->id = -1;
-}
-
-Event::Event(Type type, AppObject *obj)
+Event::Event(Type type, AppObject *obj, RestHandler* rest)
 {
     m = new EventImpl;
     m->ev_time = time(NULL);
     m->id = EventIDs::getLastID();
     m->type = type;
     m->obj = obj;
+    if (rest) {
+        m->_hash = rest->getHash();
+        m->app = rest->restName();
+    }
+
+    if (type == Add) {
+        m->_brother = nullptr;
+    }
 }
 
 Event::~Event()
@@ -63,7 +71,8 @@ json11::Json Event::to_json() const
         {"event_id", (int)id()},
         {"type", ev_type},
         {"obj_id", obj()->id_str()},
-        {"obj_info", json11::Json(obj())}
+        {"obj_info", json11::Json(obj())},
+        {"app", app()}
     };
 }
 
@@ -82,62 +91,101 @@ AppObject *Event::obj() const
 std::string Event::event() const
 { return json11::Json(m->obj).dump(); }
 
+uint32_t Event::hash() const
+{ return m->_hash; }
+
+Event* Event::brother() const
+{ return m->_brother; }
+
+std::string Event::app() const
+{ return m->app; }
+
 EventManager::EventManager()
 { m = new EventManagerImpl; }
 
 EventManager::~EventManager()
 { delete m; }
 
-std::vector<Event*> EventManager::events()
+std::list<Event *> EventManager::events()
 { return m->events; }
 
 void EventManager::addEvent(Event::Type type, AppObject* obj)
 {
     Event* ev = new Event(type, obj);
-    if (ev != NULL)
+    if (ev != nullptr)
         m->events.push_back(ev);
 }
 
 bool EventManager::checkOverlap(Event* test_ev, uint32_t last_ev)
 {
     if (test_ev->type() == Event::Add) {
-        for (auto it : events()) {
-            if (it->id() <= test_ev->id())
-                continue;
-            if (it->type() == Event::Delete && it->obj() == test_ev->obj())
-                return true;
-        }
-        return false;
+        if (test_ev->brother() != nullptr)
+            return true; //no need add
+        else
+            return false; //need add
     }
 
     else if (test_ev->type() == Event::Delete) {
-        for (auto it : events()) {
-            if (it->id() >= test_ev->id() || it->id() <= last_ev)
-                continue;
-            if (it->type() == Event::Add && it->obj() == test_ev->obj())
-                return true;
-        }
-        return false;
+        if (test_ev->brother()->id() <= last_ev)
+            return false; //need add
+        else
+            return true; //no need add
     }
     return false;
 }
 
 std::pair<uint32_t, json11::Json>
-EventManager::timeout(uint32_t last)
+EventManager::timeout(uint32_t hash_map, uint32_t last)
 {
+    std::map<std::string, std::vector<json11::Json> > result;
     std::pair<uint32_t, json11::Json> ret;
-    std::vector<Event*> suitable_ev;
     uint32_t last_event = 0;
     for (auto it : events()) {
-        if (it->id() > last) {
+        if ((it->hash() & hash_map) && (it->id() > last)) {
             if (!checkOverlap(it, last)) {
-                suitable_ev.push_back(it);
-                if (it->id() > last_event)
+                result[it->app()].push_back(it->to_json());
+                if (it->id() > last_event) {
                     last_event = it->id();
+                }
             }
         }
     }
+    if (last_event == 0) {
+        last_event = last;
+    }
     ret.first = last_event;
-    ret.second = json11::Json(suitable_ev);
+    ret.second = json11::Json(result);
     return ret;
+}
+
+void EventManager::addToEventList(Event::Type type, AppObject *obj, RestHandler* rest)
+{
+    if (rest->getHash() == 0) {
+        return;
+    }
+
+    Event* ev = new Event(type, obj, rest);
+    if (ev != nullptr) {
+        if (type == Event::Delete) {
+            setBrother(ev);
+        }
+        m->events.push_back(ev);
+    }
+}
+
+Event* EventManager::findBrother(Event* event)
+{
+    for (auto it = m->events.rbegin(); it != m->events.rend(); it++) {
+        if ((*it)->obj() == event->obj() && (*it)->type() == Event::Add) {
+            return *it;
+        }
+    }
+    return nullptr;
+}
+
+void EventManager::setBrother(Event *event)
+{
+    Event* ev = findBrother(event);
+    event->m->_brother = ev;
+    ev->m->_brother = event;
 }

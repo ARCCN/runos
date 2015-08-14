@@ -60,4 +60,6 @@ public:
      * Define the equality operator between objects
      */
     friend bool operator==(const AppObject& o1, const AppObject& o2);
+
+    static std::string uint32_t_ip_to_string(uint32_t ip);
 };

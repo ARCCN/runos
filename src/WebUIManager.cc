@@ -1,4 +1,24 @@
+/*
+ * Copyright 2015 Applied Research Center for Computer Networks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "WebUIManager.hh"
+
+#include "Switch.hh"
+#include "RestListener.hh"
+#include "HostManager.hh"
 
 REGISTER_APPLICATION(WebUIManager, {"switch-manager", "host-manager", "rest-listener", ""})
 
@@ -29,7 +49,8 @@ WebObject::WebObject(uint64_t _id, bool is_router)
     m->display_name = AppObject::uint64_to_string(_id);
 }
 
-WebObject::~WebObject() {
+WebObject::~WebObject()
+{
     delete m;
 }
 
@@ -70,26 +91,23 @@ void WebObject::display_name(std::string name)
 WebUIManager::WebUIManager()
 {
     m = new WebUIManagerImpl;
-    r = new WebUIManagerRest("Web UI Manager", "none");
-    r->m = this;
 }
 
 WebUIManager::~WebUIManager()
 {
     delete m;
-    delete r;
 }
 
 std::vector<WebObject*> WebUIManager::getObjects()
 { return m->objects; }
 
-WebObject* WebUIManager::id(uint64_t _id)
+WebObject* WebUIManager::getObject(uint64_t _id)
 {
     for (auto it : m->objects) {
         if (it->id() == _id)
             return it;
     }
-    return NULL;
+    return nullptr;
 }
 
 void WebUIManager::init(Loader *loader, const Config &config)
@@ -103,7 +121,12 @@ void WebUIManager::init(Loader *loader, const Config &config)
     QObject::connect(host_manager, &HostManager::hostDiscovered,
                      this, &WebUIManager::newHost);
 
-    RestListener::get(loader)->newListener("webui", r);
+    RestListener::get(loader)->registerRestHandler(this);
+    acceptPath(Method::GET, "webinfo/all");
+    acceptPath(Method::GET, "webinfo/[0-9]+");
+
+    acceptPath(Method::PUT, "coord/[0-9]+");
+    acceptPath(Method::PUT, "name/[0-9]+");
 }
 
 void WebUIManager::newSwitch(Switch *dp)
@@ -119,48 +142,58 @@ void WebUIManager::newHost(Host* dev)
     m->objects.push_back(obj);
 }
 
-std::string WebUIManagerRest::handle(std::vector<std::string> params)
+json11::Json WebUIManager::handleGET(std::vector<std::string> params, std::string body)
 {
-    if (params[0] == "GET" && params[2] == "webinfo") {
-        if (params[3] == "all") {
-            if (m->getObjects().size())
-                return json11::Json(m->getObjects()).dump();
-            else
-                return "{ \"error\": \"empty\" }";
+    if (params[1] == "all") {
+        if (getObjects().size())
+            return json11::Json(getObjects());
+        else
+            return "{ \"error\": \"empty\" }";
+    }
+    else {
+        uint64_t id = std::stoull(params[1]);
+        WebObject* obj = getObject(id);
+        if (obj) {
+            return json11::Json(obj);
         }
         else {
-            uint64_t id = std::stoull(params[3]);
-            WebObject* obj = m->id(id);
-            if (obj) {
-                return json11::Json(obj).dump();
-            }
-            else {
-                return "{ \"error\": \"Object not found\" }";
-            }
+            return "{ \"error\": \"Object not found\" }";
         }
     }
+}
 
-    if (params[0] == "PUT" && params[2] == "coord") {
-        if (params[3] == "all") {
+json11::Json WebUIManager::handlePUT(std::vector<std::string> params, std::string body)
+{
+    std::string parseMessage;
+    if (params[0] == "coord") {
+        uint64_t id = std::stoull(params[1]);
+        json11::Json::object coords = json11::Json::parse(body, parseMessage).object_items();
 
+        if (!parseMessage.empty()) {
+            LOG(WARNING) << "Can't parse input request : " << parseMessage;
+            return json11::Json("{}");
         }
-        else {
-            uint64_t id = std::stoull(params[3]);
-            int x = atoi(params[5].c_str());
-            int y = atoi(params[4].c_str());
-            WebObject* obj = m->id(id);
-            obj->pos(x, y);
-            return "{ \"webui\": \"OK\" }";
-        }
-    }
 
-    if (params[0] == "PUT" && params[2] == "name") {
-        uint64_t id = std::stoull(params[3]);
-        std::string new_name = params[4].c_str();
-        WebObject* obj = m->id(id);
-        obj->display_name(new_name);
+        int x = coords["x_coord"].number_value();
+        int y = coords["y_coord"].number_value();
+        WebObject* obj = getObject(id);
+        obj->pos(x, y);
         return "{ \"webui\": \"OK\" }";
     }
 
-    return "{ \"error\": \"error\" }";
+    if (params[0] == "name") {
+        uint64_t id = std::stoull(params[1]);
+        json11::Json::object jname = json11::Json::parse(body, parseMessage).object_items();
+
+        if (!parseMessage.empty()) {
+            LOG(WARNING) << "Can't parse input request : " << parseMessage;
+            return json11::Json("{}");
+        }
+
+        std::string new_name = jname["name"].string_value();
+        WebObject* obj = getObject(id);
+        obj->display_name(new_name);
+        return "{ \"webui\": \"OK\" }";
+    }
+    return "{}";
 }

@@ -23,114 +23,54 @@
 #include "Event.hh"
 #include "json11.hpp"
 
-/**
- * Implements the REST-interface for applications
- */
-class Rest : public QObject {
-    friend class RestListener;
-    friend class Listeners;
+#include "server_http.hpp"
+typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 
-    bool has_event_model;
-public:
+enum Method {
+    GET = 1,
+    PUT = 2,
+    POST = 4,
+    DELETE = 8
+};
 
-    /**
-     * Type of the application. Not used in this version
-     */
-    enum Type {
-        Application,
-        Service
-	};
+typedef std::pair<Method, std::string> RestReq;
 
-    /**
-     * Default constructor which define displayed name of application in GUI,
-     * link to webpage of application, and type of application
-     */
-    Rest(std::string name, std::string page, Type type): has_event_model(false), 
-                                                         app_type(type),
-                                                         em(NULL),
-                                                         display_name(name),
-                                                         webpage(page) 
-    {}
-
-    /**
-     * Method is used for handling REST-requests
-     * The input is the vector of input parameters
-     * params[0] is request type: GET, POST, PUT, DELETE, etc;
-     * params[1] is the name of application;
-     * params[2..k] are GET parameters in address bar;
-     * params[k..n] are POST parameters in request's body.
-     * The output is reply for request in JSON-string format.
-     */
-    virtual std::string handle(std::vector<std::string> params) = 0;
-
-    /**
-     * Method returns the number of objects in application
-     * For example, number of switches in Switch Manager apllication
-     */
-    virtual int count_objects() { return 0; }
-
-    /**
-     * Method returns true if application supports event model
-     */
-    bool hasEventModel() {
-        return has_event_model;
-    }
-
-    json11::Json to_json() const {
-        return json11::Json::object{
-            {"name", display_name},
-            {"page", webpage}
-        };
-    }
-
-protected:
-    /**
-     * List of applications with whom your application can communicate
-     */
-    std::unordered_map<std::string, Rest*> apps_list;
-
-    /**
-     * Application type
-     */
-    Type app_type;
-
-    /**
-     * Event class for your application. By default is NULL.
-     * You can create event object by makeEventApp() method.
-     */
+class RestHandler {
+    std::vector<RestReq> pathes;
+    uint32_t _hash;
     EventManager* em;
 
-    /**
-     * Displayed name of the application in Web GUI
-     */
-    std::string display_name;
-
-    /**
-     * Webpage of the application in Web GUI
-     */
-    std::string webpage;
-
-    /**
-     * Enable event model for your application.
-     * Now you can generate some events in your application,
-     * and users can ask you app ("/timeout/<your_app>/<last_event>") about new events
-     * Events must be comply with certain objects (see AppObject.hh)
-     */
-    void makeEventApp() {
-        em = new EventManager;
-        has_event_model = true;
+    void setHash(uint32_t hash) { _hash = hash; }
+    friend class RestListener;
+protected:
+    void acceptPath(Method method, std::string path) {
+        pathes.push_back(std::make_pair(method, path));
     }
-
-    /**
-     * Add new event occurred in your application
-     * Executing only if your application supprots event model
-     */
     void addEvent(Event::Type type, AppObject* obj) {
-        if (has_event_model)
-            em->addEvent(type, obj);
+        if (eventable() && em)
+            em->addToEventList(type, obj, this);
     }
-    void addApp(std::string name, Rest* app) {
-        if (app != NULL)
-            apps_list[name] = app;
-    }  
+
+public:
+    enum AppType {
+        Application = 0,
+        Service = 1,
+        None = 2
+    };
+
+    virtual std::string restName() = 0;
+
+    virtual bool eventable() = 0;
+
+    virtual json11::Json handleGET(std::vector<std::string> params, std::string body){return json11::Json::object{{restName(), "not allowed method: GET"}};}
+    virtual json11::Json handlePUT(std::vector<std::string> params, std::string body){return json11::Json::object{{restName(), "not allowed method: PUT"}};}
+    virtual json11::Json handlePOST(std::vector<std::string> params, std::string body){return json11::Json::object{{restName(), "not allowed method: POST"}};}
+    virtual json11::Json handleDELETE(std::vector<std::string> params, std::string body){return json11::Json::object{{restName(), "not allowed method: DELETE"}};}
+
+    std::vector<RestReq> getPathes() { return pathes; }
+    uint32_t getHash() { return _hash; }
+
+    virtual std::string displayedName() { return restName(); }
+    virtual std::string page() { return "none"; }
+    virtual AppType type() { return Application; }
 };

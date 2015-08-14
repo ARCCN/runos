@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include "AppObject.hh"
 #include "Common.hh"
 
@@ -30,6 +31,17 @@ std::string AppObject::uint64_to_string(uint64_t id)
     std::ostringstream ss;
     ss << FORMAT_STRID << id;
     return ss.str();
+}
+
+std::string AppObject::uint32_t_ip_to_string(uint32_t ip)
+{
+    char ret[20];
+    unsigned char octet[4]  = {0,0,0,0};
+    for (int i = 0; i < 4; i++) {
+        octet[i] = ( ip >> (i*8) ) & 0xFF;
+    }
+    sprintf(ret, "%d.%d.%d.%d", octet[0],octet[1],octet[2],octet[3]);
+    return std::string(ret);
 }
 
 time_t AppObject::connectedSince() const

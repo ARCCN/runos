@@ -16,11 +16,15 @@
 
 #include "HostManager.hh"
 
+#include "Controller.hh"
+#include "RestListener.hh"
+
 REGISTER_APPLICATION(HostManager, {"switch-manager", "rest-listener", ""})
 
 struct HostImpl {
     uint64_t id;
     std::string mac;
+    IPAddress ip;
     uint64_t switchID;
     uint32_t switchPort;
 };
@@ -30,10 +34,11 @@ struct HostManagerImpl {
     std::unordered_map<std::string, Host*> hosts;
 };
 
-Host::Host(std::string mac)
+Host::Host(std::string mac, IPAddress ip)
 {
     m = new HostImpl;
     m->mac = mac;
+    m->ip = ip;
     m->id = rand()%1000 + 1000;
 }
 
@@ -45,6 +50,9 @@ uint64_t Host::id() const
 
 std::string Host::mac() const
 { return m->mac; }
+
+std::string Host::ip() const
+{ return uint32_t_ip_to_string(m->ip.getIPv4()); }
 
 uint64_t Host::switchID() const
 { return m->switchID; }
@@ -86,12 +94,12 @@ void Host::switchID(uint64_t id)
 void Host::switchPort(uint32_t port)
 { m->switchPort = port; }
 
+void Host::ip(std::string ip)
+{ m->ip = IPAddress(ip); }
+
 HostManager::HostManager()
 {
     m = new HostManagerImpl;
-    r = new HostManagerRest("Host Manager", "none");
-    r->m = this;
-    r->makeEventApp();
 }
 
 HostManager::~HostManager()
@@ -105,8 +113,11 @@ void HostManager::init(Loader *loader, const Config &config)
 
     QObject::connect(m_switch_manager, &SwitchManager::switchDiscovered,
                      this, &HostManager::onSwitchDiscovered);
+    QObject::connect(m_switch_manager, &SwitchManager::switchDown,
+                     this, &HostManager::onSwitchDown);
 
-    RestListener::get(loader)->newListener("host-manager", r);
+    RestListener::get(loader)->registerRestHandler(this);
+    acceptPath(Method::GET, "hosts");
 }
 
 void HostManager::onSwitchDiscovered(Switch* dp)
@@ -114,9 +125,29 @@ void HostManager::onSwitchDiscovered(Switch* dp)
     QObject::connect(dp, &Switch::portUp, this, &HostManager::newPort);
 }
 
-Host* HostManager::addHost(std::string mac)
+void HostManager::onSwitchDown(Switch *dp)
 {
-    Host* dev = new Host(mac);
+    delHostForSwitch(dp);
+    for (of13::Port port : dp->ports()) {
+        auto pos = std::find(switch_macs.begin(), switch_macs.end(), port.hw_addr().to_string());
+        if (pos != switch_macs.end())
+            switch_macs.erase(pos);
+    }
+}
+
+void HostManager::addHost(Switch* sw, IPAddress ip, std::string mac, uint32_t port)
+{
+    std::lock_guard<std::mutex> lk(mutex);
+
+    Host* dev = createHost(mac, ip);
+    attachHost(mac, sw->id(), port);
+    addEvent(Event::Add, dev);
+    dev->connectedSince(time(NULL));
+}
+
+Host* HostManager::createHost(std::string mac, IPAddress ip)
+{
+    Host* dev = new Host(mac, ip);
     m->hosts[mac] = dev;
     emit hostDiscovered(dev);
     return dev;
@@ -144,8 +175,35 @@ void HostManager::attachHost(std::string mac, uint64_t id, uint32_t port)
     m->hosts[mac]->switchPort(port);
 }
 
+void HostManager::delHostForSwitch(Switch *dp)
+{
+    auto itr = m->hosts.begin();
+    while (itr != m->hosts.end()) {
+        if (itr->second->switchID() == dp->id()) {
+            addEvent(Event::Delete, itr->second);
+            m->hosts.erase(itr++);
+        }
+        else
+            ++itr;
+    }
+}
+
 Host* HostManager::getHost(std::string mac)
-{ return m->hosts[mac]; }
+{
+    if (m->hosts.count(mac) > 0)
+        return m->hosts[mac];
+    else
+        return nullptr;
+}
+
+Host* HostManager::getHost(IPAddress ip)
+{
+    for (auto it : m->hosts) {
+        if (it.second->ip() == AppObject::uint32_t_ip_to_string(ip.getIPv4()))
+            return it.second;
+    }
+    return nullptr;
+}
 
 void HostManager::newPort(Switch *dp, of13::Port port)
 {
@@ -154,30 +212,39 @@ void HostManager::newPort(Switch *dp, of13::Port port)
 
 OFMessageHandler::Action HostManager::Handler::processMiss(OFConnection* ofconn, Flow* flow)
 {
+    uint16_t eth_type = flow->pkt()->readEthType();
     EthAddress eth_src = flow->pkt()->readEthSrc();
-    std::string eth_mac = eth_src.to_string();
-    if (app->isSwitch(eth_mac))
+    std::string host_mac = eth_src.to_string();
+
+    IPAddress host_ip("0.0.0.0");
+    if (eth_type == 0x0800) {
+        host_ip = flow->pkt()->readIPv4Src();
+    }
+    else if (eth_type == 0x0806) {
+        host_ip = flow->pkt()->readARPSPA();
+    }
+
+    if (app->isSwitch(host_mac))
         return Continue;
 
     uint32_t in_port = flow->pkt()->readInPort();
     if (in_port > of13::OFPP_MAX)
         return Continue;
 
-    if (!app->findMac(eth_mac)) {
-        std::mutex mutex;
-
+    if (!app->findMac(host_mac)) {
         Switch* sw = app->m_switch_manager->getSwitch(ofconn);
+        app->addHost(sw, host_ip, host_mac, in_port);
 
-        mutex.lock();
-        Host* dev = app->addHost(eth_mac);
-        app->attachHost(eth_mac, sw->id(), in_port);
-
-        app->r->addEvent(Event::Add, dev);
-        dev->connectedSince(time(NULL));
-        mutex.unlock();
-
-        LOG(INFO) << "Host discovered. MAC: " << eth_src.to_string()
+        LOG(INFO) << "Host discovered. MAC: " << host_mac
+                  << ", IP: " << AppObject::uint32_t_ip_to_string(host_ip.getIPv4())
                   << ", Switch ID: " << sw->id() << ", port: " << in_port;
+    }
+    else {
+        Host* h = app->getHost(host_mac);
+        std::string s_ip = AppObject::uint32_t_ip_to_string(host_ip.getIPv4());
+        if (s_ip != "0.0.0.0") {
+            h->ip(s_ip);
+        }
     }
 
     return Continue;
@@ -193,25 +260,11 @@ std::unordered_map<std::string, Host*> HostManager::hosts()
     return m->hosts;
 }
 
-std::string HostManagerRest::handle(std::vector<std::string> params)
+json11::Json HostManager::handleGET(std::vector<std::string> params, std::string body)
 {
-    if (params[0] != "GET")
-        return "{ \"error\": \"error\" }";
-    if (params[2] == "hosts") {
-        return json11::Json(m->hosts()).dump();
-    }
-    if (params[2] == "f_hosts") {
-        std::vector<json11::Json> res;
-        for (auto it : m->hosts()) {
-            res.push_back(it.second->formFloodlightJSON());
-        }
-        return json11::Json(res).dump();
+    if (params[0] == "hosts") {
+        return json11::Json(hosts()).dump();
     }
 
     return "{}";
-}
-
-int HostManagerRest::count_objects()
-{
-    return m->hosts().size();
 }

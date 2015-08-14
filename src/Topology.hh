@@ -30,27 +30,20 @@
 
 typedef std::vector< switch_and_port > data_link_route;
 
-/**
- * REST interface for Topology
- */
-class TopologyRest : public Rest {
-    friend class Topology;
-    std::vector<class Link*> topo;
-public:
-    TopologyRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
-    std::string handle(std::vector<std::string> params) override;
-    int count_objects() override;
-    ~TopologyRest();
-};
-
-class Topology : public Application {
+class Topology : public Application, RestHandler {
     Q_OBJECT
     SIMPLE_APPLICATION(Topology, "topology")
 public:
     Topology();
     void init(Loader* provider, const Config& config) override;
-    Rest* rest() {return dynamic_cast<Rest*>(r); }
     ~Topology();
+
+    std::string restName() override {return "topology";}
+    bool eventable() override {return true;}
+    std::string displayedName() { return "Topology"; }
+    std::string page() { return "topology.html"; }
+    AppType type() override { return AppType::Application; }
+    json11::Json handleGET(std::vector<std::string> params, std::string body) override;
 
     data_link_route computeRoute(uint64_t from, uint64_t to);
 
@@ -60,5 +53,7 @@ protected slots:
 
 private:
     struct TopologyImpl* m;
-    TopologyRest* r;
+    std::vector<class Link*> topo;
+
+    Link* getLink(switch_and_port from, switch_and_port to);
 };

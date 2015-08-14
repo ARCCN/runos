@@ -161,6 +161,7 @@ public:
     FlowState state() const;
     FlowFlags flags() const;
     Trace& trace();
+    void toTrace(TraceEntry::Type type, of13::OXMTLV* tlv);
     ActionList& get_action();
     //@}
 
@@ -170,6 +171,7 @@ signals:
 protected:
     friend class SwitchScope;
     friend class TraceTreeNode;
+    friend class FlowManager;
 
     Flow(Packet* pkt, QObject* parent = 0);
     ~Flow();

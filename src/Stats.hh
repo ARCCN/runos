@@ -1,16 +1,34 @@
+/*
+ * Copyright 2015 Applied Research Center for Computer Networks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #pragma once
 
 #include <QTimer>
 #include <unordered_map>
+#include <vector>
+
+#include <string>
 
 #include "Common.hh"
 #include "Switch.hh"
 #include "Application.hh"
-#include "Controller.hh"
 #include "Loader.hh"
 #include "Rest.hh"
-#include "RestListener.hh"
 #include "AppObject.hh"
+#include "json11.hpp"
 
 struct port_packets_bytes : public AppObject {
     uint32_t port_no;
@@ -48,25 +66,20 @@ public:
     friend class SwitchStatsRest;
 };
 
-class SwitchStatsRest : public Rest {
-    Q_OBJECT
-    class SwitchStats* app;
-public:
-    SwitchStatsRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
-    std::string handle(std::vector<std::string> params) override;
-
-    friend class SwitchStats;
-};
-
 /**
 * An application which gathers port statistics from all known switches every n seconds
 */
-class SwitchStats: public Application {
+class SwitchStats: public Application, RestHandler {
     Q_OBJECT
     SIMPLE_APPLICATION(SwitchStats, "switch-stats")
 public:
     void init(Loader* loader, const Config& config) override;
     void startUp(Loader* provider) override;
+
+    std::string restName() override {return "stats";}
+    bool eventable() override {return false;}
+    AppType type() override { return AppType::Service; }
+    json11::Json handleGET(std::vector<std::string> params, std::string body) override;
 
 public slots:
     /**
@@ -85,8 +98,5 @@ private:
     // port stats for each switch
     std::unordered_map<uint64_t, SwitchPortStats> switch_stats;
     OFTransaction* pdescr;
-    SwitchStatsRest* r;
-
-    friend class SwitchStatsRest;
 };
 

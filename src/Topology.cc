@@ -46,10 +46,21 @@ public:
     json11::Json to_json() const;
     json11::Json to_floodlight_json() const;
     uint64_t id() const;
+
+    friend class Topology;
 };
 
 uint64_t Link::id() const {
     return obj_id;
+}
+
+Link* Topology::getLink(switch_and_port from, switch_and_port to)
+{
+    for (Link* it : topo) {
+        if ((it->source == from && it->target == to) || (it->source == to && it->target == from))
+            return it;
+    }
+    return nullptr;
 }
 
 json11::Json Link::to_json() const {
@@ -110,20 +121,18 @@ void Topology::init(Loader *loader, const Config &config)
     QObject::connect(ld, SIGNAL(linkBroken(switch_and_port, switch_and_port)),
                      this, SLOT(linkBroken(switch_and_port, switch_and_port)));
 
-    RestListener::get(loader)->newListener("topology", r);
+    RestListener::get(loader)->registerRestHandler(this);
+    acceptPath(Method::GET, "links");
 }
 
 Topology::Topology()
 {
     m = new TopologyImpl;
-    r = new TopologyRest("Topology", "topology.html");
-    r->makeEventApp();
 }
 
 Topology::~Topology()
 {
     delete m;
-    delete r;
 }
 
 void Topology::linkDiscovered(switch_and_port from, switch_and_port to)
@@ -141,8 +150,8 @@ void Topology::linkDiscovered(switch_and_port from, switch_and_port to)
     add_edge(u, v, link_property{from, to, 1}, m->graph);
 
     Link* link = new Link(from, to, 5, rand()%1000 + 2000);
-    r->topo.push_back(link);
-    r->addEvent(Event::Add, link);
+    topo.push_back(link);
+    addEvent(Event::Add, link);
 }
 
 void Topology::linkBroken(switch_and_port from, switch_and_port to)
@@ -150,8 +159,9 @@ void Topology::linkBroken(switch_and_port from, switch_and_port to)
     QWriteLocker locker(&m->graph_mutex);
     remove_edge(m->vertex(from.dpid), m->vertex(to.dpid), m->graph);
 
-    //TODO: remove from r->topo
-    //TODO: create Event::Delete event
+    Link* link = getLink(from, to);
+    addEvent(Event::Delete, link);
+    topo.erase(std::remove(topo.begin(), topo.end(), link), topo.end());
 }
 
 data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
@@ -162,6 +172,10 @@ data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
     QReadLocker locker(&m->graph_mutex);
     auto& graph = m->graph;
 
+    data_link_route ret;
+    if (num_vertices(graph) == 0)
+        return ret;
+
     std::vector<vertex_descriptor> p(num_vertices(graph), TopologyGraph::null_vertex());
 
     dijkstra_shortest_paths_no_color_map(graph, m->vertex(to_dpid),
@@ -169,13 +183,16 @@ data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
         .predecessor_map( make_iterator_property_map(p.begin(), boost::get(vertex_index, graph)) )
     );
 
-    data_link_route ret;
     // TODO: compute complete route
 
     vertex_descriptor v = m->vertex(from_dpid);
+    if (p.size() <= v)
+        return ret;
     vertex_descriptor u = p.at(v);
 
     if (u != TopologyGraph::null_vertex()) {
+        if (u == v)
+            return ret;
         DVLOG(10) << "Getting properties of edge (" << v << ", " << u << ")";
         link_property link = graph[edge(v, u, graph).first];
 
@@ -192,35 +209,10 @@ data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
     return ret;
 }
 
-std::string TopologyRest::handle(std::vector<std::string> params)
+json11::Json Topology::handleGET(std::vector<std::string> params, std::string body)
 {
-    if (params[0] == "GET") {
-        if (params[2] == "links") {
-            return json11::Json(topo).dump();
-        }
-        if (params[2] == "f_links") {
-            std::vector<json11::Json> res;
-            for (auto it = topo.begin(); it != topo.end(); it++)
-                res.push_back((*it)->to_floodlight_json());
-            return json11::Json(res).dump();
-        }
-        if (params[2] == "external_links") {
-            return "[]";
-        }
-    }
-    
+    if (params[0] == "links")
+        return json11::Json(topo).dump();
+
     return "{}";
-}
-
-int TopologyRest::count_objects()
-{
-    return topo.size();
-}
-
-TopologyRest::~TopologyRest()
-{
-    for (auto it = topo.begin(); it != topo.end(); it++) {
-        //TODO: check if all element are deleted
-        delete *it;
-    }
 }

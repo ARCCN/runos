@@ -8,7 +8,7 @@ This components should be installed in the system:
 * Utilities: cmake, autoconf, libtool, pkg-config
 * libfluid dependencies: libevent openssl
 * libtins dependencies: openssl libpcap
-* Libraries: QtCore 5, google-glog, boost::graph, uglifyjs
+* Libraries: QtCore 5, google-glog, boost::graph, boost::system, boost::thread, boost::coroutine, boost::context, uglifyjs
 * UglifyJS dependencies: npm, nodejs
 
 You can use this line on Ubuntu 14.04 to install all required packages:
@@ -16,7 +16,9 @@ You can use this line on Ubuntu 14.04 to install all required packages:
 ```
 $ sudo apt-get install build-essential cmake autoconf libtool \
     pkg-config libgoogle-glog-dev libpcap-dev libevent-dev \ 
-    libssl-dev qtbase5-dev libboost-graph-dev libgoogle-perftools-dev curl \
+    libssl-dev qtbase5-dev libboost-graph-dev libboost-system-dev \
+    libboost-thread-dev libboost-coroutine-dev libboost-context-dev \
+    libgoogle-perftools-dev curl \
 ```
 
 You need to install the latest JavaScript packages:
@@ -33,6 +35,15 @@ $ sudo apt-get install nodejs
 $ sudo npm install uglify-js -g
 ```
 
+To build project you must use g++-4.9 compiler (or above) or similar another compiler with support std::regex.  
+We recommend to install g++-4.9 by this way:
+
+```
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install g++-4.9 
+```
+
 # Building
 
 ```
@@ -41,7 +52,9 @@ $ third_party/bootstrap.sh
 
 # Create out of source build directory
 $ mkdir -p build; cd build
-# Configure
+# Configure (if you use g++)
+$ CXX=g++-4.9 cmake -DCMAKE_BUILD_TYPE=Release ..
+# OR configure (otherwise)
 $ cmake -DCMAKE_BUILD_TYPE=Release ..
 
 # Build third-party libraries
@@ -236,66 +249,73 @@ Now compile RuNOS and test that all packets from ``00:11:22:33:44:55`` had been 
 ## List of available REST services
 
 The format of the RunOS REST requests:
-`<HTTP-method> /api/<app_name>/<list_of_params>`
-   `<HTTP-method>` is GET, POST, DELETE of PUT
-   `<app_name>` is calling name of the application
-   `<list_of_params>` is list of the parameters separated by a slash
-   In POST and PUT request you can pass parameters in the body of the request using JSON format. 
 
-Current version of RunOS has 4 REST services:
+    <HTTP-method> /api/<app_name>/<list_of_params>
+    
+* `<HTTP-method>` is GET, POST, DELETE of PUT
+* `<app_name>` is calling name of the application
+* `<list_of_params>` is list of the parameters separated by a slash
+   
+In POST and PUT request you can pass parameters in the body of the request using JSON format. 
+
+Current version of RunOS has 6 REST services:
 * switch-manager
 * topology
-* device-manager
-* controller-manager
+* host-manager
+* flow
+* static-flow-pusher
+* stats
 
 ### 'Switch Manager'
 
-* `GET /api/switch-manager/switches/all` 	(RunOS version)
-* `GET /wm/core/controller/switches/json` 	(Floodlight version)
+    GET /api/switch-manager/switches/all 	(RunOS version)
+    GET /wm/core/controller/switches/json 	(Floodlight version)
 Return the list of connected switches
 
 ### 'Topology'
 
-* `GET /api/topology/links` 			(RunOS version)
-* `GET /wm/topology/links/json` 		(Floodlight version)
+    GET /api/topology/links			    (RunOS version)
+    GET /wm/topology/links/json 		(Floodlight version)
 Return the list of all the inter-switch links
 
-* `GET /wm/topology/external-links/json` 	(Floodlight)
+    GET /wm/topology/external-links/json 	(Floodlight)
 Return external links
 
 ### 'Host Manager'
 
-* `GET /api/host-manager/hosts` 		(RunOS)
-* `GET /wm/device/`				(Floodlight)
+    GET /api/host-manager/hosts		(RunOS)
+    GET /wm/device/			        (Floodlight)
 List of all end hosts tracked by the controller
 
-### 'Controller App'
+### 'Flow Manager'
 
-* `GET /wm/core/controller/summary/json`	(Floodlight)
-Controller summary (# of Switches, # of Links, etc)
+    GET /api/flow/<switch_id>
+    DELETE /api/flow/<switch_id>/<flow_id>
+List flow entries in the switch and remove some flow entry
 
-* `GET /wm/core/memory/json`			(Floodlight)
-Current controller memory usage
+### 'Static Flow Pusher'
 
-* `GET /wm/core/health/json`			(Floodlight)
-Status/Health of REST API
+    POST /api/static-flow-pusher/newflow/<switch_id>
+    body of request: JSON description of new flow
+Create new flow entry in the some switch
 
-* `GET /wm/core/system/uptime/json`		(Floodlight)
-Controller uptime
+### 'Stats'
 
-* `GET /api/controller-manager/info`		(RunOS)
-Return the main controller's info: address, port, count of threads, secure mode
+    GET /api/stats/port_info/<switch_id>/all
+    GET /api/stats/port_info/<switch_id>/<port_id>
+Get switch port statistics
 
 ### Other
 
-* `GET /apps`
+    GET /apps
 List of available applications with REST API.
 
 Also you can get events in the applications that subscribed to event model.
 In this case you should specify list of required applications and your last registered number of events.
-* `GET /timeout/<app_list>/<last_event>`
-  `<app_list>` is `app_1&app_2&...&app_n`
-  `<last_event>` is unsigned integer value
+
+    GET /timeout/<app_list>/<last_event>
+* `<app_list>` is `app_1&app_2&...&app_n`
+* `<last_event>` is `unsigned integer` value
 
 
 ## Examples
@@ -305,59 +325,87 @@ You can install this component by `sudo apt-get install curl` command in Ubuntu.
 
 In mininet topology `--topo tree,2`, for example:
 
-Request: `$ curl $CONTROLLER_IP:$LISTEN_PORT/wm/topology/links/json`
-Reply: `[{ "src-switch": "00:00:00:00:00:00:00:01", "src-port": 2, "dst-switch": "00:00:00:00:00:00:00:03", "dst-port": 3, "type": "internal", "direction": "bidirectional" }, { "src-switch": "00:00:00:00:00:00:00:01", "src-port": 1, "dst-switch": "00:00:00:00:00:00:00:02", "dst-port": 3, "type": "internal", "direction": "bidirectional" }]`
+Request: `$ curl $CONTROLLER_IP:$LISTEN_PORT/api/switch-manager/switches/all`
+Reply: `[{"DPID": "0000000000000001", "ID": "0000000000000001"}, {"DPID": "0000000000000002", "ID": "0000000000000002"}, {"DPID": "0000000000000003", "ID": "0000000000000003"}]`
 
 ## Adding REST for your RunOS app
 
 To make REST for your application `class MyApp`:
 
-* create you REST class for your application:
+* add REST for your application:
 
-        #include "rest.h"
-        #include "appobject.h"
+        #include "Rest.hh"
+        #include "AppObject.hh"
         #include <string>
-        class MyAppRest : public Rest {
-            MyAppRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
-            std::string handle(std::vector<std::string> params) override;
+        class MyApp : public Application, RestHandler {
+            std::string restName() override { return "my-app"; }
+            bool eventable() override { return false; }
+            std::string displayedName() override { return "My beautiful application"; } // or skip this
+            std::string page() override { return "my_page.html"; } // if your application has webpage
+
+            json11::Json handleGET(std::vector<std::string> params, std::string body) override;
+            json11::Json handlePOST(std::vector<std::string> params, std::string body) override;
+            // also handlePUT and handleDELETE
         }
 
-* add your REST to your application:
+* in `init()` function in `class MyApp` register Rest handler:
 
-        class MyApp {
-        private:
-            MyAppRest* rest;
-        }
+        RestListener::get(loader)->registerRestHandler(this);
 
-* in constructor or `init()` function in `class MyApp` create instance of `MyAppRest`:
+* then, you should set the handled pathes and methods in MyApp::init:
 
-        rest = new MyAppRest("My App Name", "myapp_webui.html");
+    // handle GET request with path /api/my-app/switches/<number>
+    acceptPath(Method::GET, "switches/[0-9]+");
 
+    // handle POST request with path /api/my-app/mac/<string>
+    acceptPath(Method::POST, "[A-Fa-f0-9:-]");
 
-* in `startUp()` function emit conroller's method `newListener(std::string, Rest*)` to notify a new listener:
-
-        # 'myapp' is a calling name for your application
-        # rest is a instance of MyAppRest
-        emit ctrl->newListener('myapp', rest);
-
-* method `MyApp::handle` proccesses input REST requests.
+* method `MyApp::handleGET` proccesses input GET-HTTP requests.
   This method gets the list of parameters and returns reply in JSON format.
 
 * each REST application may have own webpage, i.e. WebUI for application
-  To connect REST application to webpage you must specify this page in Rest constructor:
+  To connect REST application to webpage you must specify this page in `page()` method:
 
-        MyAppRest* rest = new MyAppRest("Displayed application's name", "myapp_webui.html");
+        std::string page() override { return "my_page.html"; }
 
-  File `"myapp_webui.html"` must be located in `/web/deploy/` directory.
+  File `"my_page.html"` must be located in `web/html` directory.
   If your application has not WebUI, write `"none"` instead webpage.
 
-* if your application supports event model, you can enable it by the command:
+* if your application supports event model, you can enable it by setting `true` in `eventable()` method:
 
-        rest->makeEventApp();
+        bool eventable() override { return true; }
 
 In current version events can signal about appearance or disappearance some objects:
 
     # some_object is object inherited class AppObject
     addEvent(Event::Add, some_object);
-or
+    # or
     addEvent(Event::Delete, some_object);
+
+## Static Flow Pusher
+
+You can use static flow pusher to set rules proactively.  
+At first, you can write required rules in `network-settings.json` file.  
+For example:
+
+    "static-flow-pusher": {
+      "flows": [
+        {
+        "dpid": "all",
+        "flows": [
+            {
+              "priority": 0,
+              "in_port": 15,
+              "ip_src": "3.3.3.3",
+              "out_port" : 22
+            }
+         ]
+         }
+      ]
+    }
+
+Also, you can add other match fields: `in_port`, `eth_src`, `eth_dst`, `ip_src`, `ip_dst`, `out_port`. To set idle and hard timeout use `idle` and `hard` strings. To set `OFPP_TO_CONTROLLER` action, write in `out_port` string value `to-controller`.
+
+Secondly, to set flows proactively, you should add to your application StaticFlowPusher application, create FlowDesc object, fill it with your match field and call `&StaticFlowPusher::sendToSwitch` method.
+
+And thirdly, use REST POST requests of StaticFlowPusher to set new flow from REST API.

@@ -25,7 +25,6 @@
 #include "OFMessageHandler.hh"
 #include "ILinkDiscovery.hh"
 #include "FluidUtils.hh"
-#include "STP.hh"
 
 class LearningSwitch : public Application, OFMessageHandlerFactory {
 SIMPLE_APPLICATION(LearningSwitch, "learning-switch")

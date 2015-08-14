@@ -48,6 +48,7 @@ bool TraceTree::isTableMiss(of13::PacketIn& pi)
 void TraceTree::cleanFlowTable(OFConnection* ofconn)
 {
     of13::FlowMod fm;
+    fm.table_id(1);
     fm.cookie(flowCookieBase);
     fm.cookie_mask(flowCookieMask);
     fm.command(of13::OFPFC_DELETE);
@@ -75,7 +76,7 @@ unsigned TraceTree::buildFlowTable(OFConnection* ofconn)
 {
     BuildFTContext ctx;
     ctx.ofconn = ofconn;
-    ctx.priority = 0;
+    ctx.priority = 1;
     ctx.cookie = flowCookieBase;
     ctx.tree = this;
 
@@ -87,6 +88,7 @@ unsigned TraceTree::buildFlowTable(OFConnection* ofconn)
 
 uint64_t BuildFTContext::emitRule(Flow* flow, of13::FlowMod* fm)
 {
+    fm->table_id(1);
     fm->cookie(++cookie);
     fm->priority(priority);
 
@@ -111,8 +113,10 @@ uint64_t BuildFTContext::emitBarrier()
         m.add_oxm_field(tlv->clone());
     fm.match(m);
 
+    fm.table_id(1);
     fm.command(of13::OFPFC_ADD);
     fm.priority(priority);
+    fm.buffer_id(OFP_NO_BUFFER);
     fm.cookie(flowCookieBase);
     fm.instructions(toController);
 
@@ -182,7 +186,11 @@ void TraceTreeNode::makeEmpty()
         delete load.value;
         for (LoadData *l = load.next, *p = nullptr;
              l != nullptr;
-             l = l->next, delete p->value, delete p, p = l);
+             l = l->next) {
+            p = l;
+            delete p->value;
+            delete p;
+        }
         break;
     case Leaf:
         leaf.flow->deleteLater();
@@ -281,6 +289,11 @@ void TraceTree::augment(Flow* flow, of13::FlowMod* fm_base)
 std::ostream& TraceTree::dump(std::ostream& out)
 {
     return root.dump(out, 0);
+}
+
+void TraceTree::clear()
+{
+    root.~TraceTreeNode();
 }
 
 std::ostream& TraceTreeNode::dump(std::ostream& out, size_t level)

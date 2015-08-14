@@ -87,6 +87,7 @@ public:
             buffer = po.pack();
             ofconn->send(buffer, po.length());
             OFMsg::free_buffer(buffer);
+            free_data(data);
             return;
         }
 
@@ -181,6 +182,7 @@ public:
                 ofconn->set_application_data(nullptr);
                 emit app->switchDown(ctx->ofconn);
                 ctx->ofconn = nullptr;
+                ctx->trace_tree.clear();
             }
         }
 
@@ -190,6 +192,7 @@ public:
                 ofconn->set_application_data(nullptr);
                 emit app->switchDown(ctx->ofconn);
                 ctx->ofconn = nullptr;
+                ctx->trace_tree.clear();
             }
         }
     }
@@ -291,7 +294,7 @@ void SwitchScope::processTableMiss(of13::PacketIn& pi)
             of13::PacketOut po;
             po.xid(pi.xid());
             po.buffer_id(pi.buffer_id());
-            if (pi.buffer_id() == 0)
+            if (pi.buffer_id() == OFP_NO_BUFFER)
                 po.data(pi.data(), pi.data_len());
             flow->initPacketOut(&po);
 
@@ -320,10 +323,10 @@ void SwitchScope::processTableMiss(of13::PacketIn& pi)
             of13::FlowMod* fm = new of13::FlowMod();
             fm->xid(pi.xid());
             fm->buffer_id(pi.buffer_id());
-            if (pi.buffer_id() == 0) {
+            if (pi.buffer_id() == OFP_NO_BUFFER) {
                 of13::PacketOut po;
                 po.xid(pi.xid());
-                po.buffer_id(0);
+                po.buffer_id(OFP_NO_BUFFER);
                 po.data(pi.data(), pi.data_len());
                 flow->initPacketOut(&po);
 
@@ -421,11 +424,6 @@ void Controller::startUp(Loader*)
     impl->start(/* block: */ false);
     impl->started = true;
     impl->cbench = config_get(impl->config, "cbench", false);
-
-    emit sendInfo(config_get(impl->config, "address", "0.0.0.0").c_str(),
-                  config_get(impl->config, "port", 6653),
-                  config_get(impl->config, "nthreads", 4),
-                  config_get(impl->config, "secure", false));
 }
 
 void Controller::registerHandler(OFMessageHandlerFactory *factory)
@@ -458,4 +456,9 @@ OFTransaction* Controller::registerStaticTransaction(Application *caller)
     });
 
     return ret;
+}
+
+TraceTree* Controller::getTraceTree(uint64_t dpid)
+{
+    return &impl->switch_scope[dpid].trace_tree;
 }

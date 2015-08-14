@@ -21,6 +21,8 @@ set(SOURCES
     CBench.cc
     Stats.cc
     STP.cc
+    ArpHandler.cc
+    StaticFlowPusher.cc
     # Loader
     Main.cc
     # REST
@@ -28,7 +30,6 @@ set(SOURCES
     Event.cc
     AppObject.cc
     HostManager.cc
-    ControllerApp.cc
     WebUIManager.cc
     FlowManager.cc
     # Json
@@ -37,6 +38,7 @@ set(SOURCES
 
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR} # for Qt-generated moc files
+    ${CMAKE_SOURCE_DIR}/third_party/webserver
 )
 
 add_executable(runos ${SOURCES}) 
@@ -45,11 +47,9 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 target_link_libraries(runos
     tcmalloc
     Qt5::Core
-    Qt5::Network
     tins
     fluid_base
     libfluid_msg.a
     ${GLOG_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${QT_QTNETWORK_LIBRARY}
 )

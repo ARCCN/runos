@@ -12,7 +12,7 @@ set(CMAKE_AUTOMOC ON)
 # Locally installed libraries
 find_package(Qt5Core)
 find_package(Qt5Network)
-find_package(Boost REQUIRED COMPONENTS graph)
+find_package(Boost REQUIRED COMPONENTS graph system thread coroutine context)
 find_package(PkgConfig)
 pkg_check_modules(GLOG REQUIRED libglog)
 

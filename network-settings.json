@@ -5,10 +5,11 @@
         "learning-switch",
         "rest-listener",
         "host-manager",
-        "controller-manager",
         "webui",
         "switch-stats",
         "stp",
+        "static-flow-pusher",
+        "arp-handler",
         "flow-manager"
     ],
 

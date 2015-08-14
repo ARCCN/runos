@@ -1,15 +1,25 @@
+RUNOS 0.5
+=========
+
+This release introduces some features for manual management of flows: now you can add your own rules to the switch in your application or via WebUI, also you can remove flow entries from switch via WebUI. New application ARP Handler allow to avoid excessive broadcast packets in the network.
+
+   - Arp Handler - handling ARP requests and sending ARP replies to host, if application knows where target host is.
+   - Static Flow Pusher (web ui, rest api) - sending user defined rules to the switches.
+   - Flow Manager has new features for removing flow entries via WebUI.
+   - Rewrited RestListener simplifies writing REST for your applications! Read description in README file.
+
 RUNOS 0.4
 =========
 
 This release introduces enhanced web interface: link load status (link blinking on load percentage (green, yellow, red) and ability to see flow table entries for switches.
-   
+
    - Statistic service (web ui) - gathering stats from devices and send to the web interface.
    - Flow manager (web ui, rest api) - caching flows in the controller.
    - STP service for broadcast packets - calculating spaning tree for a network and pushing rules for broadcast packets. Note it doesn't work for disconnected network.
    - Pure cbench mode - just test packet_in/packet_out I/O. It's different from Cbench app that uses the entire TraceTree pipeline.
    - Manual how to run Runos with ha-linux setup to have a cold backup instance.
 
-RUNOS 0.3
+RuNOS 0.3
 =========
 
 This release introduces additional tools for user interaction with applications via REST 
@@ -23,7 +33,7 @@ API. Now you can add your REST API for your application and utilize API of other
     - Introduced event model for apps. User can get only changes occurred in apps.
     - Applications can provide own webpages for user.
 
-RUNOS 0.2
+RuNOS 0.2
 =========
 
 This release introduces many new features, new interfaces and significant improvements of

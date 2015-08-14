@@ -21,7 +21,6 @@
 #include "Loader.hh"
 #include "OFMessageHandler.hh"
 #include "OFTransaction.hh"
-#include "Rest.hh"
 
 /**
 * Implements OpenFlow 1.3 controller.
@@ -51,6 +50,8 @@ public:
      */
     OFTransaction* registerStaticTransaction(Application* caller);
 
+    TraceTree* getTraceTree(uint64_t dpid);
+
 signals:
 
     /**
@@ -69,15 +70,6 @@ signals:
     */
     void switchDown(OFConnection* ofconn);
 
-    /**
-     * Controller information is generated in startUp() method.
-     * Controller Manager (see ControllerApp.hh) catches this signal
-     * @param address Controller's address
-     * @param port Controller's port
-     * @param nthreads Working threads
-     * @param secure Secure
-     */
-    void sendInfo(std::string address, int port, int nthreads, bool secure);
 private:
     class ControllerImpl *impl;
 };

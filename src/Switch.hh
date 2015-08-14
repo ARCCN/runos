@@ -22,8 +22,6 @@
 #include "Application.hh"
 #include "Controller.hh"
 #include "Rest.hh"
-#include "RestListener.hh"
-#include "Event.hh"
 #include "AppObject.hh"
 
 class SwitchManager;
@@ -41,11 +39,18 @@ public:
     uint32_t capabilites() const;
     OFConnection* ofconn() const;
 
+    std::string mfr_desc() const;
+    std::string hw_desc() const;
+    std::string sw_desc() const;
+    std::string serial_number() const;
+    std::string dp_desc() const;
+
     of13::Port port(uint32_t port_no) const;
     std::vector<of13::Port> ports() const;
 
     void send(OFMsg* msg);
     void requestPortDescriptions();
+    void requestSwitchDescriptions();
     json11::Json to_json() const;
     json11::Json to_floodlight_json() const;
 
@@ -69,35 +74,25 @@ private:
     struct SwitchImpl* m;
 };
 
-/**
- * REST interface for SwitchManager
- */
-class SwitchManagerRest : public Rest {
-    Q_OBJECT
-    friend class SwitchManager;
-    class SwitchManager* m;
-public:
-    SwitchManagerRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
-    std::string handle(std::vector<std::string> params) override;
-    int count_objects() override;
-protected slots:
-    void onSwitchDiscovered(Switch* dp);
-    void onSwitchDown(Switch* dp);
-};
-
-class SwitchManager: public Application  {
+class SwitchManager: public Application, RestHandler  {
 Q_OBJECT
 SIMPLE_APPLICATION(SwitchManager, "switch-manager")
 public:
     SwitchManager();
     ~SwitchManager();
 
+    std::string restName() override {return "switch-manager";}
+    bool eventable() override {return true;}
+    std::string displayedName() override { return "Switch Manager"; }
+    std::string page() override { return "switch.html"; }
+    AppType type() override { return AppType::Application; }
+    json11::Json handleGET(std::vector<std::string> params, std::string body) override;
+
     void init(Loader* provider, const Config& config) override;
 
     Switch* getSwitch(OFConnection* ofconn) const;
     Switch* getSwitch(uint64_t dpid);
     std::vector<Switch*> switches();
-    Rest* rest() {return dynamic_cast<Rest*>(r); }
 
 signals:
     void switchDiscovered(Switch* dp);
@@ -108,9 +103,9 @@ protected slots:
     void onPortStatus(OFConnection* ofconn, of13::PortStatus ps);
     void onSwitchDown(OFConnection* ofconn);
     void onPortDescriptions(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> msg);
+    void onSwitchDescriptions(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> msg);
 
 private:
     friend class Switch;
     struct SwitchManagerImpl* m;
-    SwitchManagerRest* r;
 };

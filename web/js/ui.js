@@ -72,6 +72,7 @@ UI = function () {
             // html += '<li class="action from">Route from here</li>';
         }
         UI.menu.innerHTML = html;
+        UI.menu.switch_id = hovered.id;
         if (UI.menu.querySelector('.edit'))          { UI.menu.querySelector('.edit').onkeypress       = nameChanged; }
         if (UI.menu.querySelector('.settings'))      { UI.menu.querySelector('.settings').onclick      = showDetails; }
         if (UI.menu.querySelector('.delete'))        { UI.menu.querySelector('.delete').onclick        = deleteThis; }
@@ -124,20 +125,20 @@ UI = function () {
         }
 
         function nameChanged () {
-	        var hovered = HCI.getHovered();
-	        this.querySelector('i').style.display = 'block';
-	        this.querySelector('i').className = 'on';
-	        this.querySelector('i').onclick = sendNewName;
-	    }
+            var hovered = HCI.getHovered();
+            this.querySelector('i').style.display = 'block';
+            this.querySelector('i').className = 'on';
+            this.querySelector('i').onclick = sendNewName;
+        }
 
         function sendNewName () {
             var hovered = HCI.getHovered(),
-		        req = new Object();
-	        req.name = hovered.name;
-		    Server.ajax('PUT', 'api/webui/name/' + hovered.id, req);
-	        this.className = 'off';
-	        this.onclick = '';
-	        this.style.display = 'none';
+                req = new Object();
+            req.name = hovered.name;
+            Server.ajax('PUT', 'api/webui/name/' + hovered.id, req);
+            this.className = 'off';
+            this.onclick = '';
+            this.style.display = 'none';
         }
     }
 
@@ -185,7 +186,6 @@ UI = function () {
         }
         UI.aux.querySelector('button.add').onclick = showRowToAdd;
         UI.aux.querySelector('button.remove').onclick = removeRule;
-        UI.aux.querySelector('button.remove').onmouseout = hideRemoveRuleButton;
         UI.menu.style.display = 'none';
         UI.aux.style.display = 'block';
     }
@@ -236,7 +236,6 @@ UI = function () {
         }
         UI.aux.querySelector('button.add').onclick = showRowToAdd;
         UI.aux.querySelector('button.remove').onclick = removeRule;
-        UI.aux.querySelector('button.remove').onmouseout = hideRemoveRuleButton;
         UI.menu.style.display = 'none';
         UI.aux.style.display = 'block';
     }
@@ -247,8 +246,6 @@ UI = function () {
             hovered = HCI.getHovered();
         html += '<h1>' + hovered.name + '</h1>';
         html += '<h2>' + hovered.ip + '</h2>';
-        // html += '<h3>Информация</h3>';
-        // html += '<p>количество пакетов, прошедших через это правило</p><p>суммарный размер в байтах этих пакетов</p>';
         html += '<h3>Network Switch Table</h3>';
         html += '<table>';
         html += '<thead><tr>';
@@ -294,6 +291,7 @@ UI = function () {
         html += '</tfoot>';
         html += '</table>';
         html += '<button type="button" class="remove"></button>';
+        html += '<button type="button" class="new"></button>';
         UI.aux.innerHTML = html;
         UI.aux.className = 'hostinfo';
         t = UI.aux.querySelectorAll('tbody tr');
@@ -303,7 +301,6 @@ UI = function () {
         }
         UI.aux.querySelector('button.add').onclick = showRowToAdd;
         UI.aux.querySelector('button.remove').onclick = removeRule;
-        UI.aux.querySelector('button.remove').onmouseout = hideRemoveRuleButton;
         UI.menu.style.display = 'none';
         UI.aux.style.display = 'block';
     }
@@ -317,8 +314,8 @@ UI = function () {
                 html += '<td><input type="text" placeholder="in_port"></td>';
                 html += '<td><input type="text" placeholder="mac_src"></td>';
                 html += '<td><input type="text" placeholder="mac_dst"></td>';
-                html += '<td><input type="text" placeholder="vlan_id"></td>';
-                html += '<td><input type="text" placeholder="vlan_pri"></td>';
+                //html += '<td><input type="text" placeholder="vlan_id"></td>';
+                //html += '<td><input type="text" placeholder="vlan_pri"></td>';
                 html += '<td><input type="text" placeholder="ip_src"></td>';
                 html += '<td><input type="text" placeholder="ip_dst"></td>';
                 html += '<td><input type="text" placeholder="ip_proto"></td>';
@@ -341,10 +338,126 @@ UI = function () {
         html += '</tr>';
         t.innerHTML += html;
         t = UI.aux.querySelectorAll('tbody tr');
-        for (i = 0, len = t.length; i < len; ++i) {
-            t[i].onmouseover = showRemoveRuleButton;
-            t[i].onmouseout = hideRemoveRuleButton;
+        len = t.length;
+
+        var button = UI.aux.querySelector('button.new');
+        button.style.top = (t[len-1].getBoundingClientRect().top - UI.aux.getBoundingClientRect().top)-1 + 'px';
+        button.style.left = '10px';
+        button.style.display = 'block';
+        button.onclick = addRule;
+
+        var button = UI.aux.querySelector('button.remove');
+        button.style.top = (t[len-1].getBoundingClientRect().top - UI.aux.getBoundingClientRect().top)-1 + 'px';
+            button.style.left = (t[len-1].getBoundingClientRect().right - UI.aux.getBoundingClientRect().left) + 'px';
+        button.style.display = 'block';
+
+        var button = UI.aux.querySelector('button.add');
+        button.style.display = 'none';
+    }
+    
+    function addRule () {
+        var rows = UI.aux.querySelectorAll('tbody tr'),
+            i, row = rows[rows.length - 1],
+            hovered = HCI.getHovered(),
+            items = row.querySelectorAll('td');
+            
+        if (UI.aux.className == "hostinfo") {
+			var mac_regex = /^([a-f0-9]{2}(:|-)){5}[a-f0-9]{2}$/ig;
+			var ip_regex = /^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/g
+			
+            var in_port = items[0].querySelector('input').value,
+                mac_src = items[1].querySelector('input').value.toLowerCase(), 
+                mac_dst = items[2].querySelector('input').value.toLowerCase(), 
+                //vlan_id = items[3].querySelector('input').value, 
+                //vlan_prio = items[4].querySelector('input').value, 
+                ip_src = items[3].querySelector('input').value, 
+                ip_dst = items[4].querySelector('input').value, 
+                ip_proto = items[5].querySelector('input').value, 
+                ip_tos = items[6].querySelector('input').value, 
+                src_port = items[7].querySelector('input').value, 
+                dst_port = items[8].querySelector('input').value, 
+                action = items[9].querySelector('input').value;
+                var old_action = action;
+                
+                if (!(in_port || mac_src || mac_dst || ip_src || ip_dst || ip_proto || ip_tos || src_port || dst_port || action)) {
+                    return;
+                }
+                                
+                if (mac_src && !mac_regex.test(mac_src)) {
+					alert('Incorrect mac_src: ' + mac_src);
+					return;
+				}
+				if (mac_dst && !mac_regex.test(mac_dst)) {
+					alert('Incorrect mac_dst: ' + mac_dst);
+					return;
+				}
+				if (ip_src && !ip_regex.test(ip_src)) {
+					alert('Incorrect ip_src: ' + ip_src);
+					return;
+				}
+				if (ip_dst && !ip_regex.test(ip_dst)) {
+					alert('Incorrect ip_dst: ' + ip_dst);
+					return;
+				}
+                
+				if (isNaN(Number(in_port))) {
+					alert('Incorrect in_port: ' + in_port);
+					return;
+				}
+				if (isNaN(Number(src_port))) {
+					alert('Incorrect src_port: ' + src_port);
+					return;
+				}
+				if (isNaN(Number(dst_port))) {
+					alert('Incorrect dst_port: ' + dst_port);
+					return;
+				}
+				
+				if (~action.toLowerCase().indexOf("output"))
+					action = action.substring(action.toLowerCase().indexOf("output") + "output".length);
+				if (~action.toLowerCase().indexOf(":"))
+					action = action.substring(action.toLowerCase().indexOf(":") + ":".length);
+				if (~action.toLowerCase().indexOf(" "))
+					action = action.substring(action.toLowerCase().indexOf(" ") + " ".length);
+				
+				if (isNaN(Number(action))) {
+					alert('Incorrect action: ' + old_action);
+					return;
+				}
+                
+                items[0].innerHTML = in_port;
+                items[1].innerHTML = mac_src;
+                items[2].innerHTML = mac_dst;
+                //items[3].innerHTML = vlan_id;
+                //items[4].innerHTML = vlan_prio;
+                items[3].innerHTML = ip_src;
+                items[4].innerHTML = ip_dst;
+                items[5].innerHTML = ip_proto;
+                items[6].innerHTML = ip_tos;
+                items[7].innerHTML = src_port;
+                items[8].innerHTML = dst_port;
+                items[9].innerHTML = (action != '' && action != '0' ? 'output: ' + action : 'drop');
+
+            var req = new Object();
+            req.in_port = Number(in_port);
+            req.eth_src = mac_src;
+            req.eth_dst = mac_dst;
+            //req.vlan_id = vlan_id;
+            //req.vlan_prio = vlan_prio;
+            req.ip_src = ip_src;
+            req.ip_dst = ip_dst;
+            req.ip_proto = ip_proto;
+            req.ip_tos = ip_tos;
+            req.src_port = Number(src_port);
+            req.dst_port = Number(dst_port);
+            req.out_port = Number(action);
+            
+            Server.ajax('POST', '/api/static-flow-pusher/newflow/' + UI.menu.switch_id, req); 
         }
+        
+        UI.aux.querySelector('button.new').style.display = 'none';
+        UI.aux.querySelector('button.remove').style.display = 'none';
+        UI.aux.querySelector('button.add').style.display = 'block';
     }
 
     function removeRule () {
@@ -357,11 +470,28 @@ UI = function () {
             t = t.top + ((t.bottom - t.top) / 2);
             if (t < rect.bottom && t > rect.top) {
                 if (UI.aux.className === 'hostinfo') {
-                    HCI.getHovered().routingRules.splice(i, 1);
+                    var rulesEntries = HCI.getHovered().routingRules.entries();
+                    for (var k = 0; k < i; k++)
+                        rulesEntries.next();
+                    
+                    var tmp = rulesEntries.next().value;
+                    window.console.error('Erase', tmp);
+                    if (tmp) {
+                        var flow_id = tmp[0],
+                            switch_id = UI.menu.switch_id;
+                        HCI.getHovered().routingRules.delete(flow_id);
+                        Server.ajax('DELETE', '/api/flow/' + switch_id + '/' + flow_id); 
+                    }
+                    else {
+                        UI.aux.querySelector('button.new').style.display = 'none';
+                        UI.aux.querySelector('button.remove').style.display = 'none';
+                        UI.aux.querySelector('button.add').style.display = 'block';
+                    }
+                    //HCI.getHovered().routingRules.splice(i, 1);
                 } else if (UI.aux.className === 'firewall') {
-                    HCI.getHovered().firewallRules.splice(i, 1);
+                    //HCI.getHovered().firewallRules.splice(i, 1);
                 } else if (UI.aux.className === 'loadBalancer') {
-                    HCI.getHovered().balancingRules.splice(i, 1);
+                    //HCI.getHovered().balancingRules.splice(i, 1);
                 }
                 rows[i].parentNode.removeChild(rows[i]);
                 return;

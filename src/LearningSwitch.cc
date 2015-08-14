@@ -19,6 +19,7 @@
 #include "Controller.hh"
 #include "Topology.hh"
 #include "Switch.hh"
+#include "STP.hh"
 
 REGISTER_APPLICATION(LearningSwitch, {"controller", "switch-manager", "topology", "stp", ""})
 
@@ -123,9 +124,8 @@ OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofco
         } else {
             flow->setFlags(Flow::Disposable);
         }
-
-        // Should be replaced with STP ports
-        std::vector<uint32_t> ports = app->stp->getSTP(sw->id());
+        
+        STPPorts ports = app->stp->getSTP(sw->id());
         if (!ports.empty()) {
             for (auto port : ports) {
                 if (port != in_port)

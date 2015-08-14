@@ -1,6 +1,15 @@
 set(UGLIFY uglifyjs)
 
-file(GLOB JS_SOURCES "js/*")
+file(GLOB JS_SOURCES "js/globals.js"
+                     "js/hci.js"
+                     "js/host.js"
+                     "js/info.js"
+                     "js/link.js"
+                     "js/main.js"
+                     "js/network.js"
+                     "js/server.js"
+                     "js/switch.js"
+                     "js/ui.js")
 file(GLOB HTML_SOURCES "html/*.html" "html/*.css")
 set(JS_TARGET arcui.js)
 

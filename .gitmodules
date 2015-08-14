@@ -7,3 +7,6 @@
 [submodule "third_party/libfluid_base"]
 	path = third_party/libfluid_base
 	url = https://github.com/OpenNetworkingFoundation/libfluid_base.git
+[submodule "third_party/webserver"]
+	path = third_party/webserver
+	url = https://github.com/eidheim/Simple-Web-Server.git

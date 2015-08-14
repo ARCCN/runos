@@ -71,6 +71,11 @@ void Flow::setFlags(FlowFlags flags)
 Trace& Flow::trace()
 { return m->trace; }
 
+void Flow::toTrace(TraceEntry::Type type, of13::OXMTLV *tlv)
+{
+    m->trace.push_back(TraceEntry(type, *tlv));
+}
+
 Packet* Flow::pkt()
 { return m->pkt; }
 
@@ -117,6 +122,7 @@ void Flow::setDestroy()
 
     m->state = Destroyed;
     m->pkt = nullptr;
+    m->live_until = steady_clock::now();
 
     emit stateChanged(m->state, old_state);
 }

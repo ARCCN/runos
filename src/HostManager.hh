@@ -16,18 +16,20 @@
 
 #pragma once
 
-#include <vector>
 #include <mutex>
+#include <string>
+#include <vector>
 #include <unordered_map>
 #include <time.h>
-#include "Controller.hh"
+
 #include "Common.hh"
+#include "Loader.hh"
 #include "Application.hh"
-#include "Switch.hh"
 #include "OFMessageHandler.hh"
+#include "Switch.hh"
 #include "Rest.hh"
-#include "RestListener.hh"
 #include "AppObject.hh"
+#include "json11.hpp"
 
 /**
  * Host object corresponding end host
@@ -40,22 +42,15 @@ public:
     json11::Json to_json() const override;
     json11::Json formFloodlightJSON();
     std::string mac() const;
+    std::string ip() const;
     uint64_t switchID() const;
     uint32_t switchPort()const;
     void switchID(uint64_t id);
     void switchPort(uint32_t port);
+    void ip(std::string ip);
 
-    Host(std::string mac);
+    Host(std::string mac, IPAddress ip);
     ~Host();
-};
-
-class HostManagerRest: public Rest {
-    friend class HostManager;
-    class HostManager* m;
-public:
-    HostManagerRest(std::string name, std::string page): Rest(name, page, Rest::Application) {}
-    std::string handle(std::vector<std::string> params) override;
-    int count_objects() override;
 };
 
 /**
@@ -66,7 +61,7 @@ public:
  * Also application handles all packet_ins and if eth_src field is not belongs to switch
  * it means that new end host appears in the network.
  */
-class HostManager: public Application, OFMessageHandlerFactory {
+class HostManager: public Application, OFMessageHandlerFactory, RestHandler {
     Q_OBJECT
     SIMPLE_APPLICATION(HostManager, "host-manager")
 public:
@@ -80,23 +75,31 @@ public:
     bool isPrereq(const std::string &name) const;
     std::unordered_map<std::string, Host*> hosts();
     Host* getHost(std::string mac);
-    Rest* rest() {return dynamic_cast<Rest*>(r); }
+    Host* getHost(IPAddress ip);
+
+    std::string restName() override {return "host-manager";}
+    bool eventable() override {return true;}
+    AppType type() override { return AppType::Service; }
+    json11::Json handleGET(std::vector<std::string> params, std::string body) override;
 
 public slots:
     void onSwitchDiscovered(Switch* dp);
+    void onSwitchDown(Switch* dp);
     void newPort(Switch* dp, of13::Port port);
 signals:
     void hostDiscovered(Host* dev);
 private:
     struct HostManagerImpl* m;
     std::vector<std::string> switch_macs;
-    HostManagerRest* r;
     SwitchManager* m_switch_manager;
+    std::mutex mutex;
 
-    Host* addHost(std::string mac);
+    void addHost(Switch* sw, IPAddress ip, std::string mac, uint32_t port);
+    Host* createHost(std::string mac, IPAddress ip);
     bool findMac(std::string mac);
     bool isSwitch(std::string mac);
     void attachHost(std::string mac, uint64_t id, uint32_t port);
+    void delHostForSwitch(Switch* dp);
 
     class Handler: public OFMessageHandler {
     public:

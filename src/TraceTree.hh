@@ -112,6 +112,7 @@ public:
     unsigned buildFlowTable(OFConnection* ofconn);
     static bool isTableMiss(of13::PacketIn& pi);
     std::ostream& dump(std::ostream& out);
+    void clear();
 private:
     TraceTreeNode root;
 

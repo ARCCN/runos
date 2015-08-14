@@ -18,11 +18,12 @@
 
 #include <time.h>
 #include <string>
-#include <vector>
-#include <time.h>
+#include <list>
 
 #include "json11.hpp"
 #include "AppObject.hh"
+
+class RestHandler;
 
 /**
  * Generate unique identifier for events.
@@ -65,15 +66,18 @@ public:
     Type type() const;
     AppObject* obj() const;
     std::string event() const;
+    uint32_t hash() const;
+    Event* brother() const;
+    std::string app() const;
 
     /**
      * Main constructor in event model.
      * When event occurred, you must:
      *  - add new event: my_app->addEvent(Event::Add, new_obj);
      */
-    Event(Type type, AppObject* obj);
+    Event(Type type, AppObject* obj, RestHandler *rest = nullptr);
 
-    Event();
+    Event() = delete;
     ~Event();
 
     /**
@@ -83,6 +87,7 @@ public:
 
 private:
     struct EventImpl* m;
+    friend class EventManager;
 };
 
 class EventManager {
@@ -92,9 +97,13 @@ public:
 
     bool checkOverlap(Event *test_ev, uint32_t last_ev);
     void addEvent(Event::Type type, AppObject* obj);
-    std::vector<Event*> events();
+    void addToEventList(Event::Type type, AppObject* obj, RestHandler *rest);
+    std::list<Event*> events();
 
-    std::pair<uint32_t, json11::Json> timeout(uint32_t last);
+    std::pair<uint32_t, json11::Json> timeout(uint32_t hash_map, uint32_t last);
 private:
     struct EventManagerImpl* m;
+
+    Event* findBrother(Event *event);
+    void setBrother(Event* event);
 };
