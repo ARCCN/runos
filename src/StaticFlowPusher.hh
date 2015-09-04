@@ -74,6 +74,7 @@ private:
     SwitchManager* sw_m;
     class FlowManager* flow_m;
 
+    std::string def_act;
     std::unordered_map<std::string, json11::Json> flows_map;
     OFTransaction* new_flow;
     uint32_t start_prio;

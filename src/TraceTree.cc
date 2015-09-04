@@ -294,6 +294,7 @@ std::ostream& TraceTree::dump(std::ostream& out)
 void TraceTree::clear()
 {
     root.~TraceTreeNode();
+    root.m_type = TraceTreeNode::Empty;
 }
 
 std::ostream& TraceTreeNode::dump(std::ostream& out, size_t level)

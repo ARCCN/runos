@@ -124,15 +124,15 @@ void StaticFlowPusher::init(Loader* loader, const Config& rootConfig)
     acceptPath(Method::POST, "newflow/[0-9]+");
 
     auto config = config_cd(rootConfig, "static-flow-pusher");
-    if (config.empty()) {
-        return;
-    }
-    auto static_flows = config.at("flows");
-    for (auto& flow_for_switch : static_flows.array_items()) {
-        Config cc = flow_for_switch.object_items();
-        std::string dpid = config_get(cc, "dpid", "none");
-        if (dpid != "none")
-            flows_map[dpid] = cc.at("flows");
+    def_act = config_get(config, "default", "nope");
+    if (config.find("flows") != config.end()) {
+        auto static_flows = config.at("flows");
+        for (auto& flow_for_switch : static_flows.array_items()) {
+            Config cc = flow_for_switch.object_items();
+            std::string dpid = config_get(cc, "dpid", "none");
+            if (dpid != "none")
+                flows_map[dpid] = cc.at("flows");
+        }
     }
 }
 
@@ -244,6 +244,16 @@ void StaticFlowPusher::sendDefault(Switch *sw)
     of13::GoToTable go_to_trace(1);
     fm.add_instruction(go_to_trace);
     sw->send(&fm);
+
+    if (def_act == "to-controller") {
+        of13::FlowMod def;
+        def.table_id(1);
+        of13::ApplyActions act;
+        of13::OutputAction* out = new of13::OutputAction(of13::OFPP_CONTROLLER, 128);
+        act.add_action(out);
+        def.add_instruction(act);
+        sw->send(&def);
+    }
 }
 
 void StaticFlowPusher::sendToSwitch(Switch* dp, FlowDesc* fd)
