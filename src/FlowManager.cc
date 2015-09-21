@@ -73,6 +73,10 @@ Rule::Rule(Flow* _flow, uint64_t _switch_id) :
                 of13::OutputAction* output = static_cast<of13::OutputAction*>(act);
                 out_port.push_back((int)output->port());
             }
+            else if (act->type() == of13::OFPAT_SET_FIELD) {
+                of13::SetFieldAction* set = static_cast<of13::SetFieldAction*>(act);
+                modify.push_back(set->field()->clone());
+            }
         }
     }
 }
@@ -82,6 +86,39 @@ uint64_t Rule::id() const
 
 json11::Json Rule::to_json() const
 {
+    std::vector<json11::Json> set;
+    if (modify.size() > 0) {
+        for (auto it : modify) {
+            json11::Json::object act;
+            switch (it->field()) {
+            case of13::OFPXMT_OFB_ETH_SRC:
+                act = json11::Json::object {
+                   { "eth_src", static_cast<of13::EthSrc*>(it)->value().to_string() }
+                };
+                set.push_back(act);
+                break;
+            case of13::OFPXMT_OFB_ETH_DST:
+                act = json11::Json::object {
+                    { "eth_dst", static_cast<of13::EthDst*>(it)->value().to_string() }
+                };
+                set.push_back(act);
+                break;
+            case of13::OFPXMT_OFB_IPV4_SRC:
+                act = json11::Json::object {
+                    { "ip_src", AppObject::uint32_t_ip_to_string(static_cast<of13::IPv4Src*>(it)->value().getIPv4()) }
+                };
+                set.push_back(act);
+                break;
+            case of13::OFPXMT_OFB_IPV4_DST:
+                act = json11::Json::object {
+                    { "ip_dst", AppObject::uint32_t_ip_to_string(static_cast<of13::IPv4Dst*>(it)->value().getIPv4()) }
+                };
+                set.push_back(act);
+                break;
+            }
+        }
+    }
+
     return json11::Json::object {
         {"switch_id", uint64_to_string(switch_id)},
         {"in_port", (int)in_port},
@@ -89,7 +126,8 @@ json11::Json Rule::to_json() const
         {"eth_dst", eth_dst.to_string()},
         {"ip_src", AppObject::uint32_t_ip_to_string(ip_src)},
         {"ip_dst", AppObject::uint32_t_ip_to_string(ip_dst)},
-        {"out_port", out_port}
+        {"out_port", out_port},
+        {"set_field", set}
     };
 }
 

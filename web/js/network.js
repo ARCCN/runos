@@ -217,12 +217,22 @@ Net = function () {
                         out_port = (_flow[i].obj_info.out_port != -4 ? _flow[i].obj_info.out_port : 'ALL'),
                         in_port = _flow[i].obj_info.in_port,
                         ip_src = _flow[i].obj_info.ip_src,
-                        ip_dst = _flow[i].obj_info.ip_dst;
-
+                        ip_dst = _flow[i].obj_info.ip_dst,
+                        set_field = _flow[i].obj_info.set_field;
+                        
+                    var actions = "";
                     if (out_port.length == 0)
 						out_port = 'drop';
                     else
 						out_port = 'output: ' + out_port;
+					actions += out_port;
+						
+					if (set_field.length != 0) {
+						set_field = set_field[0];
+						for (var key in set_field) {
+							actions += "<br>set_field: " + set_field[key] + " -> " + key;
+						}
+					}
 
                     eth_dst = (eth_dst != "00:00:00:00:00:00" ? eth_dst : '');
                     ip_src = (ip_src != "0.0.0.0" ? ip_src : '');
@@ -234,7 +244,7 @@ Net = function () {
                                 mac_dst: eth_dst,
                                 ip_src: ip_src,
                                 ip_dst: ip_dst,
-                                action: out_port
+                                action: actions
                                }
                     sw.routingRules.set(_flow[i].obj_id, rule);
 

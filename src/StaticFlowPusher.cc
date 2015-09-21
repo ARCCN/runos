@@ -44,6 +44,8 @@ struct FlowDescImpl {
     int idle{0};
     int hard{0};
     uint16_t priority{0};
+
+    ModifyList modify;
 };
  
 FlowDesc::FlowDesc()
@@ -109,6 +111,12 @@ void FlowDesc::hard(int time)
 void FlowDesc::priority(int prio)
 { m->priority = prio; }
 
+void FlowDesc::modifyField(ModifyElem elem)
+{ m->modify.push_back(elem); }
+
+ModifyList FlowDesc::modify()
+{ return m->modify; }
+
 void StaticFlowPusher::init(Loader* loader, const Config& rootConfig)
 {
     Controller* ctrl = Controller::get(loader);
@@ -173,6 +181,19 @@ of13::FlowMod StaticFlowPusher::formFlowMod(FlowDesc* fd, Switch* sw)
         sf->toTrace(TraceEntry::Load, oxm);
         fd->eth_type(0x0800);
     }
+
+    of13::ApplyActions act;
+    if (not fd->modify().empty()) {
+        for (auto it : fd->modify()) {
+            of13::SetFieldAction* set = new of13::SetFieldAction(it);
+            if (it->field() == of13::OFPXMT_OFB_IPV4_SRC || it->field() == of13::OFPXMT_OFB_IPV4_DST) {
+                    fd->eth_type(0x0800);
+            }
+            act.add_action(set);
+            sf->add_action(set);
+        }
+    }
+
     if (fd->eth_type() > 0) {
         of13::EthType* oxm = new of13::EthType(fd->eth_type());
         fm.add_oxm_field(oxm);
@@ -188,12 +209,13 @@ of13::FlowMod StaticFlowPusher::formFlowMod(FlowDesc* fd, Switch* sw)
         fm.priority(start_prio++);
     }
 
-    of13::ApplyActions act;
     if (fd->out_port() > 0) {
         of13::OutputAction* out = new of13::OutputAction(fd->out_port(), 128);
         act.add_action(out);
         sf->add_action(out);
     }
+
+
     fm.add_instruction(act);
 
     flow_m->addToFlowManager(sf, sw->id());
@@ -290,6 +312,40 @@ void StaticFlowPusher::onSwitchDown(Switch *dp)
     //TODO: might be useful for further releases
 }
 
+#define handle_string(field) \
+    if (flow_object.find(#field) != flow_object.end()) { \
+        std::string oxm = flow_object[#field].string_value(); \
+        if (oxm != "") { \
+            fd.field(oxm); \
+        } \
+    }
+
+#define handle_int(field) \
+    if (flow_object.find(#field) != flow_object.end()) { \
+        int oxm = flow_object[#field].number_value(); \
+        if (oxm > 0) { \
+            fd.field(oxm); \
+        } \
+    }
+
+#define handle_modify_eth(mod_field, oxm_field) \
+    if (flow_object.find(#mod_field) != flow_object.end()) { \
+        std::string modify = flow_object[#mod_field].string_value(); \
+        if (modify != "") { \
+            of13::oxm_field *oxm = new of13::oxm_field(EthAddress(modify)); \
+            fd.modifyField(oxm); \
+        } \
+    }
+
+#define handle_modify_ip(mod_field, oxm_field) \
+    if (flow_object.find(#mod_field) != flow_object.end()) { \
+        std::string modify = flow_object[#mod_field].string_value(); \
+        if (modify != "") { \
+            of13::oxm_field *oxm = new of13::oxm_field(IPAddress(modify)); \
+            fd.modifyField(oxm); \
+        } \
+    }
+
 json11::Json StaticFlowPusher::handlePOST(std::vector<std::string> params, std::string body)
 {
     if (params[0] == "newflow") {
@@ -308,48 +364,17 @@ json11::Json StaticFlowPusher::handlePOST(std::vector<std::string> params, std::
         }
 
         FlowDesc fd;
-        if (flow_object.find("in_port") != flow_object.end()) {
-            int port = flow_object["in_port"].number_value();
-            if (port > 0) {
-                fd.in_port(port);
-            }
-        }
+        handle_int(in_port);
+        handle_int(out_port);
+        handle_string(eth_src);
+        handle_string(eth_dst);
+        handle_string(ip_src);
+        handle_string(ip_dst);
 
-        // TODO: add checking of field's format
-        if (flow_object.find("eth_src") != flow_object.end()) {
-            std::string eth = flow_object["eth_src"].string_value();
-            if (eth != "") {
-                fd.eth_src(eth);
-            }
-        }
-
-        if (flow_object.find("eth_dst") != flow_object.end()) {
-            std::string eth = flow_object["eth_dst"].string_value();
-            if (eth != "") {
-                fd.eth_dst(eth);
-            }
-        }
-
-        if (flow_object.find("ip_src") != flow_object.end()) {
-            std::string ip = flow_object["ip_src"].string_value();
-            if (ip != "") {
-                fd.ip_src(ip);
-            }
-        }
-
-        if (flow_object.find("ip_dst") != flow_object.end()) {
-            std::string ip = flow_object["ip_dst"].string_value();
-            if (ip != "") {
-                fd.ip_dst(ip);
-            }
-        }
-
-        if (flow_object.find("out_port") != flow_object.end()) {
-            int port = flow_object["out_port"].number_value();
-            if (port > 0) {
-                fd.out_port(port);
-            }
-        }
+        handle_modify_eth(modify_eth_src, EthSrc);
+        handle_modify_eth(modify_eth_dst, EthDst);
+        handle_modify_ip(modify_ip_src, IPv4Src);
+        handle_modify_ip(modify_ip_dst, IPv4Dst);
 
         sendToSwitch(sw, &fd);
         return "{\"static-flow-pusher\": \"new flow added\"}";

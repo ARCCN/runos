@@ -28,6 +28,7 @@
 
 class LearningSwitch : public Application, OFMessageHandlerFactory {
 SIMPLE_APPLICATION(LearningSwitch, "learning-switch")
+Q_OBJECT
 public:
     void init(Loader* loader, const Config& config) override;
     std::string orderingName() const override { return "forwarding"; }
@@ -56,4 +57,6 @@ private:
 
     std::mutex db_lock;
     std::unordered_map<EthAddress, switch_and_port> db;
+signals:
+    void newRoute(Flow* flow, std::string src, std::string dst, uint64_t dpid, uint32_t out_port);
 };

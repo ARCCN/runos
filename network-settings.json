@@ -5,6 +5,7 @@
         "learning-switch",
         "rest-listener",
         "host-manager",
+        "path-verifier",
         "webui",
         "switch-stats",
         "stp",

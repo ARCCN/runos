@@ -172,6 +172,7 @@ protected:
     friend class SwitchScope;
     friend class TraceTreeNode;
     friend class FlowManager;
+    friend class PathVerifier;
 
     Flow(Packet* pkt, QObject* parent = 0);
     ~Flow();

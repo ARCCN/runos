@@ -38,7 +38,7 @@ void RestListener::init(Loader *loader, const Config &config)
 {
     auto app_config = config_cd(config, "rest-listener");
     listen_port = config_get(app_config, "port", 8000);
-    web_dir = "./build/web";
+    web_dir = config_get(app_config, "web-dir", "./build/web");
 
     em = new EventManager;
     server = new HttpServer(listen_port, 1);
@@ -151,8 +151,8 @@ void RestListener::startUp(Loader *loader)
     };
 
     // Get files and documents
-    server->default_resource["GET"] = [](HttpServer::Response& response, std::shared_ptr<HttpServer::Request> request) {
-        std::string filename = "build/web";
+    server->default_resource["GET"] = [this](HttpServer::Response& response, std::shared_ptr<HttpServer::Request> request) {
+        std::string filename = web_dir;
         std::string path = request->path;
 
         size_t pos;

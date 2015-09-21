@@ -7,7 +7,7 @@ blockquote,q{quotes:none}
 blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}
 table{border-collapse:collapse;border-spacing:0}
 .transition{transition:all .1s ease-out}
-@font-face{font-family:'FontAwesome';src:url('images/fontawesome-webfont.eot');src:url('images/fontawesome-webfont.eot') format('embedded-opentype'),url('images/fontawesome-webfont.woff') format('woff'),url('images/fontawesome-webfont.ttf') format('truetype'),url('images/fontawesome-webfont.svg') format('svg');font-weight:normal;font-style:normal}html{font-size:62.5%;-webkit-font-smoothing:antialiased}html input,html button,html select{-moz-appearance:none;-webkit-appearance:none;appearance:none;-webkit-font-smoothing:antialiased;outline:none;font-family:'PT Sans Narrow';font-size:1em;padding:0;margin:0;border:none;background:none}
+@font-face{font-family:'FontAwesome';src:url('images/fontawesome-webfont.eot');src:url('images/fontawesome-webfont.eot') format('embedded-opentype'),url('images/fontawesome-webfont.woff') format('woff'),url('images/fontawesome-webfont.ttf') format('truetype'),url('images/fontawesome-webfont.svg') format('svg');font-weight:normal;font-style:normal}html{font-size:62.5%;-webkit-font-smoothing:antialiased}html input,html button{-moz-appearance:none;-webkit-appearance:none;appearance:none;-webkit-font-smoothing:antialiased;outline:none;font-family:'PT Sans Narrow';font-size:1em;padding:0;margin:0;border:none;background:none}
 body{background:#EEE;color:black;font-family:'PT Sans Narrow';font-size:1.6em;height:100%;padding:5px;text-align:center;text-shadow:0 1px white;text-transform:uppercase}body *,body *:before,body *:after{box-sizing:border-box}
 body a{text-decoration:none;color:black}
 body.start{padding:0;background:linear-gradient(to top right, #281a71, #dd1772)}
@@ -61,6 +61,8 @@ div.hostinfo button.new:before,div.firewall button.new:before,div.loadBalancer b
 div.hostinfo table,div.firewall table,div.loadBalancer table{border:1px solid rgba(0,0,0,0.25)}div.hostinfo table thead,div.firewall table thead,div.loadBalancer table thead{background:rgba(0,0,0,0.25);font-weight:bold}
 div.hostinfo table th,div.firewall table th,div.loadBalancer table th,div.hostinfo table td,div.firewall table td,div.loadBalancer table td{padding:.3em}
 div.hostinfo table tbody tr,div.firewall table tbody tr,div.loadBalancer table tbody tr{border-bottom:1px solid rgba(0,0,0,0.25)}div.hostinfo table tbody tr:hover,div.firewall table tbody tr:hover,div.loadBalancer table tbody tr:hover{background:rgba(224,27,83,0.25)}
+div.hostinfo table td input {width: 100%}
+div.hostinfo table td input[placeholder] {text-align: center;}
 table{margin:0 auto;width:95%}table thead,table tbody,table tfoot{display:block;width:100%}
 table tr{display:table;table-layout:fixed;width:100%}
 table th,table td{display:table-cell;vertical-align:middle}

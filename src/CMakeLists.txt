@@ -23,6 +23,7 @@ set(SOURCES
     STP.cc
     ArpHandler.cc
     StaticFlowPusher.cc
+    PathVerifier.cc
     # Loader
     Main.cc
     # REST

@@ -68,7 +68,7 @@ OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofco
     static EthAddress broadcast("ff:ff:ff:ff:ff:ff");
 
     // Get required fields
-    EthAddress eth_src = flow->pkt()->readEthSrc();
+    EthAddress eth_src = flow->loadEthSrc();
     uint32_t   in_port = flow->loadInPort();
     EthAddress eth_dst = flow->loadEthDst();
     uint32_t out_port = 0;
@@ -104,6 +104,7 @@ OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofco
             } else {
                 out_port = target.port;
             }
+            emit app->newRoute(flow, eth_src.to_string(), eth_dst.to_string(), where.dpid, out_port);
         }
     }
     else
@@ -118,22 +119,13 @@ OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofco
     } else {
         DVLOG(5) << "Flooding for address " << eth_dst.to_string();
 
-        if (eth_dst == broadcast) {
-            flow->idleTimeout(0);
-            flow->timeToLive(0);
-        } else {
-            flow->setFlags(Flow::Disposable);
-        }
-        
+        flow->setFlags(Flow::Disposable);
         STPPorts ports = app->stp->getSTP(sw->id());
         if (!ports.empty()) {
             for (auto port : ports) {
                 if (port != in_port)
                     flow->add_action(new of13::OutputAction(port, 128));
             }
-        }
-        else {
-            flow->setFlags(Flow::Disposable);
         }
         return Continue;
     }

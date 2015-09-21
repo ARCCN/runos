@@ -144,6 +144,14 @@ HCI = function () {
             clear();
             UI.menu.style.display = 'none';
             UI.aux.style.display = 'none';
+        } else if (event.keyCode === key.code.Enter) {
+            key.enter = true;
+            if (UI.aux.style.display != 'none') {
+                var button = UI.aux.querySelector('button.new');
+                if (button.style.top && button.style.display != 'none') {
+                    UI.addRule();
+                }
+            }
         }
 
     }
@@ -164,6 +172,8 @@ HCI = function () {
             key.l = false;
         } else if (event.keyCode === key.code.Z) {
             key.z = false;
+        } else if (event.keyCode === key.code.Esc) {
+            key.enter = false;
         }
     }
 

@@ -27,6 +27,9 @@
 #include "Rest.hh"
 #include "json11.hpp"
 
+typedef of13::OXMTLV* ModifyElem;
+typedef std::vector<ModifyElem> ModifyList;
+
 class FlowDesc {
     struct FlowDescImpl* m;
 public:
@@ -56,7 +59,8 @@ public:
     void hard(int time);
     void priority(int prio);
 
-
+    void modifyField(ModifyElem elem);
+    ModifyList modify();
 };
 
 class StaticFlowPusher : public Application, RestHandler {

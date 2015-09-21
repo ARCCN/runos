@@ -29,6 +29,9 @@
 #include "AppObject.hh"
 #include "json11.hpp"
 
+typedef of13::OXMTLV* ModifyElem;
+typedef std::vector<ModifyElem> ModifyList;
+
 class Rule : public AppObject {
 public:
     enum Type {
@@ -54,6 +57,8 @@ private:
     uint32_t ip_src;
     uint32_t ip_dst;
     std::vector<int> out_port;
+
+    ModifyList modify;
 
     friend class FlowManager;
 };

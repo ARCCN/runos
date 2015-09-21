@@ -28,6 +28,7 @@ UI = function () {
         showDetails : showDetails,
         showMenu    : showMenu,
         setStyle    : setStyle,
+        addRule		: addRule,
     };
 
     function init () {
@@ -119,7 +120,7 @@ UI = function () {
                     hovered.firewall = !hovered.firewall;
                 } else if (this.parentNode.className.indexOf('loadBalancer') >= 0) {
                     hovered.loadBalancer = !hovered.loadBalancer;
-                } 
+                }
             }
             event.stopPropagation();
         }
@@ -249,40 +250,40 @@ UI = function () {
         html += '<h3>Network Switch Table</h3>';
         html += '<table>';
         html += '<thead><tr>';
-            html += '<th>in_port</th>';
-            html += '<th>mac_src</th>';
-            html += '<th>mac_dst</th>';
+            html += '<th width=5%>in_port</th>';
+            html += '<th width=15%>mac_src</th>';
+            html += '<th width=15%>mac_dst</th>';
             //html += '<th>vlan_id</th>';
             //html += '<th>vlan_prio</th>';
-            html += '<th>ip_src</th>';
-            html += '<th>ip_dst</th>';
-            html += '<th>ip_proto</th>';
-            html += '<th>ip_tos</th>';
-            html += '<th>src_port</th>';
-            html += '<th>dst_port</th>';
-            html += '<th>action</th>';
+            html += '<th width=12%>ip_src</th>';
+            html += '<th width=12%>ip_dst</th>';
+            html += '<th width=5%>ip_proto</th>';
+            html += '<th width=5%>ip_tos</th>';
+            html += '<th width=5%>src_port</th>';
+            html += '<th width=5%>dst_port</th>';
+            html += '<th width=21%>action</th>';
         html += '</tr></thead>';
         html += '<tbody>';
-        
+
         function fillRules(value, key, map) {
             t = value;
                 html += '<tr>';
-                    html += '<td>' + (t.in_port   ? t.in_port   : '') + '</td>';
-                    html += '<td>' + (t.mac_src   ? t.mac_src   : '') + '</td>';
-                    html += '<td>' + (t.mac_dst   ? t.mac_dst   : '') + '</td>';
+                    html += '<td width=5%>' + (t.in_port   ? t.in_port   : '') + '</td>';
+                    html += '<td width=15%>' + (t.mac_src   ? t.mac_src   : '') + '</td>';
+                    html += '<td width=15%>' + (t.mac_dst   ? t.mac_dst   : '') + '</td>';
                     //html += '<td>' + (t.vlan_id   ? t.vlan_id   : '') + '</td>';
                     //html += '<td>' + (t.vlan_prio ? t.vlan_prio : '') + '</td>';
-                    html += '<td>' + (t.ip_src    ? t.ip_src    : '') + '</td>';
-                    html += '<td>' + (t.ip_dst    ? t.ip_dst    : '') + '</td>';
-                    html += '<td>' + (t.ip_proto  ? t.ip_proto  : '') + '</td>';
-                    html += '<td>' + (t.ip_tos    ? t.ip_tos    : '') + '</td>';
-                    html += '<td>' + (t.src_port  ? t.src_port  : '') + '</td>';
-                    html += '<td>' + (t.dst_port  ? t.dst_port  : '') + '</td>';
-                    html += '<td>' + (t.action    ? t.action    : '') + '</td>';
+                    html += '<td width=12%>' + (t.ip_src    ? t.ip_src    : '') + '</td>';
+                    html += '<td width=12%>' + (t.ip_dst    ? t.ip_dst    : '') + '</td>';
+                    html += '<td width=5%>' + (t.ip_proto  ? t.ip_proto  : '') + '</td>';
+                    html += '<td width=5%>' + (t.ip_tos    ? t.ip_tos    : '') + '</td>';
+                    html += '<td width=5%>' + (t.src_port  ? t.src_port  : '') + '</td>';
+                    html += '<td width=5%>' + (t.dst_port  ? t.dst_port  : '') + '</td>';
+                    html += '<td width=21%>' + (t.action    ? t.action    : '') + '</td>';
                 html += '</tr>';
         }
         hovered.routingRules.forEach(fillRules);
-        
+
         html += '</tbody>';
         html += '<tfoot>';
             html += '<tr><td>';
@@ -305,24 +306,75 @@ UI = function () {
         UI.aux.style.display = 'block';
     }
 
+    function addNewActionLine () {
+        var new_line = document.getElementsByName("action_line")[0].cloneNode(true);
+        document.getElementById("actions_container").appendChild(new_line);
+        var last = document.getElementsByName("action_line").length - 1;
+        var act = document.getElementsByName("action")[last];
+
+        act.onchange = function () {
+            if (act.value == "output") {
+                document.getElementsByName("mod_field")[last].style.display = 'none';
+                document.getElementsByName("mod_field_value")[last].style.display = 'none';
+                document.getElementsByName("outport")[last].style.display = 'inline';
+            }
+            if (act.value == "set_field") {
+                document.getElementsByName("outport")[last].style.display = 'none';
+                document.getElementsByName("mod_field")[last].style.display = 'inline';
+                document.getElementsByName("mod_field")[last].onchange = function () {
+                    document.getElementsByName("mod_field_value")[last].style.display = 'inline';
+                }
+            }
+            if (act.value == "drop") {
+                document.getElementsByName("outport")[last].style.display = 'none';
+                document.getElementsByName("mod_field")[last].style.display = 'none';
+                document.getElementsByName("mod_field_value")[last].style.display = 'none';
+            }
+        };
+        document.getElementsByName("action_line")[last].style.display = 'block';
+    }
+
     function showRowToAdd () {
         var i, len,
             html = '',
             t = UI.aux.querySelector('tbody');
         html += '<tr>';
             if (UI.aux.className === 'hostinfo') {
-                html += '<td><input type="text" placeholder="in_port"></td>';
-                html += '<td><input type="text" placeholder="mac_src"></td>';
-                html += '<td><input type="text" placeholder="mac_dst"></td>';
+                html += '<td width=5%><input type="text" placeholder="in_port"></td>';
+                html += '<td width=15%><input type="text" placeholder="mac_src"></td>';
+                html += '<td width=15%><input type="text" placeholder="mac_dst"></td>';
                 //html += '<td><input type="text" placeholder="vlan_id"></td>';
                 //html += '<td><input type="text" placeholder="vlan_pri"></td>';
-                html += '<td><input type="text" placeholder="ip_src"></td>';
-                html += '<td><input type="text" placeholder="ip_dst"></td>';
-                html += '<td><input type="text" placeholder="ip_proto"></td>';
-                html += '<td><input type="text" placeholder="ip_tos"></td>';
-                html += '<td><input type="text" placeholder="src_port"></td>';
-                html += '<td><input type="text" placeholder="dst_port"></td>';
-                html += '<td><input type="text" placeholder="action"></td>';
+                html += '<td width=12%><input type="text" placeholder="ip_src"></td>';
+                html += '<td width=12%><input type="text" placeholder="ip_dst"></td>';
+                html += '<td width=5%><input type="text" placeholder="ip_proto"></td>';
+                html += '<td width=5%><input type="text" placeholder="ip_tos"></td>';
+                html += '<td width=5%><input type="text" placeholder="src_port"></td>';
+                html += '<td width=5%><input type="text" placeholder="dst_port"></td>';
+
+                html += '<td width=21%><div id="actions_container" style="display:inline; position:relative">';
+                    html += '<input type="submit" style="width:auto" id="add_new_line" value="New action...">';
+                    html += '<div name="action_line" style="display:none; position:relative">';
+                    html += '<select size="1" name="action">';
+                        html += '<option disabled selected  > action </option>';
+                        html += '<option value="output"> output </option>';
+                        html += '<option value="set_field"> set_field </option>';
+                        html += '<option value-"drop"> drop </option>';
+                    html += '</select>';
+                    html += '<input type="text" placeholder="port" name="outport" style="display:none; width:40px">';
+
+                    html += '<select name="mod_field" style="display:none">';
+                        html += '<option disabled selected  > field </option>';
+                        html += '<option value="eth_src"> eth_src </option>';
+                        html += '<option value="eth_dst"> eth_dst </option>';
+                        html += '<option value="ip_src"> ip_src </option>';
+                        html += '<option value="ip_dst"> ip_dst </option>';
+                    html += '</select>';
+
+                    html += '<input type="text" placeholder="value" name="mod_field_value" style="display:none; width:auto">';
+                    html += '</div>';
+                html += '</div></td>';
+
             } else if (UI.aux.className === 'firewall') {
                 html += '<td><input type="text" placeholder="action"></td>';
                 html += '<td><input type="text" placeholder="src_ip"></td>';
@@ -337,6 +389,10 @@ UI = function () {
             }
         html += '</tr>';
         t.innerHTML += html;
+
+        document.getElementById("add_new_line").onclick = addNewActionLine;
+        addNewActionLine();
+
         t = UI.aux.querySelectorAll('tbody tr');
         len = t.length;
 
@@ -354,77 +410,97 @@ UI = function () {
         var button = UI.aux.querySelector('button.add');
         button.style.display = 'none';
     }
-    
+
     function addRule () {
         var rows = UI.aux.querySelectorAll('tbody tr'),
             i, row = rows[rows.length - 1],
             hovered = HCI.getHovered(),
             items = row.querySelectorAll('td');
-            
+
         if (UI.aux.className == "hostinfo") {
-			var mac_regex = /^([a-f0-9]{2}(:|-)){5}[a-f0-9]{2}$/ig;
-			var ip_regex = /^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/g
-			
+            var mac_regex = /^([a-f0-9]{2}(:|-)){5}[a-f0-9]{2}$/ig;
+            var ip_regex = /^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/g
+
             var in_port = items[0].querySelector('input').value,
-                mac_src = items[1].querySelector('input').value.toLowerCase(), 
-                mac_dst = items[2].querySelector('input').value.toLowerCase(), 
-                //vlan_id = items[3].querySelector('input').value, 
-                //vlan_prio = items[4].querySelector('input').value, 
-                ip_src = items[3].querySelector('input').value, 
-                ip_dst = items[4].querySelector('input').value, 
-                ip_proto = items[5].querySelector('input').value, 
-                ip_tos = items[6].querySelector('input').value, 
-                src_port = items[7].querySelector('input').value, 
-                dst_port = items[8].querySelector('input').value, 
-                action = items[9].querySelector('input').value;
-                var old_action = action;
-                
+                mac_src = items[1].querySelector('input').value.toLowerCase(),
+                mac_dst = items[2].querySelector('input').value.toLowerCase(),
+                //vlan_id = items[3].querySelector('input').value,
+                //vlan_prio = items[4].querySelector('input').value,
+                ip_src = items[3].querySelector('input').value,
+                ip_dst = items[4].querySelector('input').value,
+                ip_proto = items[5].querySelector('input').value,
+                ip_tos = items[6].querySelector('input').value,
+                src_port = items[7].querySelector('input').value,
+                dst_port = items[8].querySelector('input').value,
+                action = document.getElementsByName("action");
+
+                // Validations
                 if (!(in_port || mac_src || mac_dst || ip_src || ip_dst || ip_proto || ip_tos || src_port || dst_port || action)) {
                     return;
                 }
-                                
-                if (mac_src && !mac_regex.test(mac_src)) {
-					alert('Incorrect mac_src: ' + mac_src);
-					return;
-				}
-				if (mac_dst && !mac_regex.test(mac_dst)) {
-					alert('Incorrect mac_dst: ' + mac_dst);
-					return;
-				}
-				if (ip_src && !ip_regex.test(ip_src)) {
-					alert('Incorrect ip_src: ' + ip_src);
-					return;
-				}
-				if (ip_dst && !ip_regex.test(ip_dst)) {
-					alert('Incorrect ip_dst: ' + ip_dst);
-					return;
-				}
-                
-				if (isNaN(Number(in_port))) {
-					alert('Incorrect in_port: ' + in_port);
-					return;
-				}
-				if (isNaN(Number(src_port))) {
-					alert('Incorrect src_port: ' + src_port);
-					return;
-				}
-				if (isNaN(Number(dst_port))) {
-					alert('Incorrect dst_port: ' + dst_port);
-					return;
-				}
-				
-				if (~action.toLowerCase().indexOf("output"))
-					action = action.substring(action.toLowerCase().indexOf("output") + "output".length);
-				if (~action.toLowerCase().indexOf(":"))
-					action = action.substring(action.toLowerCase().indexOf(":") + ":".length);
-				if (~action.toLowerCase().indexOf(" "))
-					action = action.substring(action.toLowerCase().indexOf(" ") + " ".length);
-				
-				if (isNaN(Number(action))) {
-					alert('Incorrect action: ' + old_action);
-					return;
-				}
-                
+                if (mac_src && mac_src.search(mac_regex) == -1) {
+                    alert('Incorrect mac_src: ' + mac_src);
+                    return;
+                }
+                if (mac_dst && mac_dst.search(mac_regex) == -1) {
+                    alert('Incorrect mac_dst: ' + mac_dst);
+                    return;
+                }
+                if (ip_src && ip_src.search(ip_regex) == -1) {
+                    alert('Incorrect ip_src: ' + ip_src);
+                    return;
+                }
+                if (ip_dst && ip_dst.search(ip_regex) == -1) {
+                    alert('Incorrect ip_dst: ' + ip_dst);
+                    return;
+                }
+
+                if (isNaN(Number(in_port))) {
+                    alert('Incorrect in_port: ' + in_port);
+                    return;
+                }
+                if (isNaN(Number(src_port))) {
+                    alert('Incorrect src_port: ' + src_port);
+                    return;
+                }
+                if (isNaN(Number(dst_port))) {
+                    alert('Incorrect dst_port: ' + dst_port);
+                    return;
+                }
+
+                // Parsing action
+                var actions_list = new Object();
+                for (var l = 0; l < action.length; l++) {
+                    if (action[l].value == "output") {
+                        var port = document.getElementsByName("outport")[l].value;
+                        if (isNaN(Number(port))) {
+                            alert('Incorrect value: ' + port);
+                            return;
+                        }
+                        actions_list[action[l].value] = port;
+                    }
+                    else if (action[l].value == "set_field") {
+                        var field = document.getElementsByName("mod_field")[l].value,
+                            value = document.getElementsByName("mod_field_value")[l].value;
+
+                            if ((field == "eth_src" || field == "eth_dst") && value.search(mac_regex) == -1) {
+                                alert('Incorrect mac address: ' + value);
+                                return;
+                            }
+
+                            if ((field == "ip_src" || field == "ip_dst") && value.search(ip_regex) == -1) {
+                                alert('Incorrect ip address: ' + value);
+                                return;
+                            }
+                            actions_list[field] = value;
+                    }
+                    else if (action[l].value == "drop") {
+                        //actions_list.clear();
+                        actions_list[action[l].value] = true;
+                    }
+                }
+
+                // Display new flow entry to table
                 items[0].innerHTML = in_port;
                 items[1].innerHTML = mac_src;
                 items[2].innerHTML = mac_dst;
@@ -436,8 +512,20 @@ UI = function () {
                 items[6].innerHTML = ip_tos;
                 items[7].innerHTML = src_port;
                 items[8].innerHTML = dst_port;
-                items[9].innerHTML = (action != '' && action != '0' ? 'output: ' + action : 'drop');
+                items[9].innerHTML = "";
+                for (var elem in actions_list) {
+                    if (elem == "output") {
+                        items[9].innerHTML += elem + ": " + actions_list[elem] + "<br>";
+                    }
+                    else if (elem == "drop") {
+						items[9].innerHTML += "drop<br>";
+					}
+                    else {
+                        items[9].innerHTML += "set_field: " + actions_list[elem] + " -> " + elem + "<br>";
+                    }
+                }
 
+            // Forming new flow request and sending to the controller
             var req = new Object();
             req.in_port = Number(in_port);
             req.eth_src = mac_src;
@@ -450,11 +538,22 @@ UI = function () {
             req.ip_tos = ip_tos;
             req.src_port = Number(src_port);
             req.dst_port = Number(dst_port);
-            req.out_port = Number(action);
-            
-            Server.ajax('POST', '/api/static-flow-pusher/newflow/' + UI.menu.switch_id, req); 
+
+            if (!isNaN(Number(actions_list["output"])))
+                req.out_port = Number(actions_list["output"]);
+
+            if (actions_list["eth_src"])
+                req.modify_eth_src = actions_list["eth_src"];
+            if (actions_list["eth_dst"])
+                req.modify_eth_dst = actions_list["eth_dst"];
+            if (actions_list["ip_src"])
+                req.modify_ip_src = actions_list["ip_src"];
+            if (actions_list["ip_dst"])
+                req.modify_ip_dst = actions_list["ip_dst"];
+
+            Server.ajax('POST', '/api/static-flow-pusher/newflow/' + UI.menu.switch_id, req);
         }
-        
+
         UI.aux.querySelector('button.new').style.display = 'none';
         UI.aux.querySelector('button.remove').style.display = 'none';
         UI.aux.querySelector('button.add').style.display = 'block';
@@ -473,14 +572,13 @@ UI = function () {
                     var rulesEntries = HCI.getHovered().routingRules.entries();
                     for (var k = 0; k < i; k++)
                         rulesEntries.next();
-                    
+
                     var tmp = rulesEntries.next().value;
-                    window.console.error('Erase', tmp);
                     if (tmp) {
                         var flow_id = tmp[0],
                             switch_id = UI.menu.switch_id;
                         HCI.getHovered().routingRules.delete(flow_id);
-                        Server.ajax('DELETE', '/api/flow/' + switch_id + '/' + flow_id); 
+                        Server.ajax('DELETE', '/api/flow/' + switch_id + '/' + flow_id);
                     }
                     else {
                         UI.aux.querySelector('button.new').style.display = 'none';
