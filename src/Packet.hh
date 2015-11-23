@@ -77,6 +77,12 @@ public:
     uint8_t           readIPDSCP();
     uint8_t           readIPECN();
     uint8_t           readIPProto();
+    // TCP
+    uint16_t          readTCPSrc();
+    uint16_t          readTCPDst();
+    // UDP
+    uint16_t          readUDPSrc();
+    uint16_t          readUDPDst();
     // TODO: fill all possible OXM fields implemented by fluid_msg
     //@
 

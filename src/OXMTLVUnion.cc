@@ -70,14 +70,14 @@ of13::OXMTLV *OXMTLVUnion::init(uint8_t field)
         m_base = new (&ipv4Src) of13::IPv4Src(); break;
     case of13::OFPXMT_OFB_IPV4_DST:
         m_base = new (&ipv4Dst) of13::IPv4Dst(); break;
-    //case of13::OFPXMT_OFB_TCP_SRC:break;
-    //    m_base = new (&) of13::(); break;
-    //case of13::OFPXMT_OFB_TCP_DST:break;
-    //    m_base = new (&) of13::(); break;
-    //case of13::OFPXMT_OFB_UDP_SRC:break;
-    //    m_base = new (&) of13::(); break;
-    //case of13::OFPXMT_OFB_UDP_DST:break;
-    //    m_base = new (&) of13::(); break;
+    case of13::OFPXMT_OFB_TCP_SRC:break;
+        m_base = new (&tcpSrc) of13::TCPSrc(); break;
+    case of13::OFPXMT_OFB_TCP_DST:break;
+        m_base = new (&tcpDst) of13::TCPDst(); break;
+    case of13::OFPXMT_OFB_UDP_SRC:break;
+        m_base = new (&udpSrc) of13::UDPSrc(); break;
+    case of13::OFPXMT_OFB_UDP_DST:break;
+        m_base = new (&udpDst) of13::UDPDst(); break;
     //case of13::OFPXMT_OFB_SCTP_SRC:break;
     //    m_base = new (&) of13::(); break;
     //case of13::OFPXMT_OFB_SCTP_DST:break;

@@ -116,6 +116,12 @@ public:
     uint8_t         loadIPDSCP();
     uint8_t         loadIPECN();
     uint8_t         loadIPProto();
+    // TCP
+    uint16_t        loadTCPSrc();
+    uint16_t        loadTCPDst();
+    // UDP
+    uint16_t        loadUDPSrc();
+    uint16_t        loadUDPDst();
     //@}
 
     //@{
@@ -146,6 +152,12 @@ public:
     bool match(const of13::IPDSCP& val);
     bool match(const of13::IPECN& val);
     bool match(const of13::IPProto& val);
+    // TCP
+    bool match(const of13::TCPSrc& val);
+    bool match(const of13::TCPDst& val);
+    // UDP
+    bool match(const of13::UDPSrc& val);
+    bool match(const of13::UDPDst& val);
     //@}
 
     void add_action(Action* action);

@@ -20,6 +20,8 @@
 #include <tins/rawpdu.h>
 #include <tins/arp.h>
 #include <tins/ip.h>
+#include <tins/tcp.h>
+#include <tins/udp.h>
 
 struct PacketImpl {
     of13::Match match;
@@ -27,6 +29,8 @@ struct PacketImpl {
     Tins::EthernetII pkt;
     Tins::ARP*       arp;
     Tins::IP*        ip;
+    Tins::TCP*       tcp;
+    Tins::UDP*       udp;
 
     PacketImpl(of13::PacketIn& pi)
         : //match(pi.match()),
@@ -37,6 +41,10 @@ struct PacketImpl {
           ip(dynamic_cast<Tins::IP*>(pkt.inner_pdu()))
     {
         of13::Match::swap(match, pi.match());
+        if (ip) {
+            tcp = dynamic_cast<Tins::TCP*>(ip->inner_pdu());
+            udp = dynamic_cast<Tins::UDP*>(ip->inner_pdu());
+        }
     }
 };
 
@@ -110,6 +118,18 @@ uint8_t Packet::readIPECN()
 uint8_t Packet::readIPProto()
 { return m->ip ? m->ip->protocol() : 0; }
 
+uint16_t Packet::readTCPSrc()
+{ return m->tcp ? m->tcp->sport() : 0; }
+
+uint16_t Packet::readTCPDst()
+{ return m->tcp ? m->tcp->dport() : 0; }
+
+uint16_t Packet::readUDPSrc()
+{ return m->udp ? m->udp->sport() : 0; }
+
+uint16_t Packet::readUDPDst()
+{ return m->udp ? m->udp->dport() : 0; }
+
 void Packet::read(of13::OXMTLV& tlv)
 {
     switch (tlv.field()) {
@@ -148,9 +168,13 @@ void Packet::read(of13::OXMTLV& tlv)
     case of13::OFPXMT_OFB_IPV4_DST:
         tlv = of13::IPv4Dst(readIPv4Dst()); break;
     case of13::OFPXMT_OFB_TCP_SRC:break;
+        tlv = of13::TCPSrc(readTCPSrc()); break;
     case of13::OFPXMT_OFB_TCP_DST:break;
+        tlv = of13::TCPDst(readTCPDst()); break;
     case of13::OFPXMT_OFB_UDP_SRC:break;
+        tlv = of13::UDPSrc(readUDPSrc()); break;
     case of13::OFPXMT_OFB_UDP_DST:break;
+        tlv = of13::UDPDst(readUDPDst()); break;
     case of13::OFPXMT_OFB_SCTP_SRC:break;
     case of13::OFPXMT_OFB_SCTP_DST:break;
     case of13::OFPXMT_OFB_ICMPV4_TYPE:break;
