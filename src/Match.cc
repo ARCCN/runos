@@ -121,5 +121,6 @@ EthAddress operator&(const EthAddress &a, const EthAddress &b)
 
 IPAddress operator&(const IPAddress &a, const IPAddress &b)
 {
-    return fluid_msg::IPAddress();
+    // Only IPV4 version. IPv6 is broken
+    return fluid_msg::IPAddress(const_cast<IPAddress &>(a).getIPv4() & const_cast<IPAddress &>(b).getIPv4());
 }

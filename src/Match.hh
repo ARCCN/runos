@@ -38,7 +38,7 @@ struct oxm_match_impl {
     static bool match(const oxm_type& op, const decltype(oxm_type().value())& value)
     {
         if (op.has_mask())
-            return value == (op.oxm_type::value() & op.oxm_type::mask());
+              return op.oxm_type::value() == (value & op.oxm_type::mask());
         else
             return value == op.oxm_type::value();
     }
