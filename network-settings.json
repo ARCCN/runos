@@ -11,7 +11,8 @@
         "stp",
         "static-flow-pusher",
         "arp-handler",
-        "flow-manager"
+        "flow-manager",
+        "acl"
     ],
 
     "rest-listener" : {

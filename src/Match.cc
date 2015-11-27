@@ -116,7 +116,15 @@ bool oxm_match(const of13::OXMTLV *tlv, const of13::OXMTLV *value)
 
 EthAddress operator&(const EthAddress &a, const EthAddress &b)
 {
-    return fluid_msg::EthAddress();
+    /* ugly code, need refactoring */
+    const uint8_t *d1 = const_cast<EthAddress &>(a).get_data();
+    const uint8_t *d2 = const_cast<EthAddress &>(b).get_data();
+    uint8_t data[6] = {0};
+
+    for(int i = 0; i < 6; ++i)
+        data[i] = d1[i] & d2[i];
+
+    return fluid_msg::EthAddress(data);
 }
 
 IPAddress operator&(const IPAddress &a, const IPAddress &b)
