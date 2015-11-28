@@ -40,6 +40,14 @@
     "switch-stats": {
 	"poll-interval": 1,
 	"pin-to-thread": 1
+    },
+
+    "acl" : {
+        "rules" : [
+            {"action" : "drop", "proto" : "tcp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow-limit" : "any"},
+            {"action" : "drop", "proto" : "udp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow-limit" : "any"},
+            {"action" : "drop", "proto" : "udp", "src" : {"ip" : "10.1.0.0/255.255.255.0", "mac" : "any", "port" : 80}, "dst" : {"ip" : "any", "mac" : "any", "port" : 80}, "flow-limit" : "any"}
+        ]
     }
 }
 

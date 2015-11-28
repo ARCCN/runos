@@ -2,37 +2,297 @@
 #include "Match.hh"
 #include "Controller.hh"
 #include "AppObject.hh"
+#include "RestListener.hh"
 
 #include <algorithm>
 
 REGISTER_APPLICATION(ACL, {"controller", ""})
+
+class MakeString {
+public:
+    MakeString() : stream(){}
+    template<class T>
+    MakeString& operator<< (const T &arg) {
+        stream << arg;
+        return *this;
+    }
+    operator std::string() const {
+        return stream.str();
+    }
+protected:
+    std::stringstream stream;
+};
+
+static const auto ANY_SRC_MAC = of13::EthSrc("00:00:00:00:00:00", "00:00:00:00:00:00");
+static const auto ANY_DST_MAC = of13::EthDst("00:00:00:00:00:00", "00:00:00:00:00:00");
+static const auto HOST_MAC_MASK = fluid_msg::EthAddress("ff:ff:ff:ff:ff:ff");
+
+static const auto ANY_SRC_IP = of13::IPv4Src("0.0.0.0", "0.0.0.0");
+static const auto ANY_DST_IP = of13::IPv4Dst("0.0.0.0", "0.0.0.0");
+static const auto HOST_IP_MASK = fluid_msg::IPAddress("255.255.255.255");
+
+template<typename T> std::string stringify(const T& value) {
+    return MakeString() << value;
+}
+
+template<> std::string stringify(const uint32_t& value) {
+    if(value)
+        return MakeString() << value;
+    else
+        return "any";
+}
+
+template<> std::string stringify(const uint16_t& value) {
+    if(value)
+        return MakeString() << value;
+    else
+        return "any";
+}
+
+using of13::EthSrc;
+using of13::EthDst;
+
+template<> std::string stringify(const EthSrc &value) {
+    if(const_cast<EthSrc &>(value).equals(ANY_SRC_MAC))
+        return "any";
+    if(const_cast<EthSrc &>(value).mask() == HOST_MAC_MASK)
+        return const_cast<EthSrc &>(value).value().to_string();
+    else
+        return const_cast<EthSrc &>(value).value().to_string() + "/" + const_cast<EthSrc &>(value).mask().to_string();
+}
+
+template<> std::string stringify(const EthDst &value) {
+    if(const_cast<EthDst &>(value).equals(ANY_DST_MAC))
+        return "any";
+    if(const_cast<EthDst &>(value).mask() == HOST_MAC_MASK)
+        return const_cast<EthDst &>(value).value().to_string();
+    else
+        return const_cast<EthDst &>(value).value().to_string() + "/" + const_cast<EthDst &>(value).mask().to_string();
+}
+
+using of13::IPv4Src;
+using of13::IPv4Dst;
+
+template<> std::string stringify(const IPv4Src &value) {
+    if(const_cast<IPv4Src &>(value).equals(ANY_SRC_IP))
+        return "any";
+    if(const_cast<IPv4Src &>(value).mask() == HOST_IP_MASK)
+        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Src &>(value).value().getIPv4());
+    else
+        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Src &>(value).value().getIPv4()) + 
+            "/" + AppObject::uint32_t_ip_to_string(const_cast<IPv4Src &>(value).mask().getIPv4());
+}
+
+template<> std::string stringify(const IPv4Dst &value) {
+    if(const_cast<IPv4Dst &>(value).equals(ANY_DST_IP))
+        return "any";
+    if(const_cast<IPv4Dst &>(value).mask() == HOST_IP_MASK)
+        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Dst &>(value).value().getIPv4());
+    else
+        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Dst &>(value).value().getIPv4()) + 
+            "/" + AppObject::uint32_t_ip_to_string(const_cast<IPv4Dst &>(value).mask().getIPv4());
+}
+
+
+template<> std::string stringify(const of13::IPProto &value) {
+    switch(const_cast<of13::IPProto &>(value).value()) {
+    case 1:
+        return "icmp";
+    case 6:
+        return "tcp";
+    case 17:
+        return "udp";
+    case 255:
+        return "any";
+    }
+
+    return "unknown";
+}
+
+json11::Json ACLEntry::to_json() const {
+    json11::Json src = json11::Json::object {
+        {"ip", stringify(src_ip)},
+        {"mac", stringify(src_mac)},
+        {"port", stringify(src_port)}
+    };
+
+    json11::Json dst = json11::Json::object {
+        {"ip", stringify(dst_ip)},
+        {"mac", stringify(dst_mac)},
+        {"port", stringify(dst_port)}
+    };
+
+    return json11::Json::object {
+        {"action", ACLAction_STR[int(action)]},
+        {"proto", stringify(proto)},
+        {"src", src},
+        {"dst", dst},
+        {"flow-limit", stringify(num_flows)}
+    };
+}
+
+void ACLEntry::from_json(const json11::Json &json)
+{
+    const auto &j_action = json["action"].string_value();
+    if(j_action == "deny")
+        action = ACLAction::DENY;
+    else
+        action = ACLAction::ALLOW;
+
+    const auto &j_proto = json["proto"].string_value();
+    if(j_proto == "any")
+        proto = of13::IPProto(255);
+    else if(j_proto == "icmp")
+        proto = of13::IPProto(1);
+    else if(j_proto == "tcp")
+        proto = of13::IPProto(6);
+    else if(j_proto == "udp")
+        proto = of13::IPProto(17);
+
+    const auto &j_flows = json["flow-limit"];
+    if(j_flows.is_number())
+        num_flows = j_flows.int_value();
+    else
+        num_flows = 0;
+
+    auto split = [](const std::string &str, const std::string &mask) {
+        auto p = str.find('/');
+        if(p != std::string::npos)
+            return std::make_pair(str.substr(0, p), str.substr(p + 1, std::string::npos));
+        else
+            return std::make_pair(str, mask);
+    };
+
+    const auto &src = json["src"];
+
+    const auto j_src_ip = src["ip"].string_value();
+    if(j_src_ip == "any")
+        src_ip = ANY_SRC_IP;
+    else {
+        auto p = split(j_src_ip, "255.255.255.255");
+        src_ip = of13::IPv4Src(p.first, p.second);
+    }
+
+    const auto j_src_mac = src["mac"].string_value();
+    if(j_src_mac == "any")
+        src_mac = ANY_SRC_MAC;
+    else {
+        auto p = split(j_src_mac, "ff:ff:ff:ff:ff:ff");
+        src_mac = of13::EthSrc(p.first, p.second);
+    }
+
+    if(src["port"].is_number())
+        src_port = src["port"].int_value();
+    else
+        src_port = 0;
+
+    const auto &dst = json["dst"];
+
+    const auto j_dst_ip = dst["ip"].string_value();
+    if(j_dst_ip == "any")
+        dst_ip = ANY_DST_IP;
+    else {
+        auto p = split(j_dst_ip, "255.255.255.255");
+        dst_ip = of13::IPv4Dst(p.first, p.second);
+    }
+
+    const auto j_dst_mac = dst["mac"].string_value();
+    if(j_dst_mac == "any")
+        dst_mac = ANY_DST_MAC;
+    else {
+        auto p = split(j_dst_mac, "ff:ff:ff:ff:ff:ff");
+        dst_mac = of13::EthDst(p.first, p.second);
+    }
+
+    if(dst["port"].is_number())
+        dst_port = dst["port"].int_value();
+    else
+        dst_port = 0;
+}
 
 void ACL::init(Loader *loader, const Config& config)
 {
     Controller* ctrl = Controller::get(loader);
     ctrl->registerHandler(this);
 
+    RestListener::get(loader)->registerRestHandler(this);
+    acceptPath(Method::GET, "rules/all");
+
     _aclId = 0;
 
-    addEntry({
-        ACLAction::DENY, 255,
-        of13::IPv4Src("10.0.0.0", "255.255.0.0"), of13::EthSrc("00:00:00:00:00:00", "00:00:00:00:00:00"), 0,
-        of13::IPv4Dst("0.0.0.0", "0.0.0.0"), of13::EthDst("00:00:00:00:00:00", "00:00:00:00:00:00"), 0, 0});
-
-    addEntry({
-        ACLAction::ALLOW, 255,
-        of13::IPv4Src("0.0.0.0", "0.0.0.0"), of13::EthSrc("00:00:00:00:00:00", "00:00:00:00:00:00"), 0,
-        of13::IPv4Dst("0.0.0.0", "0.0.0.0"), of13::EthDst("00:00:00:00:00:00", "00:00:00:00:00:00"), 0, 0});
+    auto acl_config = config_cd(config, "acl");
+    if (acl_config.find("rules") != acl_config.end()) {
+        auto static_rules = acl_config.at("rules");
+        for (auto& acl_json : static_rules.array_items()) {
+            ACLEntry acl;
+            acl.from_json(acl_json);
+            addEntry(acl);
+        }
+    }
 }
 
 std::string ACL::orderingName() const
 {
-    return "acl-filtering";
+    return "acl";
 }
 
 std::unique_ptr<OFMessageHandler> ACL::makeOFMessageHandler()
 {
     return std::unique_ptr<OFMessageHandler>(new Handler(this));
+}
+
+std::string ACL::restName()
+{
+    return "acl";
+}
+
+bool ACL::eventable()
+{
+    return false;
+}
+
+std::string ACL::displayedName()
+{
+    return "ACL";
+}
+
+std::string ACL::page()
+{
+    return "acl.html";
+}
+
+json11::Json ACL::handleGET(std::vector<std::string> params, std::string body)
+{
+    if (params.size() == 2 && params[0] == "rules" && params[1] == "all") {
+        return json11::Json(rules());
+    }
+
+    return "{}";
+}
+
+json11::Json ACL::handlePOST(std::vector<std::string> params, std::string body)
+{
+    return json11::Json::object {
+        {"action", "" }
+    };
+}
+
+json11::Json ACL::handleDELETE(std::vector<std::string> params, std::string body)
+{
+    return json11::Json::object {
+        {"action", "" }
+    };
+}
+
+std::vector<ACLEntry *> ACL::rules()
+{
+    std::vector<ACLEntry*> ret;
+    ret.reserve(_acls.size());
+
+    for (auto& pair : _acls) {
+        ret.push_back(&pair.second);
+    }
+    return ret;
 }
 
 bool ACL::isPrereq(const std::string &name) const
@@ -65,18 +325,36 @@ int32_t ACL::delEntry(int32_t id)
 
 OFMessageHandler::Action ACL::Handler::processMiss(OFConnection* ofconn, Flow* flow)
 {
-    std::vector<int32_t> acls;
+    if(flow->match(of13::EthType(0x0800))) { /* only IP is supported */
+        const auto eth_src = flow->loadEthSrc();
+        const auto eth_dst = flow->loadEthDst();
+
+        //const auto proto = flow->loadIPProto();
+
+        //const auto ip_src = flow->loadIPv4Src();
+        //const auto ip_dst = flow->loadIPv4Dst();
+
+        LOG(INFO) << eth_src.to_string() << " " << eth_dst.to_string();
+        //(void)proto;
+        //(void)ip_src;
+        //(void)ip_dst;
+        return Stop;
+    } else {
+        return Continue;
+    }
+
+    /*std::vector<int32_t> acls;
 
     for(const auto &acl_entry : app->_acls) {
         const auto &acl = acl_entry.second;
 
-        if(!of13::IPProto(255).equals(acl.proto) && !oxm_match(acl.proto, flow->pkt()->readIPProto()))
+        if(!of13::IPProto(255).equals(acl.proto) && !oxm_match(acl.proto, proto))
             continue;
 
-        if(!oxm_match(acl.src_ip, flow->pkt()->readIPv4Src()) || !oxm_match(acl.dst_ip, flow->pkt()->readIPv4Dst()))
+        if(!oxm_match(acl.src_ip, ip_src) || !oxm_match(acl.dst_ip, ip_dst))
             continue;
 
-        if(!oxm_match(acl.src_mac, flow->pkt()->readEthSrc()) || !oxm_match(acl.dst_mac, flow->pkt()->readEthDst()))
+        if(!oxm_match(acl.src_mac, eth_src) || !oxm_match(acl.dst_mac, eth_dst))
             continue;
 
         acls.push_back(acl_entry.first);
@@ -105,21 +383,8 @@ OFMessageHandler::Action ACL::Handler::processMiss(OFConnection* ofconn, Flow* f
 
     bool deny = acls.empty() || app->_acls[acls[0]].action == ACLAction::DENY;
 
-    if(deny) {
-        ACLEntry &acl = app->_acls[acls[0]];
+    LOG(INFO) << "Flow: " << eth_src.to_string() << " " << eth_dst.to_string() << " " << (deny ? "Deny" : "Allow");
+    return Continue;
 
-        const auto mac_src = flow->pkt()->readEthSrc();
-        const auto mac_dst = flow->pkt()->readEthDst();
-
-        LOG(INFO) << "Flow: " << mac_src.to_string() << " " << mac_dst.to_string() << " denied";
-
-        flow->match(acl.src_ip);
-        flow->match(acl.dst_ip);
-
-        flow->match(of13::EthSrc(mac_src));
-        flow->match(of13::EthDst(mac_dst));
-
-        return Stop;
-    } else
-        return Continue;
+    */
 }

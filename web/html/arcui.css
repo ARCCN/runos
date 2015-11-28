@@ -28,6 +28,8 @@ body.info main ul li b{font-weight:normal;text-shadow:none;background:#281a71;co
 body.info main canvas{padding:.5em 1em;padding-left:0}
 body.switch main{text-align:left;padding:1em;padding-bottom:.5em}body.switch main h1{font-family:'PT Sans';font-size:2em}
 body.switch main h2{padding:1em 0 .5em;font-family:'PT Sans';font-size:1.5em}
+body.acl main{text-align:left;padding:1em;padding-bottom:.5em}body.switch main h1{font-family:'PT Sans';font-size:2em}
+body.acl main h2{padding:1em 0 .5em;font-family:'PT Sans';font-size:1.5em}
 body.enterprise canvas.map{background:#BADA55;position:absolute;top:0;left:0;border-radius:5px;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
 body.enterprise div{display:none;position:absolute}body.enterprise div.group-name{border-radius:5px;background:rgba(0,0,0,0.5);z-index:1;top:0;left:0;width:100%;height:100%}body.enterprise div.group-name input{font-family:'PT Sans Narrow';font-size:2em;position:absolute}
 body.enterprise div.tooltip{font-size:1.3em;text-transform:none;color:white;text-shadow:0 1px rgba(0,0,0,0.88);background:rgba(0,0,0,0.8);padding:.5em;border:2px solid black;border-radius:10px;text-align:left}
@@ -132,3 +134,37 @@ body.switch tr:last-child td:first-child {
 body.switch tr:last-child td:last-child {
 	border-radius: 0 0 10px 0
 }
+
+/* ACL */
+body.acl table {
+        font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+        font-size: 14px;
+        border-radius: 10px;
+        border-spacing: 0;
+        text-align: center;
+        text-transform: none
+}
+body.acl th {
+        color: white;
+        text-shadow: 0 1px 1px #2D2020;
+        padding: 10px 20px
+}
+body.acl td {
+        padding: 10px 20px;
+        background: #E6E6FA
+}
+body.acl tr:first-child {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        background: linear-gradient(to right, #BA55D3, #000080)
+}
+body.acl tr:hover td {
+        background:linear-gradient(#ADD8E6, #4682B4)
+}
+body.acl tr:last-child td:first-child {
+        border-radius: 0 0 0 10px
+}
+body.acl tr:last-child td:last-child {
+        border-radius: 0 0 10px 0
+}
+
