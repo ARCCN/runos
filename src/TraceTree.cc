@@ -16,6 +16,8 @@
 
 #include "TraceTree.hh"
 
+#include <algorithm>
+
 #include "Flow.hh"
 #include "Match.hh"
 #include "FluidDump.hh"
@@ -67,6 +69,21 @@ struct BuildFTContext {
     uint16_t priority;
     TraceTree* tree;
 
+    std::vector<of13::OXMTLV*> match_combine()
+    {
+        auto match_ = match;
+        auto field_less =
+                [](of13::OXMTLV* a, of13::OXMTLV* b) { return a->field() < b->field(); };
+        auto field_equal =
+                [](of13::OXMTLV* a, of13::OXMTLV* b) { return a->field() == b->field(); };
+
+        std::sort(match_.begin(), match_.end(), field_equal);
+        auto last = std::unique(match_.begin(), match_.end(), field_equal);
+
+        match_.erase(last, match_.end());
+        return match_;
+    }
+
     uint64_t emitRule(Flow* flow, of13::FlowMod* fm);
     uint64_t emitBarrier();
     void buildFlowTableStep(TraceTreeNode* t);
@@ -93,7 +110,7 @@ uint64_t BuildFTContext::emitRule(Flow* flow, of13::FlowMod* fm)
     fm->priority(priority);
 
     of13::Match m;
-    for (of13::OXMTLV* tlv : match)
+    for (of13::OXMTLV* tlv : match_combine())
         m.add_oxm_field(tlv->clone());
     fm->match(m);
 
@@ -109,7 +126,7 @@ uint64_t BuildFTContext::emitBarrier()
     DVLOG(10) << "Emitting barrier";
     of13::FlowMod fm;
     of13::Match m;
-    for (of13::OXMTLV* tlv : match)
+    for (of13::OXMTLV* tlv : match_combine())
         m.add_oxm_field(tlv->clone());
     fm.match(m);
 
