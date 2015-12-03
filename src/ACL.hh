@@ -37,7 +37,7 @@ SIMPLE_APPLICATION(ACL, "acl")
 public:
     void init(Loader* loader, const Config& config) override;
 
-    std::string orderingName() const override;
+    std::string orderingName() const override { return "acl-filtering"; };
     std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override;
 
     /* REST methods & handlers */
@@ -53,8 +53,7 @@ public:
     std::vector<ACLEntry *> rules();
 
     /* ordering */
-    bool isPrereq(const std::string &name) const override;
-    bool isPostreq(const std::string &name) const override;
+    bool isPostreq(const std::string &name) const override { return (name == "forwarding"); }
 protected:
     std::map<int32_t, ACLEntry> _acls;
     int32_t _aclId;

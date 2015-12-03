@@ -44,9 +44,11 @@
 
     "acl" : {
         "rules" : [
-            {"action" : "drop", "proto" : "tcp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow_limit" : "any"},
-            {"action" : "drop", "proto" : "udp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow-limit" : "any"},
-            {"action" : "drop", "proto" : "udp", "src" : {"ip" : "10.1.0.0/255.255.255.0", "mac" : "any", "port" : 80}, "dst" : {"ip" : "any", "mac" : "any", "port" : 80}, "flow_limit" : "any"}
+            {"action" : "deny", "proto" : "tcp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow_limit" : "any"},
+            {"action" : "deny", "proto" : "udp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow-limit" : "any"},
+            {"action" : "deny", "proto" : "udp", "src" : {"ip" : "10.1.0.0/255.255.255.0", "mac" : "any", "port" : 80}, "dst" : {"ip" : "any", "mac" : "any", "port" : 80}, "flow_limit" : "any"},
+            {"action" : "allow", "proto" : "icmp", "src" : {"ip" : "any", "mac" : "00:00:00:00:00:01", "port" : "any"}, "dst" : {"ip" : "any", "mac" : "any", "port" : "any"}, "flow_limit" : "any"},
+            {"action" : "allow", "proto" : "icmp", "src" : {"ip" : "any", "mac" : "00:00:00:00:00:02", "port" : "any"}, "dst" : {"ip" : "any", "mac" : "any", "port" : "any"}, "flow_limit" : "any"}
         ]
     }
 }

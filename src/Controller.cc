@@ -199,6 +199,32 @@ public:
 
     void sortPipeline()
     {
+        for(size_t i = 0; i < pipeline_factory.size(); ++i) {
+            for(size_t j = 0; j < pipeline_factory.size(); ++j) {
+                if(i == j)
+                    continue;
+
+                const auto a = pipeline_factory[i];
+                const auto b = pipeline_factory[j];
+                bool a_before_b = b->isPrereq(a->orderingName());
+                bool a_after_b = b->isPostreq(a->orderingName());
+                bool b_before_a = a->isPrereq(b->orderingName());
+                bool b_after_a = a->isPostreq(b->orderingName());
+
+                if ((a_before_b && a_after_b) ||
+                       (b_before_a && b_after_a) ||
+                       (a_before_b && b_before_a) ||
+                       (a_after_b && b_after_a)) {
+                           LOG(FATAL) << "Wrong pipeline ordering constraints between "
+                               << a->orderingName() << " and " << b->orderingName();
+                }
+
+                if((a_before_b || b_after_a) && i > j) {
+                    std::swap(pipeline_factory[i], pipeline_factory[j]);
+                }
+            }
+        }
+/*
         std::sort(pipeline_factory.begin(), pipeline_factory.end(),
                   [](const OFMessageHandlerFactory *a, const OFMessageHandlerFactory *b) -> bool {
                       bool a_before_b = b->isPrereq(a->orderingName());
@@ -217,7 +243,7 @@ public:
                       return a_before_b || b_after_a;
                   }
         );
-
+*/
         LOG(INFO) << "Flow processors registered: ";
         for (auto &factory : pipeline_factory)
             LOG(INFO) << "  * " << factory->orderingName();

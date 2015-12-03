@@ -31,6 +31,11 @@ static const auto ANY_SRC_IP = of13::IPv4Src("0.0.0.0", "0.0.0.0");
 static const auto ANY_DST_IP = of13::IPv4Dst("0.0.0.0", "0.0.0.0");
 static const auto HOST_IP_MASK = fluid_msg::IPAddress("255.255.255.255");
 
+static const uint8_t TCP_PROTO = 6;
+static const uint8_t UDP_PROTO = 17;
+static const uint8_t ICMP_PROTO = 1;
+static const uint8_t ANY_PROTO = 255;
+
 template<typename T> std::string stringify(const T& value) {
     return MakeString() << value;
 }
@@ -96,17 +101,17 @@ template<> std::string stringify(const IPv4Dst &value) {
 
 template<> std::string stringify(const of13::IPProto &value) {
     switch(const_cast<of13::IPProto &>(value).value()) {
-    case 1:
+    case ICMP_PROTO:
         return "icmp";
-    case 6:
+    case TCP_PROTO:
         return "tcp";
-    case 17:
+    case UDP_PROTO:
         return "udp";
-    case 255:
+    case ANY_PROTO:
         return "any";
+    default:
+        return "unknown";
     }
-
-    return "unknown";
 }
 
 json11::Json ACLEntry::to_json() const {
@@ -139,15 +144,19 @@ void ACLEntry::from_json(const json11::Json &json)
     else
         action = ACLAction::ALLOW;
 
+    using of13::IPProto;
+
     const auto &j_proto = json["proto"].string_value();
     if(j_proto == "any")
-        proto = of13::IPProto(255);
+        proto = IPProto(ANY_PROTO);
     else if(j_proto == "icmp")
-        proto = of13::IPProto(1);
+        proto = IPProto(ICMP_PROTO);
     else if(j_proto == "tcp")
-        proto = of13::IPProto(6);
+        proto = IPProto(TCP_PROTO);
     else if(j_proto == "udp")
-        proto = of13::IPProto(17);
+        proto = IPProto(UDP_PROTO);
+    else
+        LOG(ERROR) << "Unknown proto: \'" << j_proto << "\'";
 
     const auto &j_flows = json["flow_limit"];
     if(j_flows.is_number())
@@ -231,11 +240,6 @@ void ACL::init(Loader *loader, const Config& config)
     }
 }
 
-std::string ACL::orderingName() const
-{
-    return "acl";
-}
-
 std::unique_ptr<OFMessageHandler> ACL::makeOFMessageHandler()
 {
     return std::unique_ptr<OFMessageHandler>(new Handler(this));
@@ -295,16 +299,6 @@ std::vector<ACLEntry *> ACL::rules()
     return ret;
 }
 
-bool ACL::isPrereq(const std::string &name) const
-{
-    return false;
-}
-
-bool ACL::isPostreq(const std::string &name) const
-{
-    return name == "forwarding";
-}
-
 /* handlers */
 int32_t ACL::addEntry(const ACLEntry &acl)
 {
@@ -333,57 +327,68 @@ OFMessageHandler::Action ACL::Handler::processMiss(OFConnection* ofconn, Flow* f
         const auto ip_src = flow->loadIPv4Src();
         const auto ip_dst = flow->loadIPv4Dst();
 
-        LOG(INFO) << eth_src.to_string() << " " << eth_dst.to_string();
-        (void)proto;
-        (void)ip_src;
-        (void)ip_dst;
-        return Stop;
+        uint16_t port_src = 0;
+        uint16_t port_dst = 0;
+        if(proto == TCP_PROTO) {
+            port_src = flow->loadTCPSrc();
+            port_dst = flow->loadTCPDst();
+        } else if(proto == UDP_PROTO) {
+            port_src = flow->loadUDPSrc();
+            port_dst = flow->loadUDPDst();
+        }
+
+        std::vector<int32_t> acls;
+        for(const auto &acl_entry : app->_acls) {
+            const auto &acl = acl_entry.second;
+
+            if(!of13::IPProto(255).equals(acl.proto) && !oxm_match(acl.proto, proto))
+                continue;
+
+            if(!oxm_match(acl.src_ip, ip_src) || !oxm_match(acl.dst_ip, ip_dst))
+                continue;
+
+            if(!oxm_match(acl.src_mac, eth_src) || !oxm_match(acl.dst_mac, eth_dst))
+                continue;
+
+            if(port_src && acl.src_port && port_src != acl.src_port)
+                continue;
+
+            if(port_dst && acl.dst_port && port_dst != acl.dst_port)
+                continue;
+
+            acls.push_back(acl_entry.first);
+        }
+
+        auto popcnt = [](uint32_t v) {
+            uint32_t bits = 0;
+            for(bits = 0; v; bits++)
+                v &= (v - 1);
+            return bits;
+        };
+
+        std::sort(acls.begin(), acls.end(), [this, popcnt](int32_t idx_a, int32_t idx_b) {
+            const ACLEntry &a = app->_acls[idx_a];
+            const ACLEntry &b = app->_acls[idx_b];
+
+            uint32_t a_mask_src = popcnt(const_cast<ACLEntry &>(a).src_ip.mask().getIPv4());
+            uint32_t b_mask_src = popcnt(const_cast<ACLEntry &>(b).src_ip.mask().getIPv4());
+
+            uint32_t a_mask_dst = popcnt(const_cast<ACLEntry &>(a).dst_ip.mask().getIPv4());
+            uint32_t b_mask_dst = popcnt(const_cast<ACLEntry &>(b).dst_ip.mask().getIPv4());
+
+            return a_mask_src > b_mask_src || (a_mask_src == b_mask_src && a_mask_dst > b_mask_dst);
+        });
+
+        bool deny = acls.empty() || app->_acls[acls[0]].action == ACLAction::DENY;
+
+        if(deny) {
+            LOG(INFO) << "DENY: " << eth_src.to_string() << " " << eth_dst.to_string();
+            return Stop;
+        }
+
+        LOG(INFO) << "ALLOW: " << eth_src.to_string() << " " << eth_dst.to_string();
+        return Continue;
     } else {
         return Continue;
     }
-
-    /*std::vector<int32_t> acls;
-
-    for(const auto &acl_entry : app->_acls) {
-        const auto &acl = acl_entry.second;
-
-        if(!of13::IPProto(255).equals(acl.proto) && !oxm_match(acl.proto, proto))
-            continue;
-
-        if(!oxm_match(acl.src_ip, ip_src) || !oxm_match(acl.dst_ip, ip_dst))
-            continue;
-
-        if(!oxm_match(acl.src_mac, eth_src) || !oxm_match(acl.dst_mac, eth_dst))
-            continue;
-
-        acls.push_back(acl_entry.first);
-    }
-
-    auto popcnt = [](uint32_t v) {
-        uint32_t bits = 0;
-        for(bits = 0; v; bits++)
-            v &= (v - 1);
-
-        return bits;
-    };
-
-    std::sort(acls.begin(), acls.end(), [this, popcnt](int32_t idx_a, int32_t idx_b) {
-        const ACLEntry &a = app->_acls[idx_a];
-        const ACLEntry &b = app->_acls[idx_b];
-
-        uint32_t a_mask_src = popcnt(const_cast<ACLEntry &>(a).src_ip.mask().getIPv4());
-        uint32_t b_mask_src = popcnt(const_cast<ACLEntry &>(b).src_ip.mask().getIPv4());
-
-        uint32_t a_mask_dst = popcnt(const_cast<ACLEntry &>(a).dst_ip.mask().getIPv4());
-        uint32_t b_mask_dst = popcnt(const_cast<ACLEntry &>(b).dst_ip.mask().getIPv4());
-
-        return a_mask_src > b_mask_src || (a_mask_src == b_mask_src && a_mask_dst > b_mask_dst);
-    });
-
-    bool deny = acls.empty() || app->_acls[acls[0]].action == ACLAction::DENY;
-
-    LOG(INFO) << "Flow: " << eth_src.to_string() << " " << eth_dst.to_string() << " " << (deny ? "Deny" : "Allow");
-    return Continue;
-
-    */
 }
