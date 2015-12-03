@@ -200,11 +200,8 @@ public:
     void sortPipeline()
     {
         for(size_t i = 0; i < pipeline_factory.size(); ++i) {
-            for(size_t j = 0; j < pipeline_factory.size(); ++j) {
-                if(i == j)
-                    continue;
-
-                const auto a = pipeline_factory[i];
+            for(size_t j = 1; j < pipeline_factory.size(); ++j) {
+                const auto a = pipeline_factory[j - 1];
                 const auto b = pipeline_factory[j];
                 bool a_before_b = b->isPrereq(a->orderingName());
                 bool a_after_b = b->isPostreq(a->orderingName());
@@ -219,8 +216,8 @@ public:
                                << a->orderingName() << " and " << b->orderingName();
                 }
 
-                if((a_before_b || b_after_a) && i > j) {
-                    std::swap(pipeline_factory[i], pipeline_factory[j]);
+                if(!(a_before_b || b_after_a)) {
+                    std::swap(pipeline_factory[j - 1], pipeline_factory[j]);
                 }
             }
         }
