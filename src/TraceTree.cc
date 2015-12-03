@@ -77,7 +77,7 @@ struct BuildFTContext {
         auto field_equal =
                 [](of13::OXMTLV* a, of13::OXMTLV* b) { return a->field() == b->field(); };
 
-        std::sort(match_.begin(), match_.end(), field_equal);
+        std::sort(match_.begin(), match_.end(), field_less);
         auto last = std::unique(match_.begin(), match_.end(), field_equal);
 
         match_.erase(last, match_.end());

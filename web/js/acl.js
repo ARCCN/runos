@@ -58,7 +58,7 @@ var Acl = function () {
 					html += '<td>' + response[i].dst.ip + '</td>';
                                         html += '<td>' + response[i].dst.mac + '</td>';
                                         html += '<td>' + response[i].dst.port + '</td>';
-					html += '<td>' + response[i].max_flows + '</td>';
+					html += '<td>' + response[i].flow_limit + '</td>';
 				html += '</tr>';
 			}
 			main.innerHTML = html;

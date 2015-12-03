@@ -79,7 +79,7 @@ template<> std::string stringify(const IPv4Src &value) {
     if(const_cast<IPv4Src &>(value).mask() == HOST_IP_MASK)
         return AppObject::uint32_t_ip_to_string(const_cast<IPv4Src &>(value).value().getIPv4());
     else
-        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Src &>(value).value().getIPv4()) + 
+        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Src &>(value).value().getIPv4()) +
             "/" + AppObject::uint32_t_ip_to_string(const_cast<IPv4Src &>(value).mask().getIPv4());
 }
 
@@ -89,7 +89,7 @@ template<> std::string stringify(const IPv4Dst &value) {
     if(const_cast<IPv4Dst &>(value).mask() == HOST_IP_MASK)
         return AppObject::uint32_t_ip_to_string(const_cast<IPv4Dst &>(value).value().getIPv4());
     else
-        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Dst &>(value).value().getIPv4()) + 
+        return AppObject::uint32_t_ip_to_string(const_cast<IPv4Dst &>(value).value().getIPv4()) +
             "/" + AppObject::uint32_t_ip_to_string(const_cast<IPv4Dst &>(value).mask().getIPv4());
 }
 
@@ -127,7 +127,7 @@ json11::Json ACLEntry::to_json() const {
         {"proto", stringify(proto)},
         {"src", src},
         {"dst", dst},
-        {"flow-limit", stringify(num_flows)}
+        {"flow_limit", stringify(num_flows)}
     };
 }
 
@@ -149,7 +149,7 @@ void ACLEntry::from_json(const json11::Json &json)
     else if(j_proto == "udp")
         proto = of13::IPProto(17);
 
-    const auto &j_flows = json["flow-limit"];
+    const auto &j_flows = json["flow_limit"];
     if(j_flows.is_number())
         num_flows = j_flows.int_value();
     else
@@ -329,15 +329,14 @@ OFMessageHandler::Action ACL::Handler::processMiss(OFConnection* ofconn, Flow* f
         const auto eth_src = flow->loadEthSrc();
         const auto eth_dst = flow->loadEthDst();
 
-        //const auto proto = flow->loadIPProto();
-
-        //const auto ip_src = flow->loadIPv4Src();
-        //const auto ip_dst = flow->loadIPv4Dst();
+        const auto proto = flow->loadIPProto();
+        const auto ip_src = flow->loadIPv4Src();
+        const auto ip_dst = flow->loadIPv4Dst();
 
         LOG(INFO) << eth_src.to_string() << " " << eth_dst.to_string();
-        //(void)proto;
-        //(void)ip_src;
-        //(void)ip_dst;
+        (void)proto;
+        (void)ip_src;
+        (void)ip_dst;
         return Stop;
     } else {
         return Continue;
