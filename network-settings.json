@@ -11,7 +11,8 @@
         "stp",
         "static-flow-pusher",
         "arp-handler",
-        "flow-manager"
+        "flow-manager",
+        "acl"
     ],
 
     "rest-listener" : {
@@ -39,6 +40,15 @@
     "switch-stats": {
 	"poll-interval": 1,
 	"pin-to-thread": 1
+    },
+
+    "acl" : {
+        "rules" : [
+            {"action" : "deny", "proto" : "icmp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow_limit" : "any"},
+            {"action" : "deny", "proto" : "udp", "src" : {"ip" : "10.0.0.2", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.3", "mac" : "any", "port" : "any"}, "flow-limit" : "any"},
+            {"action" : "deny", "proto" : "udp", "src" : {"ip" : "10.1.0.0/255.255.255.0", "mac" : "any", "port" : 80}, "dst" : {"ip" : "any", "mac" : "any", "port" : 80}, "flow_limit" : "any"},
+            {"action" : "allow", "proto" : "any", "src" : {"ip" : "10.0.0.0/255.255.255.0", "mac" : "any", "port" : "any"}, "dst" : {"ip" : "10.0.0.0/255.255.0.0", "mac" : "any", "port" : "any"}, "flow_limit" : "any"}
+        ]
     }
 }
 

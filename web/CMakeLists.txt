@@ -9,6 +9,7 @@ file(GLOB JS_SOURCES "js/globals.js"
                      "js/network.js"
                      "js/server.js"
                      "js/switch.js"
+                     "js/acl.js"
                      "js/ui.js")
 file(GLOB HTML_SOURCES "html/*.html" "html/*.css")
 set(JS_TARGET arcui.js)

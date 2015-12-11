@@ -52,6 +52,8 @@
 			Info.init();
 		} else if (document.body.className === 'switch') {
 			Switch.init();
+                } else if (document.body.className === 'acl') {
+                        Acl.init();
 		} else if (document.body.className === 'start') {
 			width = window.innerWidth;
 			height = window.innerHeight;
