@@ -1,12 +1,9 @@
-[submodule "third_party/libtins"]
-	path = third_party/libtins
-	url = https://github.com/mfontanini/libtins.git
 [submodule "third_party/libfluid_msg"]
 	path = third_party/libfluid_msg
 	url = https://github.com/ARCCN/libfluid_msg.git
 [submodule "third_party/libfluid_base"]
 	path = third_party/libfluid_base
-	url = https://github.com/OpenNetworkingFoundation/libfluid_base.git
+	url = https://github.com/ARCCN/libfluid_base.git
 [submodule "third_party/webserver"]
 	path = third_party/webserver
 	url = https://github.com/eidheim/Simple-Web-Server.git

@@ -5,22 +5,32 @@
         "learning-switch",
         "rest-listener",
         "host-manager",
-        "path-verifier",
         "webui",
+        "static-flow-pusher",
         "switch-stats",
         "stp",
-        "static-flow-pusher",
         "arp-handler",
         "flow-manager"
     ],
 
+    "flow-manager" : {
+        "interval" : 5
+    },
+
     "rest-listener" : {
-         "port" : 8000
+         "port" : 8000,
+         "web-dir" : "./build/web"
     },
 
     "controller": {
          "nthreads": 4,
-         "cbench": false
+         "cbench": false,
+         "pipeline": [
+             "link-discovery",
+             "host-manager",
+             "arp-handler",
+             "forwarding"
+         ]
     },
 
     "loader": {

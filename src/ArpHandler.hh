@@ -21,7 +21,7 @@
 #include "Application.hh"
 #include "Common.hh"
 #include "Loader.hh"
-#include "OFMessageHandler.hh"
+#include "oxm/openflow_basic.hh"
 
 struct Switch_Point
 {
@@ -29,21 +29,16 @@ struct Switch_Point
     uint32_t port;
 };
 
-class ArpHandler : public Application, public OFMessageHandlerFactory {
+/**
+ * Handler arp packets in network.
+ *
+ * Application generate arp reply on arp-request packets and send it to ingress port.
+ */
+class ArpHandler : public Application {
     SIMPLE_APPLICATION(ArpHandler, "arp-handler")
     public:
-        std::string orderingName() const override { return "arp-handler"; }
-        bool isPostreq(const std::string &name) const override { return (name == "link-discovery"); }
-        std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override { return std::unique_ptr<OFMessageHandler>(new Handler(this)); }
         void init(Loader* loader, const Config& config) override;
     private:
         class HostManager* host_manager;
 
-        class Handler: public OFMessageHandler {
-            private:
-                ArpHandler *app;
-            public:
-                Handler(ArpHandler* a){app = a; }
-                Action processMiss(OFConnection* ofconn, Flow* flow) override;
-         };
 };

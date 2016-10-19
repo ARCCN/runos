@@ -16,6 +16,8 @@
 
 #include "Event.hh"
 
+#include <boost/lexical_cast.hpp>
+
 #include <map>
 #include <vector>
 #include "RestListener.hh"
@@ -67,7 +69,7 @@ json11::Json Event::to_json() const
 {
     std::string ev_type = (type() == Add ? "Add" : (type() == Delete ? "Delete" : "Change"));
     return json11::Json::object {
-        {"time", AppObject::uint64_to_string(static_cast<uint64_t>(ev_time()))},
+        {"time", boost::lexical_cast<std::string>(static_cast<uint64_t>(ev_time()))},
         {"event_id", (int)id()},
         {"type", ev_type},
         {"obj_id", obj()->id_str()},

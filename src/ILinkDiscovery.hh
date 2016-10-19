@@ -19,14 +19,15 @@
 #include "Application.hh"
 #include "Loader.hh"
 
-struct switch_and_port {
+struct switch_and_port
+{
     uint64_t dpid;
     uint32_t port;
 };
 
 /**
   Discovers links between switches and monitors it for failures.
-  The interface assumes that all links bidirectional and 
+  The interface assumes that all links bidirectional and
   ensures (from <= to) in all signals when applicable.
 */
 class ILinkDiscovery {
@@ -48,11 +49,15 @@ signals:
 };
 
 //////
-inline bool operator==(const switch_and_port & a, const switch_and_port & b)
+inline bool operator==(switch_and_port a, switch_and_port b)
 { return std::tie(a.dpid, a.port) == std::tie(b.dpid, b.port); }
+inline bool operator!=(switch_and_port a, switch_and_port b)
+{ return std::tie(a.dpid, a.port) != std::tie(b.dpid, b.port); }
 
-inline bool operator<(const switch_and_port & a, const switch_and_port & b)
+inline bool operator<(switch_and_port a, switch_and_port b)
 { return std::tie(a.dpid, a.port) < std::tie(b.dpid, b.port); }
+inline bool operator>(switch_and_port a, switch_and_port b)
+{ return std::tie(a.dpid, a.port) > std::tie(b.dpid, b.port); }
 
 namespace std {
     template<>

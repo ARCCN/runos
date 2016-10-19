@@ -6,42 +6,49 @@
 This components should be installed in the system:
 
 * Utilities: cmake, autoconf, libtool, pkg-config
-* libfluid dependencies: libevent openssl
-* libtins dependencies: openssl libpcap
+* libfluid dependencies: libevent openssl. NOTE : libfluid requierd libevent v2.1.5, that still in beta. We recommend you install it from source.
 * Libraries: QtCore 5, google-glog, boost::graph, boost::system, boost::thread, boost::coroutine, boost::context, uglifyjs
 * UglifyJS dependencies: npm, nodejs
 
-You can use this line on Ubuntu 14.04 to install all required packages:
+You can use this line on Ubuntu 15.10+ to install all required packages:
 
 ```
 $ sudo apt-get install build-essential cmake autoconf libtool \
-    pkg-config libgoogle-glog-dev libpcap-dev libevent-dev \ 
+    pkg-config libgoogle-glog-dev libevent-dev \
     libssl-dev qtbase5-dev libboost-graph-dev libboost-system-dev \
     libboost-thread-dev libboost-coroutine-dev libboost-context-dev \
-    libgoogle-perftools-dev curl \
+    libgoogle-perftools-dev curl nodejs npm \
 ```
 
-You need to install the latest JavaScript packages:
+You need to install the JavaScript packages:
 
 ```
-# If you have old versions of Node.js or UglifyJS,
-# you should remove them
-$ sudo npm un uglify-js -g
-$ sudo apt-get remove node nodejs npm
-# Install Node.js, npm and UglifyJS via package manager
-# (according to https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
-$ curl -sL https://deb.nodesource.com/setup | sudo bash -
-$ sudo apt-get install nodejs
-$ sudo npm install uglify-js -g
+    $ sudo  npm install uglify-js -g
+
+    # You maybe needed to  creating symbolic link from nodejs to node
+    $ sudo ln -s /usr/bin/nodejs /usr/bin/node
 ```
 
-To build project you must use g++-4.9 compiler (or above) or similar another compiler with support std::regex.  
-We recommend to install g++-4.9 by this way:
+To install libevent 2.1.5 :
+```
+# Get source code
+$ wget https://github.com/libevent/libevent/releases/download/release-2.1.5-beta/libevent-2.1.5-beta.tar.gz
+$ tar -xvf libevent-2.1.5-beta.tar.gz
+$ cd libevent-2.1.5-beta
+# And build
+$ ./configure
+$ make
+$ sudo make install
+$ sudo ldconfig
+```
+
+To build project you must use g++-5.2 compiler (or above) or similar another compiler with support std::regex.
+We recommend to install g++-5.2 by this way:
 
 ```
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
-sudo apt-get install g++-4.9 
+sudo apt-get install g++-5.2
 ```
 
 # Building
@@ -53,7 +60,7 @@ $ third_party/bootstrap.sh
 # Create out of source build directory
 $ mkdir -p build; cd build
 # Configure (if you use g++)
-$ CXX=g++-4.9 cmake -DCMAKE_BUILD_TYPE=Release ..
+$ CXX=g++-5.2 cmake -DCMAKE_BUILD_TYPE=Release ..
 # OR configure (otherwise)
 $ cmake -DCMAKE_BUILD_TYPE=Release ..
 
@@ -115,7 +122,7 @@ reference them in `CMakeLists.txt`.
 
 Fill them with the following content:
 
-    /* MyApp.cc */
+    /* MyApp.hh */
     #pragma once
 
     #include "Application.hh"
@@ -127,7 +134,7 @@ Fill them with the following content:
         void init(Loader* loader, const Config& config) override;
     };
 
-    /* MyApp.hh */
+    /* MyApp.cc */
     #include "MyApp.hh"
 
     REGISTER_APPLICATION(MyApp, {""})
@@ -175,9 +182,11 @@ Then include `Controller.hh` in `MyApp.cc` and get controller instance:
 
 
 Now we need a slot to process `switchUp` events. Declare it in `MyApp.hh`:
+    #include "SwitchConnection.hh"
+    ...
 
     public slots:
-        void onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr);
+        void onSwitchUp(SwitchConnectionPtr ofconn, of13::FeaturesReply fr);
 
 And connect signal to it in `MyApp::init`:
 
@@ -186,9 +195,9 @@ And connect signal to it in `MyApp::init`:
 
 Finally, write `MyApp::onSwitchUp` implementation:
 
-    void MyApp::switchUp(OFConnection* ofconn, of13::FeaturesReply fr)
+    void MyApp::onsSitchUp(SwitchConnectionPtr ofconn, of13::FeaturesReply fr)
     {
-        LOG(INFO) << "Look! This is a switch " << FORMAT_DPID << fr.id();
+        LOG(INFO) << "Look! This is a switch " << fr.datapath_id();
     }
 
 Great! Now you will see this greeting when switch connects to RuNOS.
@@ -199,48 +208,43 @@ You learned how subscribe to other application events, but how to manage flows?
 Imagine you wan't to do MAC filtering, ie drop all packets from hosts not listed
 in the configuration file.
 
-To do so you need to create packet-in handler. Packet-in handlers will be created
-for each switch by `controller` application and will live in a number of threads.  
+To do so you need to create packet-in handler. Packet-in handlers will be invoked
+for each switch by `controller` application and will live in a number of threads.
 So, you need define not only a "handler" but a handler factory.
 
-So, implement OFMessageHandlerFactory interface:
+So, register PacketMissHandlerFactory in `init`:
 
-    ...
-    #include "OFMessageHandler.hh"
+    #include "api/PacketMissHandler.hh"
+    #include "api/Packet.hh"
+    #include "types/ethaddr.hh"
+    #include "api/TraceablePacket.hh"
+    #include "oxm/openflow_basic.hh"
 
-    class MyApp : public Application, public OFMessageHandlerFactory {
-    ...
-    public:
-        std::string orderingName() const override { return "mac-filtering"; }
-        bool isPostreq(const std::string &name) const override { return (name == "forwarding"); }
-        OFMessageHandler* makeOFMessageHandler() override { new Handler(); }
-    ...
-    private:
-        class Handler: public OFMessageHandler {
-        public:
-            Action processMiss(OFConnection* ofconn, Flow* flow) override;
-        };
+    void MyApp::init(Loader *loader, const Config& config)
+    {
+        ...
+
+        Controller* ctrl = Controller::get(loader);
+        ctrl->registerHandler("mac-filtering",
+        [=](SwitchConnectionPtr connection){
+            return [=](Packet& pkt, FlowPtr, Decision decision){
+		if (pkt.test(oxm::eth_src() == "00:11:22:33:44:55"))
+		     return decision.drop().return_();
+		else
+                     return decision;
+            };
+        });
+
+        ...
+    }
 
 What it means? First, all handlers arranged into pipeline, where every handler
-can stop processing, look at some packet fields and add actions. To define a place
-where to put our handler we may define two functions: `isPostreq(name)` and 
-`isPrereq(name)`. First return `true` if we need to place our handler after handler
-`name`. Otherwise second return `true` if we need to place handler before.
+can stop processing, look at some packet fields and add actions. We need also
+insert our handler in pipeline. In `network-settings.json` `controller` has his setting,
+and pariculary `pipeline`, which contains name of handlers in pipeline.
+
 
 So, we name our handler as "mac-filtering" and need to place it before "forwarding".
-Now we need to register our factory at the controller. Write this line in `MyApp::init`:
-
-    Controller ctrl* = ...;
-    ctrl->registerHandler(this);
-
-Finally, implement the handler:
-
-    OFMessageHandler::Action MyApp::Handler::processMiss(OFConnection* ofconn, Flow* flow)
-    {
-        if (flow->match(of13::EthSrc("00:11:22:33:44:55"))) {
-            return Stop;
-        } else return Continue;
-    }
 
 Now compile RuNOS and test that all packets from ``00:11:22:33:44:55`` had been dropped.
 
@@ -251,12 +255,12 @@ Now compile RuNOS and test that all packets from ``00:11:22:33:44:55`` had been 
 The format of the RunOS REST requests:
 
     <HTTP-method> /api/<app_name>/<list_of_params>
-    
+
 * `<HTTP-method>` is GET, POST, DELETE of PUT
 * `<app_name>` is calling name of the application
 * `<list_of_params>` is list of the parameters separated by a slash
-   
-In POST and PUT request you can pass parameters in the body of the request using JSON format. 
+
+In POST and PUT request you can pass parameters in the body of the request using JSON format.
 
 Current version of RunOS has 6 REST services:
 * switch-manager
@@ -384,8 +388,8 @@ In current version events can signal about appearance or disappearance some obje
 
 ## Static Flow Pusher
 
-You can use static flow pusher to set rules proactively.  
-At first, you can write required rules in `network-settings.json` file.  
+You can use static flow pusher to set rules proactively.
+At first, you can write required rules in `network-settings.json` file.
 For example:
 
     "static-flow-pusher": {

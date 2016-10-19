@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include "AppObject.hh"
-#include "Common.hh"
 
-#define FORMAT_STRID std::setw(16) << std::setfill('0')
+#include <stdio.h>
+#include <boost/lexical_cast.hpp>
+
+#include "Common.hh"
 
 bool operator==(const AppObject& o1, const AppObject& o2)
 { return o1.id() == o2.id(); }
 
 std::string AppObject::id_str() const
-{ return uint64_to_string(id()); }
-
-std::string AppObject::uint64_to_string(uint64_t id)
-{
-    std::ostringstream ss;
-    ss << FORMAT_STRID << id;
-    return ss.str();
-}
+{ return boost::lexical_cast<std::string>(id()); }
 
 std::string AppObject::uint32_t_ip_to_string(uint32_t ip)
 {

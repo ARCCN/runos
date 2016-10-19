@@ -15,59 +15,61 @@
  */
 
 #include "SimpleLearningSwitch.hh"
+
+#include <unordered_map>
+
+#include "api/Packet.hh"
+#include "api/PacketMissHandler.hh"
+#include "api/TraceablePacket.hh"
+#include "oxm/openflow_basic.hh"
+#include "types/ethaddr.hh"
+
+#include "Flow.hh"
 #include "Controller.hh"
+
+using namespace runos;
 
 REGISTER_APPLICATION(SimpleLearningSwitch, {"controller", ""})
 
-void SimpleLearningSwitch::init(Loader *loader, const Config &config)
+void SimpleLearningSwitch::init(Loader *loader, const Config &)
 {
     Controller* ctrl = Controller::get(loader);
-    ctrl->registerHandler(this);
-}
+    ctrl->registerHandler("forwarding", [](SwitchConnectionPtr) {
+        // MAC -> port mapping for EVERY switch
+        std::unordered_map<ethaddr, uint32_t> seen_port;
+        const auto ofb_in_port = oxm::in_port();
+        const auto ofb_eth_src = oxm::eth_src();
+        const auto ofb_eth_dst = oxm::eth_dst();
 
-std::string SimpleLearningSwitch::orderingName() const
-{ return "forwarding"; }
+        return [=](Packet& pkt, FlowPtr, Decision decision) mutable {
+            // Learn on packet data
+            ethaddr src_mac = pkt.load(ofb_eth_src);
+            // Forward by packet destination
+            ethaddr dst_mac = pkt.load(ofb_eth_dst);
 
-std::unique_ptr<OFMessageHandler> SimpleLearningSwitch::makeOFMessageHandler()
-{ return std::unique_ptr<OFMessageHandler>(new Handler()); }
+            if (is_broadcast(src_mac)) {
+                DLOG(WARNING) << "Broadcast source address, dropping";
+                return decision.drop().return_();
+            }
 
-OFMessageHandler::Action SimpleLearningSwitch::Handler::processMiss(OFConnection* ofconn, Flow* flow)
-{
-    static EthAddress broadcast("ff:ff:ff:ff:ff:ff");
+            seen_port[src_mac] = packet_cast<TraceablePacket>(pkt)
+                                .watch(ofb_in_port);
 
-    // Learn on packet data
-    EthAddress eth_src = flow->loadEthSrc();
-    uint32_t   in_port = flow->pkt()->readInPort();
-    // Forward by packet destination
-    EthAddress eth_dst = flow->loadEthDst();
+            // forward
+            auto it = seen_port.find(dst_mac);
 
-    if (eth_src == broadcast) {
-        DLOG(WARNING) << "Broadcast source address, dropping";
-        return Stop;
-    }
-
-    seen_port[eth_src] = in_port;
-
-    // forward
-    auto it = seen_port.find(eth_dst);
-
-    if (it != seen_port.end()) {
-        flow->idleTimeout(60);
-        flow->timeToLive(5 * 60);
-        flow->add_action(new of13::OutputAction(it->second, 0));
-        return Continue;
-    } else {
-        LOG(INFO) << "Flooding for unknown address " << eth_dst.to_string();
-
-        if (eth_dst == broadcast) {
-            flow->idleTimeout(0);
-            flow->timeToLive(0);
-        } else {
-            flow->setFlags(Flow::Disposable);
-        }
-
-        // Should be replaced with STP ports
-        flow->add_action(new of13::OutputAction(of13::OFPP_ALL, 128));
-        return Continue;
-    }
+            if (it != seen_port.end()) {
+                return decision.unicast(it->second)
+                               .idle_timeout(std::chrono::seconds(60))
+                               .hard_timeout(std::chrono::minutes(30));
+            } else {
+                auto ret = decision.broadcast();
+                if (not is_broadcast(dst_mac)) {
+                    LOG(INFO) << "Flooding for unknown address " << dst_mac;
+                    ret.hard_timeout(std::chrono::seconds::zero());
+                }
+                return ret;
+            }
+        };
+    });
 }

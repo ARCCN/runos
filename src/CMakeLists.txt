@@ -1,29 +1,29 @@
+add_subdirectory(types)
+add_subdirectory(maple)
+
 set(SOURCES
     # Core
     Application.cc 
     Loader.cc
-    OFMsgUnion.cc
-    OXMTLVUnion.cc
-    Packet.cc
-    Match.cc
-    TraceTree.cc
+    Decision.cc
     Flow.cc
+    OFMsgUnion.cc
     OFTransaction.cc
-    FluidDump.cc
-    # Base
+    FluidOXMAdapter.cc
+    SwitchConnection.cc
+    PacketParser.cc
     Controller.cc
     Switch.cc
     LinkDiscovery.cc
     Topology.cc
+    STP.cc
     # Apps
     SimpleLearningSwitch.cc
     LearningSwitch.cc
     CBench.cc
     Stats.cc
-    STP.cc
     ArpHandler.cc
     StaticFlowPusher.cc
-    PathVerifier.cc
     # Loader
     Main.cc
     # REST
@@ -37,6 +37,12 @@ set(SOURCES
     json11.cpp
 )
 
+add_definitions(
+    -DBOOST_ENABLE_ASSERT_HANDLER
+)
+
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR} # for Qt-generated moc files
     ${CMAKE_SOURCE_DIR}/third_party/webserver
@@ -46,11 +52,18 @@ add_executable(runos ${SOURCES})
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 target_link_libraries(runos
+    runos_types
+    runos_maple
     tcmalloc
     Qt5::Core
-    tins
     fluid_base
     libfluid_msg.a
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    ${Boost_COROUTINE_LIBRARY}
     ${GLOG_LIBRARIES}
+    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_THREAD_LIBRARY}
     ${Boost_LIBRARIES}
+    pthread 
+
 )

@@ -20,6 +20,8 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths_no_color_map.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/assert.hpp>
 
 #include "Common.hh"
 
@@ -43,9 +45,9 @@ public:
     Link(switch_and_port _source, switch_and_port _target, int _weight, uint64_t _id):
         source(_source), target(_target), weight(_weight), obj_id(_id) {}
 
-    json11::Json to_json() const;
+    json11::Json to_json() const override;
     json11::Json to_floodlight_json() const;
-    uint64_t id() const;
+    uint64_t id() const override;
 
     friend class Topology;
 };
@@ -65,10 +67,10 @@ Link* Topology::getLink(switch_and_port from, switch_and_port to)
 
 json11::Json Link::to_json() const {
     json11::Json src = json11::Json::object {
-        {"src_id", uint64_to_string(source.dpid)},
+        {"src_id", boost::lexical_cast<std::string>(source.dpid)},
         {"src_port", (int)source.port} };
     json11::Json dst = json11::Json::object {
-        {"dst_id", uint64_to_string(target.dpid)},
+        {"dst_id", boost::lexical_cast<std::string>(target.dpid)},
         {"dst_port", (int)target.port} };
 
     return json11::Json::object {
@@ -80,16 +82,22 @@ json11::Json Link::to_json() const {
 
 json11::Json Link::to_floodlight_json() const {
     return json11::Json::object {
-        {"src-switch", AppObject::uint64_to_string(source.dpid)},
+        {"src-switch", boost::lexical_cast<std::string>(source.dpid)},
         {"src-port", (int)source.port},
-        {"dst-switch", AppObject::uint64_to_string(target.dpid)},
+        {"dst-switch", boost::lexical_cast<std::string>(target.dpid)},
         {"dst-port", (int)target.port},
         {"type", "internal"},
         {"direction", "bidirectional"}
     };
 }
 
-typedef adjacency_list< vecS, vecS, undirectedS, no_property, link_property>
+struct dpid_t {
+    typedef vertex_property_tag kind;
+};
+
+typedef adjacency_list< vecS, vecS, undirectedS,
+                        property<dpid_t, uint64_t>,
+                        link_property>
     TopologyGraph;
 
 typedef TopologyGraph::vertex_descriptor
@@ -105,9 +113,13 @@ struct TopologyImpl {
     vertex_descriptor vertex(uint64_t dpid) {
         auto it = vertex_map.find(dpid);
         if (it != vertex_map.end()) {
-            return it->second;
+            auto v = it->second;
+            BOOST_ASSERT(get(dpid_t(), graph, v) == dpid);
+            return v;
         } else {
-            return vertex_map[dpid] = add_vertex(graph);
+            auto v = vertex_map[dpid] = add_vertex(graph);
+            put(dpid_t(), graph, v, dpid);
+            return v;
         }
     }
 };
@@ -140,7 +152,7 @@ void Topology::linkDiscovered(switch_and_port from, switch_and_port to)
     QWriteLocker locker(&m->graph_mutex);
 
     if (from.dpid == to.dpid) {
-        LOG(WARNING) << "Ignoring loopback link on " << FORMAT_DPID << from.dpid;
+        LOG(WARNING) << "Ignoring loopback link on " << from.dpid;
         return;
     }
 
@@ -166,41 +178,34 @@ void Topology::linkBroken(switch_and_port from, switch_and_port to)
 
 data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
 {
-    DVLOG(5) << "Computing route between "
-        << FORMAT_DPID << from_dpid << " and " << FORMAT_DPID << to_dpid;
+    DVLOG(5) << "Computing route between " << from_dpid << " and " << to_dpid;
 
     QReadLocker locker(&m->graph_mutex);
-    auto& graph = m->graph;
-
-    data_link_route ret;
-    if (num_vertices(graph) == 0)
-        return ret;
-
-    std::vector<vertex_descriptor> p(num_vertices(graph), TopologyGraph::null_vertex());
+    const auto& graph = m->graph;
+    vector_property_map<vertex_descriptor> p;
+    vertex_descriptor v = m->vertex(from_dpid);
 
     dijkstra_shortest_paths_no_color_map(graph, m->vertex(to_dpid),
          weight_map( boost::get(&link_property::weight, graph) )
-        .predecessor_map( make_iterator_property_map(p.begin(), boost::get(vertex_index, graph)) )
+        .predecessor_map( p )
     );
 
-    // TODO: compute complete route
+    data_link_route ret;
 
-    vertex_descriptor v = m->vertex(from_dpid);
-    if (p.size() <= v)
-        return ret;
-    vertex_descriptor u = p.at(v);
 
-    if (u != TopologyGraph::null_vertex()) {
-        if (u == v)
-            return ret;
-        DVLOG(10) << "Getting properties of edge (" << v << ", " << u << ")";
-        link_property link = graph[edge(v, u, graph).first];
+    BOOST_ASSERT( v != TopologyGraph::null_vertex() );
 
-        if (link.source.dpid == from_dpid) {
+    for (; v != p[v]; v = p[v]) {
+        BOOST_ASSERT(edge(v, p[v], graph).second);
+        link_property link = graph[edge(v, p[v], graph).first];
+
+        if (link.source.dpid == boost::get(dpid_t(), graph, v)) {
+            BOOST_ASSERT(link.target.dpid == boost::get(dpid_t(), graph, p[v]));
             ret.push_back(link.source);
             ret.push_back(link.target);
         } else {
-            assert(link.target.dpid == from_dpid);
+            BOOST_ASSERT(link.target.dpid == boost::get(dpid_t(), graph, v));
+            BOOST_ASSERT(link.source.dpid == boost::get(dpid_t(), graph, p[v]));
             ret.push_back(link.target);
             ret.push_back(link.source);
         }

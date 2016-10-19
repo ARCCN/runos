@@ -19,8 +19,14 @@
 #include "Common.hh"
 #include "Application.hh"
 #include "Loader.hh"
-#include "OFMessageHandler.hh"
 #include "OFTransaction.hh"
+
+#include "api/PacketMissHandler.hh"
+#include "SwitchConnectionFwd.hh"
+
+using runos::SwitchConnectionPtr;
+using runos::PacketMissHandlerFactory;
+using runos::FloodImplementation;
 
 /**
 * Implements OpenFlow 1.3 controller.
@@ -29,7 +35,6 @@ class Controller : public Application {
     Q_OBJECT
     SIMPLE_APPLICATION(Controller, "controller")
 public:
-    Controller();
     ~Controller();
 
     void init(Loader* loader, const Config& config) override;
@@ -39,7 +44,21 @@ public:
     * Registers new message handler for each worker thread.
     * Used for performance-critical message processing, such as packet-in's.
     */
-    void registerHandler(OFMessageHandlerFactory* hf);
+    void registerHandler(const char* name, PacketMissHandlerFactory factory);
+
+    uint8_t handler_table() const;
+    void handler_table(uint8_t no);
+
+    /**
+     * If your application needed in own table, use this method
+     */
+    uint8_t reserveTable();
+
+    /**
+      * Deleting all TraceTrees
+      */
+
+    void invalidateTraceTree();
 
     /**
      * Allocate unique OFMsg::xid and return's a wrapper class
@@ -50,26 +69,30 @@ public:
      */
     OFTransaction* registerStaticTransaction(Application* caller);
 
-    TraceTree* getTraceTree(uint64_t dpid);
+
+    /**
+    * register handler broadcast packets
+    */
+    void registerFlood(FloodImplementation flood);
 
 signals:
 
     /**
     * New switch connection is ready to use.
     */
-    void switchUp(OFConnection* ofconn, of13::FeaturesReply fr);
+    void switchUp(SwitchConnectionPtr conn, of13::FeaturesReply fr);
 
     /**
     * Switch reports about port status changes.
     */
-    void portStatus(OFConnection* ofconn, of13::PortStatus ps);
+    void portStatus(SwitchConnectionPtr ofconn, of13::PortStatus ps);
 
     /**
     * Switch connection failed or closed.
     * @param ofconn OpenFlow connection. You should drop references to it to free memory.
     */
-    void switchDown(OFConnection* ofconn);
+    void switchDown(SwitchConnectionPtr ofconn);
 
 private:
-    class ControllerImpl *impl;
+    std::unique_ptr<class ControllerImpl> impl;
 };

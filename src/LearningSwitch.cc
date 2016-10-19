@@ -16,122 +16,121 @@
 
 #include "LearningSwitch.hh"
 
+#include <mutex>
+#include <unordered_map>
+#include <boost/optional.hpp>
+#include <boost/thread.hpp>
+
+#include "api/Packet.hh"
+#include "api/PacketMissHandler.hh"
+#include "api/TraceablePacket.hh"
+#include "types/ethaddr.hh"
+#include "oxm/openflow_basic.hh"
+
 #include "Controller.hh"
 #include "Topology.hh"
-#include "Switch.hh"
-#include "STP.hh"
+#include "SwitchConnection.hh"
+#include "Flow.hh"
 
-REGISTER_APPLICATION(LearningSwitch, {"controller", "switch-manager", "topology", "stp", ""})
+REGISTER_APPLICATION(LearningSwitch, {"controller", "topology", ""})
 
-void LearningSwitch::init(Loader *loader, const Config &config)
+using namespace runos;
+
+class HostsDatabase {
+    boost::shared_mutex mutex;
+    std::unordered_map<ethaddr, switch_and_port> db;
+
+public:
+    void learn(uint64_t dpid, uint32_t in_port, ethaddr mac)
+    {
+        if (is_broadcast(mac)) { // should we test here??
+            DLOG(WARNING) << "Broadcast source address detected";
+            return;
+        }
+
+        VLOG(5) << mac << " seen at " << dpid << ':' << in_port;
+        {
+            boost::unique_lock< boost::shared_mutex > lock(mutex);
+            db.emplace(mac, switch_and_port{dpid, in_port});
+        }
+    }
+
+    boost::optional<switch_and_port> query(ethaddr mac)
+    {
+        boost::shared_lock< boost::shared_mutex > lock(mutex);
+
+        auto it = db.find(mac);
+        if (it != db.end())
+            return it->second;
+        else
+            return boost::none;
+    }
+};
+
+void LearningSwitch::init(Loader *loader, const Config &)
 {
     Controller* ctrl = Controller::get(loader);
-    topology = Topology::get(loader);
-    switch_manager = SwitchManager::get(loader);
-    stp = STP::get(loader);
+    auto topology = Topology::get(loader);
+    auto db = std::make_shared<HostsDatabase>();
 
-    ctrl->registerHandler(this);
-}
+    ctrl->registerHandler("forwarding",
+    [=](SwitchConnectionPtr connection) {
+        const auto ofb_in_port = oxm::in_port();
+        const auto ofb_eth_src = oxm::eth_src();
+        const auto ofb_eth_dst = oxm::eth_dst();
 
-std::pair<bool, switch_and_port>
-LearningSwitch::findAndLearn(const switch_and_port& where,
-                             const EthAddress& eth_src,
-                             const EthAddress& eth_dst)
-{
-    std::pair<bool, switch_and_port> ret;
-    ret.first = false;
+        return [=](Packet& pkt, FlowPtr, Decision decision) {
+            // Get required fields
+            ethaddr dst_mac = pkt.load(ofb_eth_dst);
 
-    auto it_src = db.find(eth_src);
-    auto it_dst = db.find(eth_dst);
+            db->learn(connection->dpid(),
+                      pkt.load(ofb_in_port),
+                      packet_cast<TraceablePacket>(pkt).watch(ofb_eth_src));
 
-    if (it_dst != db.end()) {
-        ret.first = true;
-        ret.second = it_dst->second;
-    }
+            auto target = db->query(dst_mac);
 
-    // Learn new MAC or update old entry
-    // TODO: implement migrations
-    if (it_src == db.end()) {
-        db_lock.lock();
-        db[eth_src] = where;
-        db_lock.unlock();
+            // Forward
+            if (target) {
+                auto route = topology
+                             ->computeRoute(connection->dpid(), target->dpid);
 
-        LOG(INFO) << eth_src.to_string() << " seen at "
-            << FORMAT_DPID << where.dpid << ':' << where.port;
-    }
-
-    return ret;
-}
-
-OFMessageHandler::Action LearningSwitch::Handler::processMiss(OFConnection* ofconn, Flow* flow)
-{
-    static EthAddress broadcast("ff:ff:ff:ff:ff:ff");
-
-    // Get required fields
-    EthAddress eth_src = flow->loadEthSrc();
-    uint32_t   in_port = flow->loadInPort();
-    EthAddress eth_dst = flow->loadEthDst();
-    uint32_t out_port = 0;
-
-    if (eth_src == broadcast) {
-        DLOG(WARNING) << "Broadcast source address, dropping";
-        return Stop;
-    }
-
-    // Observe our point
-    Switch* sw = app->switch_manager->getSwitch(ofconn);
-    if (sw) {
-        switch_and_port where;
-        where.dpid = sw->id();
-        where.port = in_port;
-
-        // Learn
-        bool target_found;
-        switch_and_port target;
-        std::tie(target_found, target)
-                = app->findAndLearn(where, eth_src, eth_dst);
-
-        // Find path
-        if (target_found) {
-            if (where.dpid != target.dpid) {
-                data_link_route route = app->topology->computeRoute(where.dpid, target.dpid);
                 if (route.size() > 0) {
-                    out_port = route[0].port;
+                    DVLOG(10) << "Forwarding packet from "
+                              << connection->dpid()
+                              << ':' << uint32_t(pkt.load(ofb_in_port))
+                              << " via port " << route[0].port
+                              << " to " << ethaddr(pkt.load(ofb_eth_dst))
+                              << " seen at " << target->dpid;
+                    // unicast via core
+                    return decision.unicast(route[0].port)
+                                   .idle_timeout(std::chrono::seconds(60))
+                                   .hard_timeout(std::chrono::minutes(30));
+                } else if (connection->dpid() == target->dpid) {
+                    DVLOG(10) << "Forwarding packet from "
+                              << connection->dpid()
+                              << ':' << uint32_t(pkt.load(ofb_in_port))
+                              << " via port " << target->port;
+                    // send through core border
+                    return decision.unicast(target->port)
+                                   .idle_timeout(std::chrono::seconds(60))
+                                   .hard_timeout(std::chrono::minutes(30));
                 } else {
-                    LOG(WARNING) << "Path between " << FORMAT_DPID << where.dpid 
-                        << " and " << FORMAT_DPID << target.dpid << " not found";
+                    LOG(WARNING)
+                        << "Path from " << connection->dpid()
+                        << " to " << target->dpid << " not found";
+                    return decision.drop()
+                                   .idle_timeout(std::chrono::seconds(30))
+                                   .hard_timeout(std::chrono::seconds(60))
+                                   .return_();
                 }
             } else {
-                out_port = target.port;
+                if (not is_broadcast(dst_mac)) {
+                    VLOG(5) << "Flooding for unknown address " << dst_mac;
+                    return decision.broadcast()
+                                   .idle_timeout(std::chrono::seconds::zero());
+                }
+                return decision.broadcast();
             }
-            emit app->newRoute(flow, eth_src.to_string(), eth_dst.to_string(), where.dpid, out_port);
-        }
-    }
-    else
-        return Stop;
-
-    // Forward
-    if (out_port) {
-        flow->idleTimeout(60);
-        flow->timeToLive(5*60);
-        flow->add_action(new of13::OutputAction(out_port, 0));
-        return Continue;
-    } else {
-        DVLOG(5) << "Flooding for address " << eth_dst.to_string();
-
-        flow->setFlags(Flow::Disposable);
-        STPPorts ports = app->stp->getSTP(sw->id());
-        if (!ports.empty()) {
-            for (auto port : ports) {
-                if (port != in_port)
-                    flow->add_action(new of13::OutputAction(port, 128));
-            }
-        }
-        return Continue;
-    }
-}
-
-bool LearningSwitch::isPrereq(const std::string &name) const
-{
-    return name == "link-discovery";
+        };
+    });
 }

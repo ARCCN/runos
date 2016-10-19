@@ -16,6 +16,9 @@
 
 #include "Stats.hh"
 
+#include <boost/lexical_cast.hpp>
+
+#include "SwitchConnection.hh"
 #include "Controller.hh"
 #include "RestListener.hh"
 
@@ -47,12 +50,12 @@ json11::Json port_packets_bytes::to_json() const
 {
     return json11::Json::object {
         {"port_no", (int)port_no},
-        {"tx_packets", uint64_to_string(tx_packets)},
-        {"rx_packets", uint64_to_string(rx_packets)},
-        {"tx_bytes", uint64_to_string(tx_bytes)},
-        {"rx_bytes", uint64_to_string(rx_bytes)},
-        {"tx_byte_speed", uint64_to_string(tx_byte_speed)},
-        {"rx_byte_speed", uint64_to_string(rx_byte_speed)}
+        {"tx_packets", boost::lexical_cast<std::string>(tx_packets)},
+        {"rx_packets", boost::lexical_cast<std::string>(rx_packets)},
+        {"tx_bytes", boost::lexical_cast<std::string>(tx_bytes)},
+        {"rx_bytes", boost::lexical_cast<std::string>(rx_bytes)},
+        {"tx_byte_speed", boost::lexical_cast<std::string>(tx_byte_speed)},
+        {"rx_byte_speed", boost::lexical_cast<std::string>(rx_byte_speed)}
     };
 }
 
@@ -87,12 +90,10 @@ void SwitchStats::init(Loader *loader, const Config& rootConfig)
                      this, &SwitchStats::portStatsArrived);
 
     QObject::connect(pdescr, &OFTransaction::error,
-    [](OFConnection* conn, std::shared_ptr<OFMsgUnion> msg) {
+    [](SwitchConnectionPtr conn, std::shared_ptr<OFMsgUnion> msg) {
         of13::Error& error = msg->error;
         LOG(ERROR) << "Switch reports error for OFPT_MULTIPART_REQUEST: "
             << "type " << (int) error.type() << " code " << error.code();
-        // Send request again
-        conn->send(error.data(), error.data_len());
     });
 
     QObject::connect(m_switch_manager, &SwitchManager::switchDiscovered,
@@ -116,7 +117,7 @@ void SwitchStats::newSwitch(Switch *sw)
     switch_stats.insert(std::pair<uint64_t, SwitchPortStats>(sw->id(), newswitch));
 }
 
-void SwitchStats::portStatsArrived(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> reply)
+void SwitchStats::portStatsArrived(SwitchConnectionPtr conn, std::shared_ptr<OFMsgUnion> reply)
 {
     auto type = reply->base()->type();
     if (type != of13::OFPT_MULTIPART_REPLY) {
@@ -132,7 +133,7 @@ void SwitchStats::portStatsArrived(OFConnection* ofconn, std::shared_ptr<OFMsgUn
     float rx_byte_speed = 0;
     for (auto& i : s)
     {
-        uint64_t sw_id = m_switch_manager->getSwitch(ofconn)->id();
+        uint64_t sw_id = conn->dpid();
         uint32_t port_no = i.port_no();
         uint64_t tx_packets = i.tx_packets();
         uint64_t rx_packets = i.rx_packets();
@@ -168,7 +169,7 @@ void SwitchStats::pollTimeout()
         req.flags(0);
         req.port_no(of13::OFPP_ANY);
         if (switch_stats.count(sw->id()))
-            pdescr->request(sw->ofconn(), &req);
+            pdescr->request(sw->connection(), req);
     }
 }
 

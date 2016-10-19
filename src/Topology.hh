@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** @file */
 #pragma once
 
 #include <QtCore>
@@ -30,6 +31,12 @@
 
 typedef std::vector< switch_and_port > data_link_route;
 
+/**
+ * This application tracking network for its topology.
+ *
+ * You may get description of networks topology by REST request : GET /api/topology/links
+ *
+ */
 class Topology : public Application, RestHandler {
     Q_OBJECT
     SIMPLE_APPLICATION(Topology, "topology")
@@ -40,11 +47,18 @@ public:
 
     std::string restName() override {return "topology";}
     bool eventable() override {return true;}
-    std::string displayedName() { return "Topology"; }
-    std::string page() { return "topology.html"; }
+    std::string displayedName() override { return "Topology"; }
+    std::string page() override { return "topology.html"; }
     AppType type() override { return AppType::Application; }
     json11::Json handleGET(std::vector<std::string> params, std::string body) override;
 
+    /**
+     * compute route between two switchs
+     * @param from switch route will be computed
+     * @param to switch be computed
+     *
+     * @return computed route. Hop by hop.
+     */
     data_link_route computeRoute(uint64_t from, uint64_t to);
 
 protected slots:

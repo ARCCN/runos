@@ -19,18 +19,11 @@
 #include "Controller.hh"
 #include "FlowManager.hh"
 #include "RestListener.hh"
+#include "SwitchConnection.hh"
 
-REGISTER_APPLICATION(StaticFlowPusher, {"controller", "switch-manager", "rest-listener", "flow-manager", ""})
+REGISTER_APPLICATION(StaticFlowPusher, {"controller", "switch-manager", "rest-listener"/*, "flow-manager" */ /*TODO*/, ""})
 
 constexpr auto TO_CONTROLLER = "to-controller";
-
-class StaticFlow : public Flow {
-public:
-    StaticFlow() : Flow(nullptr) {}
-    void setLive() {
-        Flow::setLive();
-    }
-};
 
 struct FlowDescImpl {
     uint32_t in_port{0};
@@ -47,7 +40,7 @@ struct FlowDescImpl {
 
     ModifyList modify;
 };
- 
+
 FlowDesc::FlowDesc()
 { m = new FlowDescImpl(); }
 
@@ -123,16 +116,16 @@ void StaticFlowPusher::init(Loader* loader, const Config& rootConfig)
     new_flow = ctrl->registerStaticTransaction(this);
 
     start_prio = 1;
-    flow_m = FlowManager::get(loader);
+    table_no = ctrl->reserveTable();
+
     sw_m = SwitchManager::get(loader);
-    connect(sw_m, &SwitchManager::switchDiscovered, this, &StaticFlowPusher::onSwitchDiscovered);
+    connect(sw_m, &SwitchManager::switchUp, this, &StaticFlowPusher::onSwitchUp);
     connect(sw_m, &SwitchManager::switchDown, this, &StaticFlowPusher::onSwitchDown);
 
     RestListener::get(loader)->registerRestHandler(this);
     acceptPath(Method::POST, "newflow/[0-9]+");
 
     auto config = config_cd(rootConfig, "static-flow-pusher");
-    def_act = config_get(config, "default", "nope");
     if (config.find("flows") != config.end()) {
         auto static_flows = config.at("flows");
         for (auto& flow_for_switch : static_flows.array_items()) {
@@ -146,8 +139,6 @@ void StaticFlowPusher::init(Loader* loader, const Config& rootConfig)
 
 of13::FlowMod StaticFlowPusher::formFlowMod(FlowDesc* fd, Switch* sw)
 {
-    StaticFlow* sf = new StaticFlow;
-
     of13::FlowMod fm;
     fm.command(of13::OFPFC_ADD);
     fm.buffer_id(OFP_NO_BUFFER);
@@ -156,29 +147,24 @@ of13::FlowMod StaticFlowPusher::formFlowMod(FlowDesc* fd, Switch* sw)
     if (fd->in_port() > 0) {
         of13::InPort* oxm = new of13::InPort(fd->in_port());
         fm.add_oxm_field(oxm);
-        sf->toTrace(TraceEntry::Load, oxm);
     }
     if (fd->eth_src().to_string() != "00:00:00:00:00:00") {
         of13::EthSrc* oxm = new of13::EthSrc(fd->eth_src());
         fm.add_oxm_field(oxm);
-        sf->toTrace(TraceEntry::Load, oxm);
     }
     if (fd->eth_dst().to_string() != "00:00:00:00:00:00") {
         of13::EthDst* oxm = new of13::EthDst(fd->eth_dst());
         fm.add_oxm_field(oxm);
-        sf->toTrace(TraceEntry::Load, oxm);
     }
 
     if (fd->ip_src().getIPv4() != IPAddress::IPv4from_string("0.0.0.0")) {
         of13::IPv4Src* oxm = new of13::IPv4Src(fd->ip_src());
         fm.add_oxm_field(oxm);
-        sf->toTrace(TraceEntry::Load, oxm);
         fd->eth_type(0x0800);
     }
     if (fd->ip_dst().getIPv4() != IPAddress::IPv4from_string("0.0.0.0")) {
         of13::IPv4Dst* oxm = new of13::IPv4Dst(fd->ip_dst());
         fm.add_oxm_field(oxm);
-        sf->toTrace(TraceEntry::Load, oxm);
         fd->eth_type(0x0800);
     }
 
@@ -190,14 +176,12 @@ of13::FlowMod StaticFlowPusher::formFlowMod(FlowDesc* fd, Switch* sw)
                     fd->eth_type(0x0800);
             }
             act.add_action(set);
-            sf->add_action(set);
         }
     }
 
     if (fd->eth_type() > 0) {
         of13::EthType* oxm = new of13::EthType(fd->eth_type());
         fm.add_oxm_field(oxm);
-        sf->toTrace(TraceEntry::Load, oxm);
     }
 
     fm.idle_timeout(fd->idle());
@@ -212,13 +196,14 @@ of13::FlowMod StaticFlowPusher::formFlowMod(FlowDesc* fd, Switch* sw)
     if (fd->out_port() > 0) {
         of13::OutputAction* out = new of13::OutputAction(fd->out_port(), 128);
         act.add_action(out);
-        sf->add_action(out);
     }
-
+    fm.table_id(table_no);
 
     fm.add_instruction(act);
 
+#if 0 // TODO
     flow_m->addToFlowManager(sf, sw->id());
+#endif
 
     return fm;
 }
@@ -247,47 +232,25 @@ FlowDesc StaticFlowPusher::readFlowFromConfig(Config config)
     return fd;
 }
 
-void StaticFlowPusher::cleanFlowTable(OFConnection* ofconn)
+void StaticFlowPusher::cleanFlowTable(SwitchConnectionPtr conn)
 {
     of13::FlowMod fm;
-    fm.table_id(0);
+    fm.table_id(table_no);
     fm.command(of13::OFPFC_DELETE);
     fm.out_port(of13::OFPP_ANY);
     fm.out_group(of13::OFPG_ANY);
 
-    uint8_t* buf = fm.pack();
-    ofconn->send(buf, fm.length());
-    OFMsg::free_buffer(buf);
-}
-
-void StaticFlowPusher::sendDefault(Switch *sw)
-{
-    of13::FlowMod fm;
-    of13::GoToTable go_to_trace(1);
-    fm.add_instruction(go_to_trace);
-    sw->send(&fm);
-
-    if (def_act == "to-controller") {
-        of13::FlowMod def;
-        def.table_id(1);
-        of13::ApplyActions act;
-        of13::OutputAction* out = new of13::OutputAction(of13::OFPP_CONTROLLER, 128);
-        act.add_action(out);
-        def.add_instruction(act);
-        sw->send(&def);
-    }
+    conn->send(fm);
 }
 
 void StaticFlowPusher::sendToSwitch(Switch* dp, FlowDesc* fd)
 {
     of13::FlowMod fm = formFlowMod(fd, dp);
-    dp->send(&fm);
+    dp->connection()->send(fm);
 }
 
-void StaticFlowPusher::onSwitchDiscovered(Switch *dp)
+void StaticFlowPusher::onSwitchUp(Switch *dp)
 {
-    cleanFlowTable(dp->ofconn());
-    sendDefault(dp);
     if (flows_map.count("all") > 0) {
         json11::Json flows = flows_map["all"];
         for (auto& flow : flows.array_items()) {

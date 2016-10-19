@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** @file */
 #pragma once
 
 #include <string>
@@ -63,10 +64,22 @@ public:
     ModifyList modify();
 };
 
+/**
+ * This application allow push flows on the switch.
+ *
+ * POST /api/static-flow-pusher/newflow/<switch_id>
+ *  body of request: JSON description of new flow
+ */
 class StaticFlowPusher : public Application, RestHandler {
     SIMPLE_APPLICATION(StaticFlowPusher, "static-flow-pusher")
 public:
     void init(Loader* loader, const Config& rootConfig) override;
+
+    /**
+     * install flow on switch
+     * @param dp switch, on which flow will be installed
+     * @param fd description of flow
+     */
     void sendToSwitch(Switch* dp, FlowDesc* fd);
 
     std::string restName() override { return "static-flow-pusher"; }
@@ -82,13 +95,18 @@ private:
     std::unordered_map<std::string, json11::Json> flows_map;
     OFTransaction* new_flow;
     uint32_t start_prio;
+    uint8_t table_no;
 
     of13::FlowMod formFlowMod(FlowDesc* fd, Switch *sw);
     FlowDesc readFlowFromConfig(Config config);
-    void cleanFlowTable(OFConnection* ofconn);
-    void sendDefault(Switch* sw);
+
+    /**
+    * !!! WARNING !!! : this method will delete all rule
+    * from table, including goto next table
+    */
+    void cleanFlowTable(SwitchConnectionPtr ofconn);
 
 private slots:
-    void onSwitchDiscovered(Switch* dp);
+    void onSwitchUp(Switch* dp);
     void onSwitchDown(Switch* dp);
 };

@@ -16,14 +16,14 @@
 
 #include "OFTransaction.hh"
 
+#include "SwitchConnection.hh"
+
 OFTransaction::OFTransaction(uint32_t xid, QObject *parent)
     : QObject(parent), m_xid(xid)
 { }
 
-void OFTransaction::request(OFConnection* ofconn, OFMsg *msg)
+void OFTransaction::request(SwitchConnectionPtr conn, OFMsg& msg)
 {
-    msg->xid(m_xid);
-    uint8_t* buffer = msg->pack();
-    ofconn->send(buffer, msg->length());
-    delete[] buffer;
+    msg.xid(m_xid);
+    conn->send(msg);
 }

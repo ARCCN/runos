@@ -18,6 +18,8 @@
 
 #include "Common.hh"
 #include "OFMsgUnion.hh"
+#include "SwitchConnectionFwd.hh"
+using namespace runos;
 
 /**
 * Used to serve response from the switch.
@@ -32,7 +34,7 @@ public:
     * @param ofconn Connection to use.
     * @param msg OpenFlow Message (xid will be overwritten).
     */
-    void request(OFConnection* ofconn, OFMsg* msg);
+    void request(SwitchConnectionPtr conn, OFMsg& msg);
 
 signals:
     /**
@@ -41,7 +43,7 @@ signals:
     * @param ofconn     OpenFlow Connection.
     * @param reply        Unpacked OpenFlow message.
     */
-    void response(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> reply);
+    void response(SwitchConnectionPtr conn, std::shared_ptr<OFMsgUnion> reply);
 
     /**
     * Indicates about error on the switch.
@@ -49,7 +51,7 @@ signals:
     * @param ofconn     OpenFlow Connection.
     * @param error      Information about error.
     */
-    void error(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> error);
+    void error(SwitchConnectionPtr conn, std::shared_ptr<OFMsgUnion> error);
 
 private:
     uint32_t m_xid;

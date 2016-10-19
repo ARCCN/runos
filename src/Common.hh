@@ -22,18 +22,8 @@
 #include <memory>
 #include <glog/logging.h>
 #include <QtCore>
-#include <fluid/OFConnection.hh>
 #include <fluid/of13msg.hh>
-using namespace fluid_base;
 using namespace fluid_msg;
-
-#ifndef NDEBUG
-#define SMART_CAST static_cast
-#else
-#define SMART_CAST dynamic_cast
-#endif
-
-#define FORMAT_DPID std::hex << std::setw(16) << std::setfill('0')
 
 Q_DECLARE_METATYPE(uint32_t)
 Q_DECLARE_METATYPE(uint64_t)

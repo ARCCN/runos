@@ -16,9 +16,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <arpa/inet.h>
-
 #define LLDP_ETH_TYPE 0x88cc
 
 /*
@@ -43,9 +40,3 @@
 #define LLDP_PORT_ID_SUB_NAME           5
 #define LLDP_PORT_ID_SUB_CIRCUIT        6
 #define LLDP_PORT_ID_SUB_LOCAL          7
-
-// FIXME: is it correct code for big-endian platforms?
-inline uint16_t lldp_tlv_header(int type, int length)
-{
-    return htons((type << 9) | length);
-}

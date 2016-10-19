@@ -219,14 +219,22 @@ Net = function () {
                         ip_src = _flow[i].obj_info.ip_src,
                         ip_dst = _flow[i].obj_info.ip_dst,
                         set_field = _flow[i].obj_info.set_field;
-                        
+
                     var actions = "";
+                    var j, len2;
+                    for (j = 0, len2 = out_port.length; j < len2; ++j){
+                        if (out_port[j] == -3){
+                            out_port[j] = "to-controller";
+                        } else if (out_port[j] == -5){
+                            out_port[j] = "FLOOD";
+                        }
+                    }
                     if (out_port.length == 0)
 						out_port = 'drop';
                     else
 						out_port = 'output: ' + out_port;
 					actions += out_port;
-						
+
 					if (set_field.length != 0) {
 						set_field = set_field[0];
 						for (var key in set_field) {

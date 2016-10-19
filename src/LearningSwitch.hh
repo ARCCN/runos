@@ -15,48 +15,11 @@
  */
 
 #pragma once
-#include "Common.hh"
-
-#include <mutex>
-#include <unordered_map>
-
 #include "Application.hh"
 #include "Loader.hh"
-#include "OFMessageHandler.hh"
-#include "ILinkDiscovery.hh"
-#include "FluidUtils.hh"
 
-class LearningSwitch : public Application, OFMessageHandlerFactory {
+class LearningSwitch : public Application {
 SIMPLE_APPLICATION(LearningSwitch, "learning-switch")
-Q_OBJECT
 public:
     void init(Loader* loader, const Config& config) override;
-    std::string orderingName() const override { return "forwarding"; }
-    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override 
-    { return std::unique_ptr<OFMessageHandler>(new Handler(this)); }
-    bool isPrereq(const std::string &name) const;
-
-
-    std::pair<bool, switch_and_port>
-    findAndLearn(const switch_and_port& where,
-                 const EthAddress& src,
-                 const EthAddress& dst);
-
-private:
-    class Handler: public OFMessageHandler {
-    public:
-        Handler(LearningSwitch* app_) : app(app_) { }
-        Action processMiss(OFConnection* ofconn, Flow* flow) override;
-    private:
-        LearningSwitch* app;
-    };
-
-    class Topology* topology;
-    class SwitchManager* switch_manager;
-    class STP* stp;
-
-    std::mutex db_lock;
-    std::unordered_map<EthAddress, switch_and_port> db;
-signals:
-    void newRoute(Flow* flow, std::string src, std::string dst, uint64_t dpid, uint32_t out_port);
 };

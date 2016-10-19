@@ -14,13 +14,29 @@
  * limitations under the License.
  */
 
+/** @file */
 #pragma once
 
 #include "json11.hpp"
 
 // TODO: implement full-featured interface
+
+/**
+ * @brief Configurations for applications
+ * @details You may customize your applications by file `network-settings.json`
+ * For it add needed settings in file in JSON format
+ * you can use Config in initializing of your application
+ */
 typedef json11::Json::object Config;
 
+/**
+ * @brief get setting
+ *
+ * @param config abstraction of `network-settings.json` file
+ * @param key key of setting
+ * @param defval default value of setting. Will be returned if file don't have pair if key : velue
+ * @return value by key
+ */
 inline std::string config_get(const Config& config,
                               const std::string& key,
                               const std::string& defval)
@@ -63,11 +79,26 @@ inline bool config_get(const Config& config,
     return (it != config.end()) ?
         it->second.bool_value() : defval;
 }
-
+/**
+ * @brief change directory
+ * @details change dirrectory in json file
+ * For example json file have next format
+ * ` "Parent" : {
+ *    "first_child" : "one",
+ *    "second_child" : "two"
+ * } `
+ * invokation `config_cd(config, "Parent")` will return new config next format :
+ * `"first_child" : "one",
+ * "seconf_child" : "two" `
+ *
+ * @param config Parent config
+ *
+ * @return child config
+ */
 inline Config config_cd(const Config& config,
                         const std::string& key)
 {
     auto it = config.find(key);
-    return (it != config.end()) ? 
+    return (it != config.end()) ?
         it->second.object_items() : Config();
 }

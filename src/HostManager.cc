@@ -16,8 +16,17 @@
 
 #include "HostManager.hh"
 
+#include <boost/lexical_cast.hpp>
+#include <fluid/util/ipaddr.hh>
+
 #include "Controller.hh"
 #include "RestListener.hh"
+#include "api/PacketMissHandler.hh"
+#include "api/Packet.hh"
+#include "api/TraceablePacket.hh"
+#include "oxm/openflow_basic.hh"
+#include "SwitchConnection.hh"
+#include "Flow.hh"
 
 REGISTER_APPLICATION(HostManager, {"switch-manager", "rest-listener", ""})
 
@@ -65,7 +74,7 @@ json11::Json Host::to_json() const
     return json11::Json::object {
         {"ID", id_str()},
         {"mac", mac()},
-        {"switch_id", uint64_to_string(switchID())},
+        {"switch_id", boost::lexical_cast<std::string>(switchID())},
         {"switch_port", (int)switchPort()}
     };
 }
@@ -73,7 +82,7 @@ json11::Json Host::to_json() const
 json11::Json Host::formFloodlightJSON()
 {
     json11::Json attach = json11::Json::object {
-        {"switchDPID", AppObject::uint64_to_string(switchID())},
+        {"switchDPID", boost::lexical_cast<std::string>(switchID())},
         {"port", (int)switchPort()},
         {"errorStatus", "null"}
     };
@@ -84,7 +93,7 @@ json11::Json Host::formFloodlightJSON()
         {"ipv4", "[]"},
         {"vlan", "[]"},
         {"attachmentPoint", attach},
-        {"lastSeen", uint64_to_string(static_cast<uint64_t>(connectedSince()))}
+        {"lastSeen", boost::lexical_cast<std::string>(static_cast<uint64_t>(connectedSince()))}
     };
 }
 
@@ -109,7 +118,54 @@ void HostManager::init(Loader *loader, const Config &config)
 {
     m_switch_manager = SwitchManager::get(loader);
     auto ctrl = Controller::get(loader);
-    ctrl->registerHandler(this);
+
+    ctrl->registerHandler("host-manager",
+        [this](SwitchConnectionPtr connection) {
+            const auto ofb_in_port = oxm::in_port();
+            const auto ofb_eth_type = oxm::eth_type();
+            const auto ofb_eth_src = oxm::eth_src();
+            const auto ofb_arp_spa = oxm::arp_spa();
+            const auto ofb_ipv4_src = oxm::ipv4_src();
+
+            return [=](Packet& pkt, FlowPtr, Decision decision) {
+                auto tpkt = packet_cast<TraceablePacket>(pkt);
+
+                ethaddr eth_src = pkt.load(ofb_eth_src);
+                std::string host_mac = boost::lexical_cast<std::string>(eth_src);
+
+                IPAddress host_ip("0.0.0.0");
+                if (pkt.test(ofb_eth_type == 0x0800)) {
+                    host_ip = IPAddress(tpkt.watch(ofb_ipv4_src));
+                } else if (pkt.test(ofb_eth_type == 0x0806)) {
+                    host_ip = IPAddress(tpkt.watch(ofb_arp_spa));
+                }
+
+                if (isSwitch(host_mac))
+                    return decision;
+
+                uint32_t in_port = tpkt.watch(ofb_in_port);
+                if (in_port > of13::OFPP_MAX)
+                    return decision;
+
+                if (not findMac(host_mac)) {
+                    Switch* sw = m_switch_manager->getSwitch(connection->dpid());
+                    addHost(sw, host_ip, host_mac, in_port);
+
+                    LOG(INFO) << "Host discovered. MAC: " << host_mac
+                              << ", IP: " << AppObject::uint32_t_ip_to_string(host_ip.getIPv4())
+                              << ", Switch ID: " << sw->id() << ", port: " << in_port;
+                } else {
+                    Host* h = getHost(host_mac);
+                    std::string s_ip = AppObject::uint32_t_ip_to_string(host_ip.getIPv4());
+                    if (s_ip != "0.0.0.0") {
+                        h->ip(s_ip);
+                    }
+                }
+
+                return decision;
+            };
+        }
+    );
 
     QObject::connect(m_switch_manager, &SwitchManager::switchDiscovered,
                      this, &HostManager::onSwitchDiscovered);
@@ -205,54 +261,9 @@ Host* HostManager::getHost(IPAddress ip)
     return nullptr;
 }
 
-void HostManager::newPort(Switch *dp, of13::Port port)
+void HostManager::newPort(Switch *, of13::Port port)
 {
     switch_macs.push_back(port.hw_addr().to_string());
-}
-
-OFMessageHandler::Action HostManager::Handler::processMiss(OFConnection* ofconn, Flow* flow)
-{
-    uint16_t eth_type = flow->pkt()->readEthType();
-    EthAddress eth_src = flow->pkt()->readEthSrc();
-    std::string host_mac = eth_src.to_string();
-
-    IPAddress host_ip("0.0.0.0");
-    if (eth_type == 0x0800) {
-        host_ip = flow->pkt()->readIPv4Src();
-    }
-    else if (eth_type == 0x0806) {
-        host_ip = flow->pkt()->readARPSPA();
-    }
-
-    if (app->isSwitch(host_mac))
-        return Continue;
-
-    uint32_t in_port = flow->pkt()->readInPort();
-    if (in_port > of13::OFPP_MAX)
-        return Continue;
-
-    if (!app->findMac(host_mac)) {
-        Switch* sw = app->m_switch_manager->getSwitch(ofconn);
-        app->addHost(sw, host_ip, host_mac, in_port);
-
-        LOG(INFO) << "Host discovered. MAC: " << host_mac
-                  << ", IP: " << AppObject::uint32_t_ip_to_string(host_ip.getIPv4())
-                  << ", Switch ID: " << sw->id() << ", port: " << in_port;
-    }
-    else {
-        Host* h = app->getHost(host_mac);
-        std::string s_ip = AppObject::uint32_t_ip_to_string(host_ip.getIPv4());
-        if (s_ip != "0.0.0.0") {
-            h->ip(s_ip);
-        }
-    }
-
-    return Continue;
-}
-
-bool HostManager::isPrereq(const std::string &name) const
-{
-    return name == "link-discovery";
 }
 
 std::unordered_map<std::string, Host*> HostManager::hosts()

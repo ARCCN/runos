@@ -17,21 +17,27 @@
 #include "CBench.hh"
 #include "Controller.hh"
 
+#include "api/Packet.hh"
+#include "api/PacketMissHandler.hh"
+#include "types/ethaddr.hh"
+#include "oxm/openflow_basic.hh"
+#include "Flow.hh"
+
+using namespace runos;
+
 REGISTER_APPLICATION(CBench, {"controller", ""})
 
-void CBench::init(Loader* loader, const Config& config)
+void CBench::init(Loader* loader, const Config&)
 {
-    Controller::get(loader)->registerHandler(this);
-}
+    Controller::get(loader)->registerHandler("cbench",
+    [=](SwitchConnectionPtr) {
+        const auto ofb_eth_dst = oxm::eth_dst();
 
-OFMessageHandler::Action CBench::Handler::processMiss(OFConnection* ofconn, Flow* flow)
-{
-    EthAddress src = flow->pkt()->readEthSrc();
-
-    uint32_t out_port = src.get_data()[5] % 3;
-
-    flow->setFlags(Flow::Disposable);
-    flow->add_action(new of13::OutputAction(out_port, 0));
-
-    return Stop;
+        return [=](Packet& pkt, FlowPtr, Decision decision) {
+            uint32_t out_port = ethaddr(pkt.load(ofb_eth_dst))
+                               .to_octets()[5] % 3;
+            return decision.unicast(out_port)
+                           .return_();
+        };
+    });
 }

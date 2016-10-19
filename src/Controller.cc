@@ -19,62 +19,553 @@
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
-#include <list>
 #include <mutex>
 #include <thread>
 #include <sstream>
 #include <memory>
+#include <functional>
 
+#include <boost/assert.hpp>
+#include <boost/variant/apply_visitor.hpp>
+#include <boost/variant/static_visitor.hpp>
+#include <boost/variant/get.hpp>
 #include <fluid/OFServer.hh>
 
-#include "TraceTree.hh"
-#include "Flow.hh"
-#include "Packet.hh"
+#include "maple/Runtime.hh"
+#include "oxm/field_set.hh"
+#include "types/exception.hh"
+
 #include "OFMsgUnion.hh"
+#include "SwitchConnection.hh"
+#include "Flow.hh"
+#include "PacketParser.hh"
+#include "FluidOXMAdapter.hh"
+
+
+using namespace std::placeholders;
+using namespace runos;
+using namespace fluid_base;
+using maple::TraceTree;
 
 REGISTER_APPLICATION(Controller, {""})
 
-typedef std::list< std::unique_ptr<OFMessageHandler> > HandlerPipeline;
+typedef std::vector< std::pair<std::string, PacketMissHandler> >
+    PacketMissPipeline;
+typedef std::vector< std::pair<std::string, PacketMissHandlerFactory> >
+    PacketMissPipelineFactory;
 
-// TODO: Can we implement similar SwitchStorage?
-class SwitchScope {
+class SwitchConnectionImpl : public SwitchConnection {
 public:
-    TraceTree trace_tree;
-    OFConnection* ofconn;
-    HandlerPipeline pipeline;
+    SwitchConnectionImpl(OFConnection* ofconn_, uint64_t dpid)
+        : SwitchConnection(ofconn_, dpid)
+    { }
 
-    void processTableMiss(of13::PacketIn& pi);
-    void processFlowRemoved(Flow* flow, uint8_t reason);
+    void replace(OFConnection* ofconn_)
+    { m_ofconn = ofconn_; }
+};
+
+typedef std::shared_ptr<SwitchConnectionImpl> SwitchConnectionImplPtr;
+typedef std::weak_ptr<SwitchConnectionImpl> SwitchConnectionImplWeakPtr;
+
+struct ModTrackingPacket final : public PacketProxy {
+    oxm::field_set m_mods;
+public:
+    explicit ModTrackingPacket(Packet& pkt)
+        : PacketProxy(pkt)
+    { }
+
+    void modify(const oxm::field<> patch) override
+    {
+        pkt.modify(patch);
+        m_mods.modify(patch);
+    }
+
+    const oxm::field_set& mods() const
+    { return m_mods; }
+};
+
+// Enable protected members
+struct DecisionImpl : Decision
+{
+    DecisionImpl() = default;
+    const Base& base() const
+    { return Decision::base(); }
+
+    const DecisionData& data() const
+    { return m_data; }
+};
+
+struct unhandled_packet: runtime_error
+{ };
+
+class FlowImpl final : public Flow
+                     , public maple::Flow
+{
+    SwitchConnectionPtr conn;
+
+    uint16_t m_priority;
+    oxm::field_set m_match;
+    uint8_t m_table{0};
+    uint32_t m_in_port;
+    Decision m_decision {DecisionImpl()};
+    oxm::field_set m_mods;
+
+    bool m_packet_in {false};
+    int expect_remowed{0};
+    uint32_t m_xid {0};
+    uint32_t m_buffer_id {OFP_NO_BUFFER};
+    std::function<Action *()>m_flood;
+    class DecisionCompiler : public boost::static_visitor<void> {
+        ActionList& ret;
+        std::function<Action *()> flood;
+    public:
+        explicit DecisionCompiler(ActionList& ret, std::function<Action*()> flood)
+            : ret(ret), flood(flood)
+        { }
+
+        void operator()(const Decision::Undefined&) const
+        {
+            RUNOS_THROW(unhandled_packet());
+        }
+
+        void operator()(const Decision::Drop&) const
+        { }
+
+        void operator()(const Decision::Unicast& u) const
+        {
+            ret.add_action(new of13::OutputAction(u.port, 0));
+        }
+
+        void operator()(const Decision::Multicast& m) const
+        {
+            for (uint32_t port : m.ports) {
+                ret.add_action(new of13::OutputAction(port, 0));
+            }
+        }
+
+        void operator()(const Decision::Broadcast& b) const
+        {
+            ret.add_action(flood());
+        }
+
+        void operator()(const Decision::Inspect& i) const
+        {
+            ret.add_action(new of13::OutputAction(of13::OFPP_CONTROLLER,
+                                                  i.send_bytes_len));
+        }
+    };
+
+    ActionList actions() const
+    {
+        ActionList ret;
+
+        for (const oxm::field<>& f : m_mods) {
+            ret.add_action(new of13::SetFieldAction(new FluidOXMAdapter(f)));
+        }
+
+        boost::apply_visitor(DecisionCompiler(ret, m_flood), m_decision.data());
+        return ret;
+    }
+
+    void install()
+    {
+        using std::chrono::duration_cast;
+        using std::chrono::seconds;
+
+        if (state() == State::Evicted && not m_packet_in)
+            return;
+
+        if (state() != State::Egg ){
+            // becouse maple require deleting flow-tables before installing, we will
+            // wait flow-remowed message from switch
+            //TODO : handle this in MapleBackand
+            expect_remowed++;
+        }
+
+        if (m_decision.idle_timeout() <= Decision::duration::zero()) {
+            if (m_packet_in) {
+                of13::PacketOut po;
+                po.xid(m_xid);
+                po.buffer_id(m_buffer_id);
+                po.actions(actions());
+                po.in_port(m_in_port);
+
+                conn->send(po);
+            }
+        } else {
+            of13::FlowMod fm;
+
+            fm.command(of13::OFPFC_ADD);
+            fm.xid(m_xid);
+            fm.buffer_id(m_buffer_id);
+
+            fm.table_id(m_table);
+            fm.priority(m_priority);
+            fm.cookie(cookie());
+            fm.match(make_of_match(m_match));
+
+            auto ito = m_decision.idle_timeout();
+            auto hto = m_decision.hard_timeout();
+            long long ito_seconds = duration_cast<seconds>(ito).count();
+            long long hto_seconds = duration_cast<seconds>(hto).count();
+
+            if (ito == Decision::duration::max())
+                fm.idle_timeout(0);
+            else
+                fm.idle_timeout(std::min(ito_seconds, 65535LL));
+
+            if (hto == Decision::duration::max())
+                fm.hard_timeout(0);
+            else
+                fm.hard_timeout(std::min(hto_seconds, 65535LL));
+
+            fm.flags( of13::OFPFF_CHECK_OVERLAP |
+                      of13::OFPFF_SEND_FLOW_REM );
+
+            of13::ApplyActions applyActions;
+            applyActions.actions(actions());
+            fm.add_instruction(applyActions);
+
+            conn->send(fm);
+        }
+
+        m_packet_in = false;
+        m_xid = 0;
+        m_buffer_id = OFP_NO_BUFFER;
+        m_state = State::Active;
+        m_in_port = of13::OFPP_CONTROLLER;
+    }
+
+public:
+    explicit FlowImpl(SwitchConnectionPtr conn, uint8_t table,
+                       std::function<Action *()> flood)
+        : conn(conn), m_table(table), m_flood(flood)
+    { }
+
+    void mods(oxm::field_set mod)
+    {
+        BOOST_ASSERT(state() != State::Active);
+        m_mods = std::move(mod);
+    }
+
+    void decision(Decision d)
+    {
+        //BOOST_ASSERT(state() != State::Active);
+        m_decision = std::move(d);
+    }
+
+    maple::Flow& operator=(const maple::Flow& other_) override
+    {
+        const FlowImpl& other = dynamic_cast<const FlowImpl&>(other_);
+        return *this = other;
+    }
+
+    // Transitions
+    void packet_in(of13::PacketIn& pi)
+    {
+        //BOOST_ASSERT(state() == State::Egg ||
+        //             state() == State::Evicted ||
+        //             state() == State::Idle ||
+        //             (state() == State::Active &&
+        //                boost::get<Decision::Inspect>(&m_decision.data()))
+        //           );
+
+        m_packet_in = true;
+        m_xid = pi.xid();
+        m_buffer_id = pi.buffer_id();
+        m_in_port = pi.match().in_port()->value();
+    }
+
+    void flow_removed(of13::FlowRemoved& fr)
+    {
+        switch (fr.reason()) {
+        case of13::OFPRR_DELETE:
+            if (expect_remowed == 1){
+                expect_remowed--;
+                return; // we waited this message becouse maple deleted flow-tables before
+            }
+            expect_remowed = -1;
+        case of13::OFPRR_METER_DELETE:
+            m_state = State::Evicted;
+            VLOG(30) << "Evicted Flow";
+            break;
+        case of13::OFPRR_IDLE_TIMEOUT:
+            m_state = State::Idle;
+            VLOG(30) << "Deleted flow by idle timeout";
+            break;
+        case of13::OFPRR_HARD_TIMEOUT:
+            m_state = State::Expired;
+            VLOG(30) << "Deted flow by hard timeout";
+            break;
+        }
+    }
+
+    void packet_out(uint16_t priority, oxm::field_set match)
+    {
+        m_priority = priority;
+        m_match = std::move(match);
+        install();
+    }
+
+    void wakeup()
+    {
+       // BOOST_ASSERT( state() == State::Idle
+       //     || state() == State::Evicted
+       //     || disposable() );
+        install();
+    }
+    bool disposable(){
+        return m_decision.idle_timeout() <= Decision::duration::zero();
+    }
+};
+
+typedef std::shared_ptr<FlowImpl> FlowImplPtr;
+typedef std::weak_ptr<FlowImpl> FlowImplWeakPtr;
+
+class MapleBackend : public maple::Backend {
+    SwitchConnectionPtr conn;
+    uint8_t table{0};
+
+    static FlowImplPtr flow_cast(maple::FlowPtr flow)
+    {
+        FlowImplPtr ret
+            = std::dynamic_pointer_cast<FlowImpl>(flow);
+        BOOST_ASSERT(ret);
+        return ret;
+    }
+
+public:
+    explicit MapleBackend(SwitchConnectionPtr conn, uint8_t table)
+        : conn(conn), table(table)
+    { }
+
+    virtual void install(unsigned priority,
+                         oxm::field_set const& match,
+                         maple::FlowPtr flow_) override
+    {
+        auto flow = flow_cast(flow_);
+        DVLOG(20) << "Installing prio=" << priority
+                  << ", match={" << match << "}"
+                  << " => cookie = " << std::setbase(16) << flow->cookie() << " on switch " << conn->dpid();
+        flow->packet_out(priority, match);
+    }
+
+    void remove(oxm::field_set const& match) override
+    {
+        DVLOG(20) << "Removing flows matching {" << match << "}" << " on switch " << conn->dpid();
+
+        of13::FlowMod fm;
+        fm.command(of13::OFPFC_DELETE);
+
+        fm.table_id(table);
+        fm.cookie(Flow::cookie_space().first);
+        fm.cookie_mask(Flow::cookie_space().second);
+        fm.match(make_of_match(match));
+
+        fm.out_port(of13::OFPP_ANY);
+        fm.out_group(of13::OFPG_ANY);
+
+        conn->send(fm);
+    }
+
+    void remove(unsigned priority,
+                oxm::field_set const& match) override
+    {
+        DVLOG(20) << "Removing flows matching prio=" << priority
+                  << " with " << match;
+
+        of13::FlowMod fm;
+        fm.command(of13::OFPFC_DELETE_STRICT);
+
+        fm.table_id(table);
+        fm.cookie(Flow::cookie_space().first);
+        fm.cookie_mask(Flow::cookie_space().second);
+        fm.match(make_of_match(match));
+        fm.priority(priority);
+
+        fm.out_port(of13::OFPP_ANY);
+        fm.out_group(of13::OFPG_ANY);
+
+        conn->send(fm);
+    }
+
+    void remove(maple::FlowPtr flow_) override
+    {
+        auto flow = flow_cast(flow_);
+        DVLOG(20) << "Removing flow with cookie=" << flow->cookie();
+
+        of13::FlowMod fm;
+        fm.command(of13::OFPFC_DELETE);
+
+        fm.table_id(table);
+        fm.cookie(flow->cookie());
+        fm.cookie_mask(uint64_t(-1));
+
+        fm.out_port(of13::OFPP_ANY);
+        fm.out_group(of13::OFPG_ANY);
+
+        conn->send(fm);
+    }
+
+    void barrier() override
+    {
+        conn->send(of13::BarrierRequest());
+    }
+};
+
+typedef boost::error_info< struct tag_pi_handler, std::string >
+    errinfo_packetin_handler;
+
+struct SwitchScope {
+    SwitchConnectionImplPtr connection;
+    FlowImplPtr miss;
+    MapleBackend backend;
+    maple::Runtime<DecisionImpl, FlowImpl> runtime;
+    PacketMissPipeline pipeline;
+    std::unordered_map<uint64_t, FlowImplPtr> flows;
+    uint8_t handler_table;
+    std::function <Action*()> flood;
+
+    SwitchScope(PacketMissPipelineFactory const& pipeline_factory,
+                OFConnection* ofconn,
+                uint64_t dpid,
+                uint8_t handler_table,
+                FloodImplementation _flood)
+        : connection{new SwitchConnectionImpl{ofconn, dpid}}
+        , miss{new FlowImpl(connection, handler_table, std::bind(_flood, 0))}
+        , backend{connection, handler_table}
+        , runtime{std::bind(&SwitchScope::process, this, _1, _2), backend, miss}
+        , handler_table{handler_table}
+        , flood(std::bind(_flood, dpid))
+    {
+        clearTable();
+        miss->decision( DecisionImpl{}.inspect(128) ); // TODO: unhardcode
+
+        for (auto &factory : pipeline_factory) {
+            pipeline.emplace_back(factory.first,
+                                  std::move(factory.second(connection)));
+        }
+        for (uint8_t i = 0; i < handler_table; i++){
+            installGoto(i);
+        }
+        installTableMissRule();
+    }
+
+    DecisionImpl process(Packet& pkt, FlowImplPtr flow) const
+    {
+        DecisionImpl ret = DecisionImpl{};
+        for (auto& handler: pipeline) {
+            try {
+                ret = (DecisionImpl&&)(handler.second(pkt, flow, ret));
+                if (ret.base().return_)
+                    return ret;
+            } catch (boost::exception & e) {
+                e << errinfo_packetin_handler(handler.first);
+                throw;
+            }
+        }
+        return ret;
+    }
+
+    bool isTableMiss(of13::PacketIn& pi) const
+    {
+        if (pi.reason() == of13::OFPR_NO_MATCH)
+            return true;
+        if (pi.reason() == of13::OFPR_ACTION && pi.cookie() == miss->cookie())
+            return true;
+        return false;
+    }
+
+    void clearTable()
+    {
+        backend.barrier();
+        of13::FlowMod fm;
+        fm.command(of13::OFPFC_DELETE);
+
+        fm.table_id(of13::OFPTT_ALL);
+        fm.cookie(0x0);
+        fm.cookie_mask(0x0);
+
+        fm.out_port(of13::OFPP_ANY);
+        fm.out_group(of13::OFPG_ANY);
+
+        connection->send(fm);
+    }
+
+    /* install in table `table` goto on `table + 1` */
+    void installGoto(uint8_t table)
+    {
+        backend.barrier();
+        of13::FlowMod fm;
+        fm.command(of13::OFPFC_ADD);
+        fm.priority(0);
+        fm.cookie(0);
+        fm.idle_timeout(0);
+        fm.hard_timeout(0);
+        fm.table_id(table);
+        fm.flags( of13::OFPFF_CHECK_OVERLAP |
+                  of13::OFPFF_SEND_FLOW_REM );
+        of13::ApplyActions act;
+        of13::GoToTable go_to_table(table + 1);
+        fm.add_instruction(go_to_table);
+        connection->send(fm);
+    }
+
+    void installTableMissRule()
+    {
+        backend.remove(oxm::field_set{});
+        backend.barrier();
+        of13::FlowMod tableMiss;
+        tableMiss.command(of13::OFPFC_ADD);
+        tableMiss.priority(0);
+        tableMiss.cookie(0);
+        tableMiss.idle_timeout(0);
+        tableMiss.hard_timeout(0);
+        tableMiss.table_id(handler_table);
+        tableMiss.flags( of13::OFPFF_CHECK_OVERLAP |
+                  of13::OFPFF_SEND_FLOW_REM );
+        of13::ApplyActions act;
+        of13::OutputAction out(of13::OFPP_CONTROLLER, 0);
+        act.add_action(out);
+        tableMiss.add_instruction(act);
+        connection->send(tableMiss);
+    }
+    void processPacketIn(of13::PacketIn& pi);
+    void processFlowRemoved(of13::FlowRemoved& fr);
 };
 
 class ControllerImpl : public OFServer {
-    const uint32_t min_xid = 0xff;
-    Controller *app;
+    const uint32_t min_xid = 0xfff;
+    Controller &app;
 
 public:
-    bool started;
+    bool started{false};
     bool cbench;
+    uint8_t handler_table{0};
     Config config;
-    std::vector<OFMessageHandlerFactory *> pipeline_factory;
-    std::unordered_map<uint64_t, SwitchScope> switch_scope;
+
+    std::unordered_map<std::string, PacketMissHandlerFactory>
+        handlers;
+    PacketMissPipelineFactory pipeline_factory;
+    bool isFloodImplementation{false};
+    FloodImplementation flood;
+    std::unordered_map<uint64_t, SwitchScope> switches;
 
     // OFResponse
-    std::vector<OFTransaction *> static_ofresponse;
-    uint32_t min_session_xid; // Make sure that we don't intersect with libfluid_base
+    std::vector<OFTransaction*> static_ofresponse;
+    // Make sure that we don't intersect with libfluid_base
+    uint32_t min_session_xid{min_xid};
     //uint32_t last_xid;
 
-    ControllerImpl(Controller *_app,
+    ControllerImpl(Controller &_app,
             const char *address,
             const int port,
             const int nthreads = 4,
             const bool secure = false,
             const class OFServerSettings ofsc = OFServerSettings())
             : OFServer(address, port, nthreads, secure, ofsc),
-              app(_app), started(false),
-              min_session_xid(min_xid) // last_xid(min_xid)
-    { }
-
-    ~ControllerImpl()
+              app(_app)
+              // last_xid(min_xid)
     { }
 
     void message_callback(OFConnection *ofconn, uint8_t type, void *data, size_t len) override
@@ -92,10 +583,9 @@ public:
         }
 
         SwitchScope *ctx = reinterpret_cast<SwitchScope *>(ofconn->get_application_data());
-        Flow* flow;
 
         if (ctx == nullptr && type != of13::OFPT_FEATURES_REPLY) {
-            LOG(ERROR) << "Switch send message before feature reply";
+            LOG(WARNING) << "Switch send message before feature reply";
             OFMsg::free_buffer(static_cast<uint8_t *>(data));
             return;
         }
@@ -105,26 +595,19 @@ public:
 
             switch (type) {
             case of13::OFPT_PACKET_IN:
-                if (TraceTree::isTableMiss(msg.packetIn)) {
-                    ctx->processTableMiss(msg.packetIn);
-                } else {
-                    LOG(ERROR) << "TODO: to-controller packet-ins"; // TODO
-                }
+                ctx->processPacketIn(msg.packetIn);
                 break;
             case of13::OFPT_FEATURES_REPLY:
                 ctx = createSwitchScope(ofconn, msg.featuresReply.datapath_id());
                 ofconn->set_application_data(ctx);
-                emit app->switchUp(ctx->ofconn, msg.featuresReply);
+                emit app.switchUp(ctx->connection, msg.featuresReply);
                 break;
             case of13::OFPT_PORT_STATUS:
                 if (ctx == nullptr) break;
-                emit app->portStatus(ctx->ofconn, msg.portStatus);
+                emit app.portStatus(ctx->connection, msg.portStatus);
                 break;
             case of13::OFPT_FLOW_REMOVED:
-                if (ctx == nullptr) break;
-                if (msg.flowRemoved.reason() == of13::OFPRR_DELETE) break;
-                flow = ctx->trace_tree.find(msg.flowRemoved.cookie());
-                ctx->processFlowRemoved(flow, msg.flowRemoved.reason());
+                ctx->processFlowRemoved(msg.flowRemoved);
                 break;
             default: {
                 uint32_t xid = msg.base()->xid();
@@ -142,9 +625,9 @@ public:
                     auto msg_copy = std::make_shared<OFMsgUnion>(type, data, len);
 
                     if (type == of13::OFPT_ERROR) {
-                        emit transaction->error(ctx->ofconn, msg_copy);
+                        emit transaction->error(ctx->connection, msg_copy);
                     } else {
-                        emit transaction->response(ctx->ofconn, msg_copy);
+                        emit transaction->response(ctx->connection, msg_copy);
                     }
                 }
             }
@@ -154,6 +637,10 @@ public:
         } catch (const OFMsgUnhandledType &e) {
             LOG(WARNING) << "Unhandled message type " << e.msg_type()
                     << " received from connection " << ofconn->get_id();
+        } catch (const std::exception &e) {
+            LOG(ERROR) << "Unhandled exception: " << e.what();
+        } catch (...) {
+            LOG(ERROR) << "Unhandled exception";
         }
 
         free_data(data);
@@ -161,7 +648,7 @@ public:
 
     void connection_callback(OFConnection *ofconn, OFConnection::Event type) override
     {
-        SwitchScope *ctx = reinterpret_cast<SwitchScope *>(ofconn->get_application_data());
+        auto ctx = reinterpret_cast<SwitchScope*>(ofconn->get_application_data());
 
         if (type == OFConnection::EVENT_STARTED) {
             LOG(INFO) << "Connection id=" << ofconn->get_id() << " started";
@@ -180,9 +667,10 @@ public:
             LOG(INFO) << "Connection id=" << ofconn->get_id() << " closed by the user";
             if (ctx) {
                 ofconn->set_application_data(nullptr);
-                emit app->switchDown(ctx->ofconn);
-                ctx->ofconn = nullptr;
-                ctx->trace_tree.clear();
+                emit app.switchDown(ctx->connection);
+                ctx->connection->replace(nullptr);
+                ctx->runtime.invalidate();
+                ctx->flows.clear();
             }
         }
 
@@ -190,217 +678,143 @@ public:
             LOG(INFO) << "Connection id=" << ofconn->get_id() << " closed due to inactivity";
             if (ctx) {
                 ofconn->set_application_data(nullptr);
-                emit app->switchDown(ctx->ofconn);
-                ctx->ofconn = nullptr;
-                ctx->trace_tree.clear();
+                emit app.switchDown(ctx->connection);
+                ctx->connection->replace(nullptr);
+                ctx->runtime.invalidate();
+                ctx->flows.clear();
             }
         }
-    }
-
-    void sortPipeline()
-    {
-        std::sort(pipeline_factory.begin(), pipeline_factory.end(),
-                  [](const OFMessageHandlerFactory *a, const OFMessageHandlerFactory *b) -> bool {
-                      bool a_before_b = b->isPrereq(a->orderingName());
-                      bool a_after_b = b->isPostreq(a->orderingName());
-                      bool b_before_a = a->isPrereq(b->orderingName());
-                      bool b_after_a = a->isPostreq(b->orderingName());
-
-                      if ((a_before_b && a_after_b) ||
-                              (b_before_a && b_after_a) ||
-                              (a_before_b && b_before_a) ||
-                              (a_after_b && b_after_a)) {
-                          LOG(FATAL) << "Wrong pipeline ordering constraints between "
-                                  << a->orderingName() << " and " << b->orderingName();
-                      }
-
-                      return a_before_b || b_after_a;
-                  }
-        );
-
-        LOG(INFO) << "Flow processors registered: ";
-        for (auto &factory : pipeline_factory)
-            LOG(INFO) << "  * " << factory->orderingName();
     }
 
     SwitchScope *createSwitchScope(OFConnection *ofconn, uint64_t dpid)
     {
-        static std::mutex mutex;
-
-        auto it = switch_scope.find(dpid);
-        if (it != switch_scope.end())
+        auto it = switches.find(dpid);
+        if (it != switches.end())
             goto ret;
-
-        mutex.lock();
-        it = switch_scope.find(dpid);
-        if (it != switch_scope.end()) {
-            mutex.unlock();
-            goto ret;
-        }
-
-        it = switch_scope.emplace(std::piecewise_construct,
-                                  std::forward_as_tuple(dpid),
-                                  std::forward_as_tuple()).first;
 
         {
-            auto& swctx = it->second;
-            // Create pipeline
-            for (auto &factory : pipeline_factory) {
-                swctx.pipeline.push_back(std::move(factory->makeOFMessageHandler()));
-            }
-            swctx.trace_tree.cleanFlowTable(ofconn);
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
+            it = switches.find(dpid);
+            if (it != switches.end())
+                goto ret;
+
+            it = switches.emplace(std::piecewise_construct,
+                                  std::forward_as_tuple(dpid),
+                                  std::forward_as_tuple(pipeline_factory,
+                                                        ofconn,
+                                                        dpid,
+                                                        handler_table,
+                                                        flood))
+                         .first;
+            return &it->second;
         }
-        mutex.unlock();
 
         ret:
         SwitchScope *ctx = &it->second;
-        if (ctx->ofconn != nullptr) {
+        if (ctx->connection->alive()) {
             LOG(ERROR) << "Overwriting switch scope on active connection";
         }
-        ctx->ofconn = ofconn;
+        ctx->connection->replace(ofconn);
 
         return ctx;
     }
+
+    void invalidateTraceTree()
+    {
+        LOG(INFO) << "Invalidation all Trace Trees";
+        for (auto i =  switches.begin(); i != switches.end(); i++){
+            i->second.runtime.invalidate();
+            i->second.backend.remove(oxm::field_set{});
+        }
+    }
 };
 
-void SwitchScope::processTableMiss(of13::PacketIn& pi)
+void SwitchScope::processPacketIn(of13::PacketIn& pi)
 {
-    auto conn_id = ofconn->get_id();
-    auto pkt     = new Packet(pi);
-    auto leaf    = trace_tree.find(pkt);
+    DVLOG(10) << "Packet-in on switch " << connection->dpid()
+              << (isTableMiss(pi) ? " (miss)" : " (inspect)");
 
-    DVLOG(10) << "Table miss on connection id=" << conn_id;
+    // Serializes to/from raw buffer
+    PacketParser pkt { pi };
+    // Find flow in the trace tree
+    std::shared_ptr<FlowImpl> flow = runtime(pkt);
 
-    if (leaf == nullptr) {
-        // The flow is not in the trace tree.
-        // This means that it is new or outdated (deleted by hard timeout).
+    DVLOG(30) << "flow cookie is : " << std::setbase(16) << flow->cookie() << " packet cookie : " << pi.cookie();
+    // Delete flow if it doesn't found or expired
+    if (flow == miss || flow->state() == Flow::State::Expired) {
+        DVLOG(30) << "hit on  mapple-barrier rule. Cookie : " << std::setbase(16) << miss->cookie();
+        flow = std::make_shared<FlowImpl>(connection, handler_table, flood);
+        flows[flow->cookie()] = flow;
+    }
+    flow->packet_in(pi);
 
-        // Create new Flow object and pass it through handlers.
-        // Handlers will define:
-        //  1) Flow space: which fields are used to make decision.
-        //  2) Decision: forward to port, modify fields, drop.
-        //  3) Timeout: how many time decision is valid.
-        Flow* flow = new Flow(pkt);
-        for (auto& handler : pipeline) {
-            if (handler->processMiss(ofconn, flow) == OFMessageHandler::Stop)
-                break;
-        }
-
-        if (flow->flags() & Flow::Disposable) {
+    switch (flow->state()) {
+        case Flow::State::Egg:
+        case Flow::State::Idle:
+        {
+            ModTrackingPacket mpkt {pkt};
+            runtime.augment(mpkt, flow);
+            if (flow->disposable()){
             // Sometimes we don't need to create a new flow on the switch.
             // So, reply to the packet-in using packet-out message.
-            DVLOG(9) << "Sending packet-out";
-
-            of13::PacketOut po;
-            po.xid(pi.xid());
-            po.buffer_id(pi.buffer_id());
-            if (pi.buffer_id() == OFP_NO_BUFFER)
-                po.data(pi.data(), pi.data_len());
-            flow->initPacketOut(&po);
-
-            uint8_t* buffer = po.pack();
-            ofconn->send(buffer, po.length());
-            OFMsg::free_buffer(buffer);
-
-            flow->deleteLater();
-        } else {
-            // In other cases we need to add newly created Flow into the
-            // trace tree and rebuild it [TODO: incrementaly].
-            DVLOG(5) << "Rebuilding flow table on conn = " << conn_id;
-
-            static const struct Barrier {
-                uint8_t* data;
-                size_t len;
-                Barrier() {
-                    of13::BarrierRequest br;
-                    data = br.pack();
-                    len = br.length();
-                }
-                ~Barrier() { OFMsg::free_buffer(data); }
-            } barrier;
-
-            // Initialize flow mod
-            of13::FlowMod* fm = new of13::FlowMod();
-            fm->xid(pi.xid());
-            fm->buffer_id(pi.buffer_id());
-            if (pi.buffer_id() == OFP_NO_BUFFER) {
-                of13::PacketOut po;
-                po.xid(pi.xid());
-                po.buffer_id(OFP_NO_BUFFER);
-                po.data(pi.data(), pi.data_len());
-                flow->initPacketOut(&po);
-
-                uint8_t* buffer = po.pack();
-                ofconn->send(buffer, po.length());
-                OFMsg::free_buffer(buffer);
+                flow->packet_out(1, mpkt.mods() );
+                flows.erase(flow->cookie());
+            } else {
+                flow->mods( std::move(mpkt.mods()) );
+                runtime.commit();
             }
-            fm->command(of13::OFPFC_ADD);
-            flow->setFlags(Flow::TrackFlowRemoval);
-            flow->initFlowMod(fm);
-
-            // Add new leaf to the trace tree
-            trace_tree.augment(flow, fm);
-            if (VLOG_IS_ON(10)) {
-                std::stringstream ss;
-                trace_tree.dump(ss);
-                VLOG(10) << "Current trace tree on connection " << ofconn->get_id() << ": "
-                    << std::endl << ss.str();
-            }
-
-            // Rebuild flow table from scratch.
-            // We will do incremental update in the future.
-            trace_tree.cleanFlowTable(ofconn);
-            ofconn->send(barrier.data, barrier.len);
-            unsigned rules = trace_tree.buildFlowTable(ofconn);
-
-            DVLOG(5) << rules << " rules generated for switch on conn = " << conn_id;
-
-            // FIXME: Can flow be expired and free'd at this point?
-            flow->setLive();
         }
+        break;
 
-    } else {
-        // Flow removed from the switch by idle timeout, but
-        // still valid (by hard timeout). Reinstall it without
-        // touching handlers.
+        case Flow::State::Evicted:
+            flow->wakeup();
+        break;
 
-        DVLOG(5) << "Reinstalling rule from the trace tree";
-        // Flow removed by idleTimeout but still actual
-        of13::FlowMod* fm = leaf->fm;
-        fm->xid(pi.xid());
-        fm->buffer_id(pi.buffer_id());
-        leaf->flow->initFlowMod(fm);
+        case Flow::State::Expired:
+            BOOST_ASSERT(false);
+        break;
 
-        uint8_t* buffer = fm->pack();
-        ofconn->send(buffer, fm->length());
-        OFMsg::free_buffer(buffer);
-
-        leaf->flow->setLive();
+        case Flow::State::Active:
+        {
+            DLOG_IF(ERROR, isTableMiss(pi))
+                << "Table-miss on active non-inspect flow, "
+                << "cookie = " << std::setbase(16) << flow->cookie()
+                << ", reason = " << unsigned(pi.reason()) << " disposable : " << flow->disposable();
+            // BOOST_ASSERT(not isTableMiss(pi));
+            if (not isTableMiss(pi)){
+                flow->decision(process(pkt, flow));
+            } else {
+                flow->wakeup();
+            }
+            // Maybe this packet arrived on switch when maple reload table, but may be from remowed flows
+            // TODO: implement FSM of flow
+            // TODO: make that packets arrived Only when reloading table */
+        }
+        break;
     }
 }
 
-void SwitchScope::processFlowRemoved(Flow *flow, uint8_t reason)
+void SwitchScope::processFlowRemoved(of13::FlowRemoved& fr)
 {
-    if (flow) {
-        if (reason == of13::OFPRR_HARD_TIMEOUT)
-            flow->setDestroy();
-        if (reason == of13::OFPRR_IDLE_TIMEOUT)
-            flow->setShadow();
-    }
+    DVLOG(30) << "Flow-remowed message handled on  switch : " << connection->dpid();
+    auto it = flows.find( fr.cookie() );
+    if (it == flows.end())
+        return;
+    auto flow = it->second;
+
+    flow->flow_removed(fr);
+    if (flow->state() == Flow::State::Expired)
+        flows.erase(it);
 }
 
 /* Application interface */
-Controller::Controller()
-    : impl(nullptr)
-{ }
-
 void Controller::init(Loader*, const Config& rootConfig)
 {
-
-    auto config = config_cd(rootConfig, "controller");
-
-    impl = new ControllerImpl(
-            this,
+    const Config& config = config_cd(rootConfig, "controller");
+    impl.reset(new ControllerImpl{
+            *this,
             config_get(config, "address", "0.0.0.0").c_str(),
             config_get(config, "port", 6653),
             config_get(config, "nthreads", 4),
@@ -410,30 +824,65 @@ void Controller::init(Loader*, const Config& rootConfig)
                     .keep_data_ownership(false)
                     .echo_interval(config_get(config, "echo_interval", 15))
                     .liveness_check(config_get(config, "liveness_check", true))
-    );
+    });
     impl->config = config;
-}
-
-Controller::~Controller() {
-    delete impl;
 }
 
 void Controller::startUp(Loader*)
 {
-    impl->sortPipeline();
+    auto config = impl->config;
+
+    LOG(INFO) << "Registered packet-in handlers: ";
+    for (const auto& handler : impl->handlers) {
+        LOG(INFO) << "\t" << handler.first;
+    }
+    LOG(INFO) << ".";
+
+    const auto& names = config.at("pipeline").array_items();
+    // TODO: check dups
+    for (const auto& name_token : names) {
+        // TODO: warn if doesn't exists
+        auto name = name_token.string_value();
+        impl->pipeline_factory.emplace_back(name, impl->handlers.at(name));
+    }
+    // TODO: print unused handlers
+    if (not impl->isFloodImplementation){
+        LOG(INFO) << "using default flood implemetation";
+        impl->flood = [](uint32_t){
+            return new of13::OutputAction(of13::OFPP_FLOOD, 0);
+        };
+    }
     impl->start(/* block: */ false);
     impl->started = true;
     impl->cbench = config_get(impl->config, "cbench", false);
 }
 
-void Controller::registerHandler(OFMessageHandlerFactory *factory)
+void Controller::registerHandler(const char* name,
+                                 PacketMissHandlerFactory factory)
 {
     if (impl->started) {
         LOG(ERROR) << "Registering handler after startup";
         return;
     }
-    VLOG(10) << "Registring flow processor " << factory->orderingName();
-    impl->pipeline_factory.push_back(factory);
+
+    VLOG(10) << "Registring flow processor " << name;
+    impl->handlers[std::string(name)] = factory;
+}
+
+void Controller::registerFlood(FloodImplementation _flood)
+{
+    if (impl->started) {
+        LOG(ERROR) << "Register flood implemetation after startup";
+        return;
+    }
+    VLOG(10) << "Register flood implemetation";
+    //TODO : mutax setup
+    if (impl->isFloodImplementation){
+        LOG(ERROR) << "trying register more than one flood implemetation";
+        return;
+    }
+    impl->isFloodImplementation = true;
+    impl->flood = _flood;
 }
 
 OFTransaction* Controller::registerStaticTransaction(Application *caller)
@@ -450,15 +899,23 @@ OFTransaction* Controller::registerStaticTransaction(Application *caller)
 
     QObject::connect(ret, &QObject::destroyed, [xid, this]() {
         static std::mutex mutex;
-        mutex.lock();
+        std::lock_guard<std::mutex> lock(mutex);
         impl->static_ofresponse[xid] = 0;
-        mutex.unlock();
     });
 
     return ret;
 }
 
-TraceTree* Controller::getTraceTree(uint64_t dpid)
-{
-    return &impl->switch_scope[dpid].trace_tree;
-}
+uint8_t Controller::handler_table() const
+{ return impl->handler_table; }
+
+void Controller::handler_table(uint8_t table)
+{ impl->handler_table = table; }
+
+uint8_t Controller::reserveTable()
+{ return impl->handler_table++; }
+
+void Controller::invalidateTraceTree()
+{ impl->invalidateTraceTree(); }
+
+Controller::~Controller() = default;

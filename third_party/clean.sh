@@ -9,7 +9,3 @@ cd ..
 cd libfluid_msg
 git clean -fdx
 cd ..
-
-cd libtins
-git clean -fdx
-cd ..

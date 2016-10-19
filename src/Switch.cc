@@ -17,12 +17,18 @@
 #include "Switch.hh"
 
 #include <unordered_map>
+#include <boost/assert.hpp>
+#include <boost/lexical_cast.hpp>
+
+#include "SwitchConnection.hh"
+
+#include <unordered_map>
 #include "RestListener.hh"
 
 REGISTER_APPLICATION(SwitchManager, {"controller", "rest-listener", ""})
 
 struct SwitchImpl {
-    OFConnection* conn;
+    SwitchConnectionPtr conn;
     SwitchManager* mgr;
 
     uint64_t         id;
@@ -42,29 +48,14 @@ struct SwitchManagerImpl {
     OFTransaction* swdescr;
 
     QReadWriteLock switch_lock;
-    std::unordered_map<int, Switch*> switch_by_conn;
     std::unordered_map<uint64_t, Switch> switches;
 };
 
 SwitchManager::SwitchManager()
-{
-    m = new SwitchManagerImpl;
-}
+    : m(new SwitchManagerImpl)
+{ }
 
-SwitchManager::~SwitchManager()
-{
-    delete m;
-}
-
-Switch* SwitchManager::getSwitch(OFConnection* ofconn) const
-{
-    try {
-        QReadLocker locker(&m->switch_lock);
-        return m->switch_by_conn.at(ofconn->get_id());
-    } catch (const std::out_of_range& e) {
-        return nullptr;
-    }
-}
+SwitchManager::~SwitchManager() = default;
 
 Switch* SwitchManager::getSwitch(uint64_t dpid)
 {
@@ -75,7 +66,7 @@ Switch* SwitchManager::getSwitch(uint64_t dpid)
     }
 }
 
-void SwitchManager::init(Loader* loader, const Config& config)
+void SwitchManager::init(Loader* loader, const Config&)
 {
     auto controller = m->controller = Controller::get(loader);
 
@@ -90,19 +81,21 @@ void SwitchManager::init(Loader* loader, const Config& config)
     QObject::connect(m->pdescr, &OFTransaction::response,
                      this, &SwitchManager::onPortDescriptions);
     QObject::connect(m->pdescr, &OFTransaction::error,
-    [](OFConnection* conn, std::shared_ptr<OFMsgUnion> msg) {
+    [](SwitchConnectionPtr, std::shared_ptr<OFMsgUnion> msg)
+    {
         of13::Error& error = msg->error;
         LOG(ERROR) << "Switch reports error for OFPT_MULTIPART_REQUEST: "
             << "type " << (int) error.type() << " code " << error.code();
         // Send request again
-        conn->send(error.data(), error.data_len());
+        // FIXME: use switch-generate ofmsg and limit retry count
+        //conn->send(error.data(), error.data_len());
     });
 
     m->swdescr = controller->registerStaticTransaction(this);
     QObject::connect(m->swdescr, &OFTransaction::response,
                      this, &SwitchManager::onSwitchDescriptions);
     QObject::connect(m->swdescr, &OFTransaction::error,
-    [](OFConnection* conn, std::shared_ptr<OFMsgUnion> msg) {
+    [](SwitchConnectionPtr, std::shared_ptr<OFMsgUnion> msg) {
         of13::Error& error = msg->error;
         LOG(ERROR) << "Switch reports error for OFPT_MULTIPART_REQUEST: "
             << "type " << (int) error.type() << " code " << error.code();
@@ -112,33 +105,27 @@ void SwitchManager::init(Loader* loader, const Config& config)
     acceptPath(Method::GET, "switches/all");
 }
 
-void SwitchManager::onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr)
+void SwitchManager::onSwitchUp(SwitchConnectionPtr conn, of13::FeaturesReply fr)
 {
-    int conn_id = ofconn->get_id();
+    BOOST_ASSERT( fr.datapath_id() == conn->dpid() );
     QWriteLocker locker(&m->switch_lock);
 
-    if (m->switch_by_conn.find(conn_id) != m->switch_by_conn.end()) {
-        LOG(WARNING) << "Unexpected FeaturesReply received";
-        return;
-    }
-
-    auto it = m->switches.find(fr.datapath_id());
-
+    auto it = m->switches.find(conn->dpid());
     if (it == m->switches.end()) {
         it = m->switches.emplace(
                 std::piecewise_construct,
-                std::forward_as_tuple(fr.datapath_id()),
-                std::forward_as_tuple(this, ofconn, fr)
+                std::forward_as_tuple(conn->dpid()),
+                std::forward_as_tuple(this, conn, fr)
         ).first;
         locker.unlock();
 
-        emit switchDiscovered(m->switch_by_conn[conn_id] = &it->second);
+        emit switchDiscovered(&it->second);
+        emit switchUp(&it->second);
     } else {
-        m->switch_by_conn[conn_id] = &it->second;
         locker.unlock();
 
-        it->second.setUp(ofconn, fr);
-        emit switchDiscovered(m->switch_by_conn[conn_id]);
+        it->second.setUp(conn, fr);
+        emit switchUp(&it->second);
     }
 
     it->second.requestPortDescriptions();
@@ -147,15 +134,13 @@ void SwitchManager::onSwitchUp(OFConnection* ofconn, of13::FeaturesReply fr)
     addEvent(Event::Add, &it->second);
 }
 
-void SwitchManager::onSwitchDown(OFConnection* ofconn)
+void SwitchManager::onSwitchDown(SwitchConnectionPtr conn)
 {
-    if (!ofconn)
-        return;
-    auto it = m->switch_by_conn.find(ofconn->get_id());
-    if (it == m->switch_by_conn.end())
+    auto it = m->switches.find(conn->dpid());
+    if (it == m->switches.end())
         return;
 
-    Switch* dp = it->second;
+    Switch* dp = &it->second;
     dp->setDown();
 
     emit switchDown(dp);
@@ -163,26 +148,30 @@ void SwitchManager::onSwitchDown(OFConnection* ofconn)
     addEvent(Event::Delete, dp);
 }
 
-void SwitchManager::onPortStatus(OFConnection* ofconn, of13::PortStatus ps)
+void SwitchManager::onPortStatus(SwitchConnectionPtr conn, of13::PortStatus ps)
 {
     // don't acquire lock because operation lives in qt loop
-    m->switch_by_conn.at(ofconn->get_id())->portStatus(ps);
+    m->switches.at(conn->dpid()).portStatus(ps);
 }
 
-void SwitchManager::onPortDescriptions(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> reply)
+void SwitchManager::onPortDescriptions(SwitchConnectionPtr conn,
+                                       std::shared_ptr<OFMsgUnion> reply)
 {
     // don't acquire lock because operation lives in qt loop
     auto type = reply->base()->type();
-    if (type != of13::OFPT_MULTIPART_REPLY) {
+    if (type != of13::OFPT_MULTIPART_REPLY ||
+        reply->multipartReply.mpart_type() != of13::OFPMP_PORT_DESC)
+    {
         LOG(ERROR) << "Unexpected response of type " << type
                 << " received, expected OFPT_MULTIPART_REPLY";
         return;
     }
 
-    m->switch_by_conn.at(ofconn->get_id())->portDescArrived(reply->multipartReplyPortDescription);
+    m->switches.at(conn->dpid()).portDescArrived(reply->multipartReplyPortDescription);
 }
 
-void SwitchManager::onSwitchDescriptions(OFConnection *ofconn, std::shared_ptr<OFMsgUnion> msg)
+void SwitchManager::onSwitchDescriptions(SwitchConnectionPtr conn,
+                                         std::shared_ptr<OFMsgUnion> msg)
 {
     auto type = msg->base()->type();
     if (type != of13::OFPT_MULTIPART_REPLY) {
@@ -191,7 +180,7 @@ void SwitchManager::onSwitchDescriptions(OFConnection *ofconn, std::shared_ptr<O
         return;
     }
 
-    m->switch_by_conn.at(ofconn->get_id())->m->desc = msg->multipartReplyDesc.desc();
+    m->switches.at(conn->dpid()).m->desc = msg->multipartReplyDesc.desc();
 }
 
 std::vector<Switch*> SwitchManager::switches()
@@ -202,9 +191,8 @@ std::vector<Switch*> SwitchManager::switches()
     ret.reserve(m->switches.size());
 
     for (auto& pair : m->switches) {
-        OFConnection* conn = pair.second.m->conn;
-
-        if (conn->get_state() == OFConnection::STATE_RUNNING)
+        SwitchConnectionPtr conn = pair.second.m->conn;
+        if (conn->alive())
             ret.push_back(&pair.second);
     }
     return ret;
@@ -213,7 +201,7 @@ std::vector<Switch*> SwitchManager::switches()
 /* ==== Switch ===== */
 
 Switch::Switch(SwitchManager* mgr,
-               OFConnection* conn,
+               SwitchConnectionPtr conn,
                of13::FeaturesReply fr)
  : m(new SwitchImpl)
 {
@@ -225,10 +213,7 @@ Switch::Switch(SwitchManager* mgr,
     m->capabilities = fr.capabilities();
 }
 
-Switch::~Switch()
-{
-    delete m;
-}
+Switch::~Switch() = default;
 
 std::string Switch::idstr() const
 {
@@ -237,12 +222,9 @@ std::string Switch::idstr() const
     return ss.str();
 }
 
-void Switch::setUp(OFConnection* conn, of13::FeaturesReply fr)
+void Switch::setUp(SwitchConnectionPtr conn, of13::FeaturesReply fr)
 {
-    auto conn_state = m->conn->get_state();
-    if (conn_state != OFConnection::STATE_DOWN &&
-        conn_state != OFConnection::STATE_FAILED)
-    {
+    if (not conn->alive()) {
         LOG(WARNING) << "Setting switch up, but it isn't down";
     }
 
@@ -322,14 +304,14 @@ void Switch::requestPortDescriptions()
 {
     of13::MultipartRequestPortDescription req;
     req.flags(0); // no more requests will follow
-    m->mgr->m->pdescr->request(m->conn, &req);
+    m->mgr->m->pdescr->request(m->conn, req);
 }
 
 void Switch::requestSwitchDescriptions()
 {
     of13::MultipartRequestDesc req;
     req.flags(0);
-    m->mgr->m->swdescr->request(m->conn, &req);
+    m->mgr->m->swdescr->request(m->conn, req);
 }
 
 json11::Json Switch::to_json() const {
@@ -351,7 +333,7 @@ json11::Json Switch::to_json() const {
 
     return json11::Json::object {
         {"ID", id_str()},
-        {"DPID", AppObject::uint64_to_string(id())},
+        {"DPID", boost::lexical_cast<std::string>(id())},
         {"ports", json11::Json(ports_vec)},
         {"mfr_desc", mfr_desc()},
         {"hw_desc", hw_desc()},
@@ -385,8 +367,8 @@ json11::Json Switch::to_floodlight_json() const {
         {"description", "NONE"},
         {"capabilities", (int)capabilites()},
         {"inetAddress", "NONE"},
-        {"connectedSince", uint64_to_string(static_cast<uint64_t>(connectedSince()))},
-        {"dpid", uint64_to_string(id())},
+        {"connectedSince", boost::lexical_cast<std::string>(static_cast<uint64_t>(connectedSince()))},
+        {"dpid", boost::lexical_cast<std::string>(id())},
         {"actions", "NONE"},
         {"attributes", "NONE"}
     };
@@ -400,18 +382,15 @@ void Switch::portDescArrived(of13::MultipartReplyPortDescription &desc)
             m->port[port.port_no()] = port;
             emit portUp(this, port);
         }
-
         DVLOG(1) << "PortDesc received (dpid=" << idstr() << ", port=" << port.port_no() << ") --> "
                 << port.name() << "(" << port.hw_addr().to_string() << ") {"
                 << "curr_speed=" << port.curr_speed() << ", max_speed=" << port.max_speed() << "}";
     }
 }
 
-void Switch::send(OFMsg *msg)
+SwitchConnectionPtr Switch::connection() const
 {
-    uint8_t* data = msg->pack();
-    m->conn->send(data, msg->length());
-    OFMsg::free_buffer(data);
+    return m->conn;
 }
 
 uint64_t Switch::id() const
@@ -432,11 +411,6 @@ uint8_t Switch::ntables() const
 uint32_t Switch::capabilites() const
 {
     return m->capabilities;
-}
-
-OFConnection* Switch::ofconn() const
-{
-    return m->conn;
 }
 
 std::string Switch::mfr_desc() const

@@ -20,14 +20,12 @@
 #include <unordered_map>
 #include <chrono>
 
-#include <QTimer>
-
 #include "Common.hh"
 #include "Switch.hh"
 #include "Application.hh"
 #include "Loader.hh"
-#include "OFMessageHandler.hh"
 #include "ILinkDiscovery.hh"
+#include "Controller.hh"
 
 struct DiscoveredLink {
     typedef std::chrono::time_point<std::chrono::steady_clock>
@@ -36,58 +34,43 @@ struct DiscoveredLink {
     switch_and_port source;
     switch_and_port target;
     valid_through_t valid_through;
-
-    DiscoveredLink(const switch_and_port&, const switch_and_port&,
-                   const valid_through_t&);
-};
-
-class LinkDiscovery : public Application, public ILinkDiscovery, private OFMessageHandlerFactory {
-    Q_OBJECT
-    APPLICATION(LinkDiscovery, ILinkDiscovery)
-public:
-    void init(Loader* provider, const Config& config) override;
-    void startUp(Loader* provider) override;
-
-    std::string orderingName() const override;
-    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override;
-    bool isPostreq(const std::string &name) const override;
-
-signals:
-    void linkDiscovered(switch_and_port from, switch_and_port to);
-    void linkBroken(switch_and_port from, switch_and_port to);
-    void lldpReceived(switch_and_port from, switch_and_port to);
-
-public slots:
-    void portUp(Switch* dp, of13::Port port);
-    void portModified(Switch* dp, of13::Port port, of13::Port old_port);
-    void portDown(Switch* dp, uint32_t port_no);
-
-protected slots:
-    void onLldpReceived(switch_and_port from, switch_and_port to);
-    void pollTimeout();
-
-private:
-    class Handler: public OFMessageHandler {
-        LinkDiscovery* app;
-    public:
-        Handler(LinkDiscovery* ld) : app(ld) { }
-        Action processMiss(OFConnection* ofconn, Flow* flow) override;
-    };
-
-    unsigned c_poll_interval;
-    SwitchManager* m_switch_manager;
-    QTimer* m_timer;
-
-    std::set<DiscoveredLink> m_links;
-    std::unordered_map<switch_and_port, std::set<DiscoveredLink>::iterator >
-                   m_out_edges;
-
-    void sendLLDP(Switch *dp, of13::Port port);
-    void clearLinkAt(const switch_and_port & ap);
 };
 
 inline bool operator<(const DiscoveredLink& a, const DiscoveredLink& b) {
     return a.valid_through < b.valid_through;
 }
 
+class LinkDiscovery : public Application
+                    , public ILinkDiscovery
+{
+    Q_OBJECT
+    APPLICATION(LinkDiscovery, ILinkDiscovery)
+    Controller* ctrl;
+public:
+    void init(Loader* provider, const Config& config) override;
+    void startUp(Loader* provider) override;
 
+signals:
+    void linkDiscovered(switch_and_port from, switch_and_port to) override;
+    void linkBroken(switch_and_port from, switch_and_port to) override;
+
+public slots:
+    void portUp(Switch* dp, of13::Port port);
+    void portModified(Switch* dp, of13::Port port, of13::Port old_port);
+    void portDown(Switch* dp, uint32_t port_no);
+
+protected:
+    void timerEvent(QTimerEvent *event) override;
+
+private:
+    unsigned c_poll_interval;
+    SwitchManager* m_switch_manager;
+
+    std::set<DiscoveredLink> m_links;
+    std::unordered_map<switch_and_port, std::set<DiscoveredLink>::iterator >
+                   m_out_edges;
+
+    Q_INVOKABLE void handleBeacon(switch_and_port from, switch_and_port to);
+    void sendLLDP(Switch *dp, of13::Port port);
+    void clearLinkAt(const switch_and_port & ap);
+};

@@ -1,3 +1,14 @@
+RUNOS 0.6
+=========
+
+This release introduces a new interface for packet-in handlers: now you can get access to packet field with more usable oxm syntax, you can modify packet's fields in code, and then if you read this fields you will see changed values, you can choose one of several decision you want to do with packet.
+
+   - New core of maple engine that more efficient and usable.
+   - Rewrited Flow Manager. Now it asks switchs about installed flows periodically.
+   - Rewrited STP that prevents loops by registering implementation of broadcast decision.
+   - Added ability to register you own application to prevents loops or broadcast storm in network.
+   - Added wrap to Ethernet and IPv6 address.
+
 RUNOS 0.5
 =========
 

@@ -85,7 +85,7 @@ public slots:
     /**
     * Called when a switch has answered with MulipartReplyPortStats message
     */ 
-    void portStatsArrived(OFConnection* ofconn, std::shared_ptr<OFMsgUnion> reply);
+    void portStatsArrived(SwitchConnectionPtr, std::shared_ptr<OFMsgUnion>);
     void newSwitch(Switch* sw);
 
 private slots:

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** @file */
 #pragma once
 
 #include <string>
@@ -23,56 +24,64 @@
 #include "Common.hh"
 #include "Loader.hh"
 #include "Application.hh"
-#include "OFMessageHandler.hh"
 #include "Rest.hh"
 #include "Switch.hh"
 #include "AppObject.hh"
 #include "json11.hpp"
+#include "OFTransaction.hh"
+#include "SwitchConnection.hh"
+
+#include "oxm/field_set.hh"
 
 typedef of13::OXMTLV* ModifyElem;
 typedef std::vector<ModifyElem> ModifyList;
 
 class Rule : public AppObject {
 public:
-    enum Type {
-        TraceTree,
-        Static
-    };
-
-    Rule(Flow* _flow, uint64_t _switch_id);
-    bool active;
-    Flow* flow;
+    Rule(uint64_t _switch_id, of13::FlowStats flow);
 
     uint64_t id() const override;
-    json11::Json to_json() const;
+    json11::Json to_json() const override;
 private:
-    Type type;
     uint64_t rule_id;
     uint64_t switch_id;
+    uint64_t cookie;
 
-    uint32_t in_port;
-    EthAddress eth_src;
-    EthAddress eth_dst;
-    uint16_t eth_type;
-    uint32_t ip_src;
-    uint32_t ip_dst;
     std::vector<int> out_port;
 
     ModifyList modify;
 
+    of13::FlowStats flow;
+    bool active;
+    void action_list(ActionList acts, std::vector<int> &out_port,
+                   json11::Json::array &sets) const;
+    json11::Json::object SetField(of13::OXMTLV *) const;
     friend class FlowManager;
 };
 
 typedef std::vector<Rule*> Rules;
 
-class FlowManager : public Application, OFMessageHandlerFactory, RestHandler {
+/**
+ *
+ * Application, that allow you manage flows on switchs table by Rest API.
+ *
+ * You may know which flows is installed on switch by GET request : GET /api/flow/<switch_id>
+ * And FlowManager will reply json, which contains following information about flows :
+ *
+ *  Matchs : input port, ethernet source/destination address, ethernet type, VLAN id, IP source/destenation address, IP protocol
+ *  Actions : output port, goto table, metadata and set fields.
+ *  Flow identificator.
+ *
+ * You may delete flow by its identifictator, for this you need send DELETE request : DELETE /api/flow/<switch_id>/<flow_id>
+ *
+ *  This application support event model, and manage Rule objects.
+ */
+class FlowManager : public Application, RestHandler {
     Q_OBJECT
     SIMPLE_APPLICATION(FlowManager, "flow-manager")
 public:
-    void init(Loader* loader, const Config& config) override;
-    std::string orderingName() const override { return "flow-detector"; }
-    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override { return std::unique_ptr<OFMessageHandler>(new Handler(this)); }
-    bool isPrereq(const std::string &name) const;
+    void init(Loader* loader, const Config& rootConfig) override;
+    void startUp(Loader *) override;
 
     std::string restName() override {return "flow";}
     bool eventable() override {return true;}
@@ -80,26 +89,24 @@ public:
     json11::Json handleGET(std::vector<std::string> params, std::string body) override;
     json11::Json handleDELETE(std::vector<std::string> params, std::string body) override;
 
-    void addToFlowManager(Flow* flow, uint64_t dpid);
-
 protected slots:
-    void onStateChanged(Flow::FlowState new_state, Flow::FlowState old_state);
     void onSwitchDown(Switch* dp);
+    void onResponse(SwitchConnectionPtr conn, std::shared_ptr<OFMsgUnion> reply);
+    void onSwitchUp(Switch* dp);
 protected:
-    void addRule(Switch *sw, Flow *flow, Rule::Type type);
     void deleteRule(Switch *sw, Rule* rule);
     void dumpRule(Rule* rule);
+    void timerEvent(QTimerEvent*) override;
+    void addRule(Switch *sw, of13::FlowStats flow);
+
 private:
+    unsigned int interval;
+    void sendFlowRequest(Switch *dp);
     class Controller* ctrl;
     class SwitchManager* sw_m;
     std::unordered_map<int, Rules> switch_rules;
-    std::unordered_map<Flow*, Rule*> flow_rule;
-
-    class Handler: public OFMessageHandler {
-    public:
-        Handler(FlowManager* app_) : app(app_) { }
-        Action processMiss(OFConnection* ofconn, Flow* flow) override;
-    private:
-        FlowManager* app;
-    };
+    //std::unordered_map<Flow*, Rule*> flow_rule;
+    void cleanSwitchRules(Switch  *dp);
+    void updateSwitchRules(Switch *dp, std::vector<of13::FlowStats> flows);
+    OFTransaction* transaction;
 };

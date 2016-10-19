@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** @file */
 #pragma once
 
 #include <QTimer>
@@ -26,8 +27,7 @@
 #include "Loader.hh"
 #include "ILinkDiscovery.hh"
 #include "Switch.hh"
-
-constexpr auto POLL_TIMEOUT = 1;
+#include "OFTransaction.hh"
 
 typedef std::vector<uint32_t> STPPorts;
 
@@ -39,7 +39,8 @@ struct Port {
     bool to_switch;
     class SwitchSTP* nextSwitch;
 
-    Port(uint32_t _port_no, bool _b = true): port_no(_port_no), broadcast(_b), to_switch(false), nextSwitch(nullptr) {}
+    Port(uint32_t _port_no, bool _b = true):
+            port_no(_port_no), broadcast(_b), to_switch(false), nextSwitch(nullptr) {}
 };
 
 class STP;
@@ -62,23 +63,44 @@ public:
         root(_root),
         computed(_comp),
         nextSwitchToRoot(nullptr),
-        timer(new QTimer(this)) {}
+        timer(new QTimer(this))
+        {
+            clearGroup();
+            installGroup();
+        }
 
     bool existsPort(uint32_t port_no) { return (ports.count(port_no) > 0 ? true : false); }
-    void unsetBroadcast(uint32_t port_no)  { ports.at(port_no)->broadcast = false; }
-    void setBroadcast(uint32_t port_no)    { ports.at(port_no)->broadcast = true;  }
+    void unsetBroadcast(uint32_t port_no) { ports.at(port_no)->broadcast = false; }
+    void setBroadcast(uint32_t port_no) { ports.at(port_no)->broadcast = true; }
     void setSwitchPort(uint32_t port_no, uint64_t dpid);
     void resetBroadcast();
+    void updateGroup();
+private:
+    void clearGroup();
+    void installGroup();
 protected slots:
     void computeSTP();
+    friend STP;
 };
 
+/**
+ * @brief Implementation of Spanning Tree
+ *
+ * This application register function which implement flood action, and prevents
+ * loops and storm of broadcast packets, by disabling some ports
+ *
+ */
 class STP : public Application {
     Q_OBJECT
     SIMPLE_APPLICATION(STP, "stp")
 public:
     void init(Loader* loader, const Config& config) override;
-
+/**
+ * get enabling for flooding ports
+ *
+ * @param dpid id of switch
+ * @return Ports
+ */
     STPPorts getSTP(uint64_t dpid);
 
 protected slots:
@@ -86,9 +108,12 @@ protected slots:
     void onLinkBroken(switch_and_port from, switch_and_port to);
     void onSwitchDiscovered(Switch* dp);
     void onSwitchDown(Switch* dp);
+    void onSwitchUp(Switch* dp);
     void onPortUp(Switch* dp, of13::Port port);
 
 private:
+    unsigned int poll_timeout;
+
     std::unordered_map<uint64_t, SwitchSTP*> switch_list;
     class Topology* topo;
 

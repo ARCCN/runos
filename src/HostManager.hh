@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** @file */
 #pragma once
 
 #include <mutex>
@@ -25,8 +26,8 @@
 #include "Common.hh"
 #include "Loader.hh"
 #include "Application.hh"
-#include "OFMessageHandler.hh"
 #include "Switch.hh"
+
 #include "Rest.hh"
 #include "AppObject.hh"
 #include "json11.hpp"
@@ -61,7 +62,7 @@ public:
  * Also application handles all packet_ins and if eth_src field is not belongs to switch
  * it means that new end host appears in the network.
  */
-class HostManager: public Application, OFMessageHandlerFactory, RestHandler {
+class HostManager: public Application, RestHandler {
     Q_OBJECT
     SIMPLE_APPLICATION(HostManager, "host-manager")
 public:
@@ -69,10 +70,7 @@ public:
     ~HostManager();
 
     void init(Loader* loader, const Config& config) override;
-    std::string orderingName() const override { return "host-finder"; }
-    std::unique_ptr<OFMessageHandler> makeOFMessageHandler() override
-    { return std::unique_ptr<OFMessageHandler>(new Handler(this)); }
-    bool isPrereq(const std::string &name) const;
+
     std::unordered_map<std::string, Host*> hosts();
     Host* getHost(std::string mac);
     Host* getHost(IPAddress ip);
@@ -100,12 +98,4 @@ private:
     bool isSwitch(std::string mac);
     void attachHost(std::string mac, uint64_t id, uint32_t port);
     void delHostForSwitch(Switch* dp);
-
-    class Handler: public OFMessageHandler {
-    public:
-        Handler(HostManager* app_) : app(app_) { }
-        Action processMiss(OFConnection* ofconn, Flow* flow) override;
-    private:
-        HostManager* app;
-    };
 };

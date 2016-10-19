@@ -38,7 +38,7 @@ public:
     ~WebObject();
 
     uint64_t id() const override;
-    json11::Json to_json() const;
+    json11::Json to_json() const override;
     Position pos() const;
     std::string icon() const;
     std::string display_name() const;

@@ -19,30 +19,66 @@
 
 #include "LinkDiscovery.hh"
 
-#include <tins/macros.h>
-#include <fluid/util/util.h>
+#include <cstdint>
+#include <boost/endian/arithmetic.hpp>
+#include <boost/endian/conversion.hpp>
+
 #include "LLDP.hh"
-#include "Controller.hh"
+
+#include "api/PacketMissHandler.hh"
+#include "api/Packet.hh"
+#include "api/SerializablePacket.hh"
+#include "api/TraceablePacket.hh"
+#include "oxm/openflow_basic.hh"
+#include "SwitchConnection.hh"
+#include "Flow.hh"
+
+using namespace boost::endian;
+using namespace runos;
 
 REGISTER_APPLICATION(LinkDiscovery, {"switch-manager", "controller", ""})
+
+big_uint16_t lldp_tlv_header(big_uint16_t type, big_uint16_t length)
+{
+    return (type << big_uint16_t(9)) | length;
+}
+
+struct lldp_packet {
+    big_uint48_t dst_mac {0x0180c200000eULL};
+    big_uint48_t src_mac;
+    big_uint16_t eth_type {LLDP_ETH_TYPE};
+
+    big_uint16_t chassis_id_header {lldp_tlv_header(LLDP_CHASSIS_ID_TLV, 7)};
+    big_uint8_t chassis_id_sub {LLDP_CHASSIS_ID_SUB_MAC};
+    big_uint48_t chassis_id_sub_mac;
+
+    big_uint16_t port_id_header {lldp_tlv_header(LLDP_PORT_ID_TLV, 5)};
+    big_uint8_t port_id_sub {LLDP_PORT_ID_SUB_COMPONENT};
+    big_uint32_t port_id_sub_component;
+
+    big_uint16_t ttl_header {lldp_tlv_header(LLDP_TTL_TLV, 2)};
+    big_uint16_t ttl_seconds;
+
+    big_uint16_t dpid_header {lldp_tlv_header(127, 12)};
+    big_uint24_t dpid_oui {0x0026e1}; // OpenFlow
+    big_uint8_t  dpid_sub {0};
+    big_uint64_t dpid_data;
+
+    big_uint16_t end {0};
+};
+static_assert(sizeof(lldp_packet) == 50, "Unexpected alignment");
 
 void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
 {
     qRegisterMetaType<switch_and_port>();
-
-    /* Initialize members */
-    m_timer = new QTimer(this);
 
     /* Read configuration */
     auto config = config_cd(rootConfig, "link-discovery");
     c_poll_interval = config_get(config, "poll-interval", 120);
 
     /* Get dependencies */
-    Controller*    ctrl  = Controller::get(loader);
+    ctrl  = Controller::get(loader);
     m_switch_manager     = SwitchManager::get(loader);
-
-    /* Connect with other applications */
-    ctrl->registerHandler(this);
 
     QObject::connect(m_switch_manager, &SwitchManager::switchDiscovered,
          [this](Switch* dp) {
@@ -51,32 +87,69 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
              QObject::connect(dp, &Switch::portModified, this, &LinkDiscovery::portModified);
          });
 
-    QObject::connect(this, &LinkDiscovery::lldpReceived,
-                     this, &LinkDiscovery::onLldpReceived,
-                     Qt::QueuedConnection);
-
-    connect(m_timer, SIGNAL(timeout()), this, SLOT(pollTimeout()));
-
     /* Do logging */
     QObject::connect(this, &LinkDiscovery::linkDiscovered,
          [](switch_and_port from, switch_and_port to) {
              LOG(INFO) << "Link discovered: "
-                     << FORMAT_DPID << from.dpid << ':' << from.port << " -> "
-                     << FORMAT_DPID << to.dpid << ':' << to.port;
+                     << from.dpid << ':' << from.port << " -> "
+                     << to.dpid << ':' << to.port;
          });
     QObject::connect(this, &LinkDiscovery::linkBroken,
          [](switch_and_port from, switch_and_port to) {
              LOG(INFO) << "Link broken: "
-                     << FORMAT_DPID << from.dpid << ':' << from.port << " -> "
-                     << FORMAT_DPID << to.dpid << ':' << to.port;
+                     << from.dpid << ':' << from.port << " -> "
+                     << to.dpid << ':' << to.port;
 
+        });
+
+    /* Connect with other applications */
+    ctrl->registerHandler("link-discovery",
+        [this](SwitchConnectionPtr connection) {
+            const auto ofb_in_port = oxm::in_port();
+            const auto ofb_eth_type = oxm::eth_type();
+
+            return [=](Packet& pkt, FlowPtr, Decision decision) {
+                if (not pkt.test(ofb_eth_type == LLDP_ETH_TYPE))
+                    return decision;
+
+                lldp_packet lldp;
+                auto written = packet_cast<SerializablePacket&>(pkt)
+                              //.ethernet()
+                              .serialize_to(sizeof lldp, &lldp);
+                if (written < sizeof lldp) {
+                    LOG(ERROR) << "LLDP packet is too small";
+                    return decision.idle_timeout(std::chrono::seconds::zero())
+                        .drop()// TODO : inspect(sizeof(lldp_packet))
+                                   .return_();
+                }
+
+                switch_and_port source
+                    = { lldp.dpid_data, lldp.port_id_sub_component };
+                switch_and_port target
+                    = { target.dpid = connection->dpid(),
+                        packet_cast<TraceablePacket>(pkt).watch(ofb_in_port) };
+
+                DVLOG(5) << "LLDP packet received on "
+                    << target.dpid << ':' << target.port;
+
+                if (source > target)
+                    std::swap(source, target);
+
+                QMetaObject::invokeMethod(this, "handleBeacon",
+                                          Qt::QueuedConnection,
+                                          Q_ARG(switch_and_port, source),
+                                          Q_ARG(switch_and_port, target));
+                return decision.idle_timeout(std::chrono::seconds::zero())
+                    .drop()// TODO : inspect(sizeof(lldp_packet))
+                                   .return_();
+            };
         });
 }
 
 void LinkDiscovery::startUp(Loader *)
 {
     // Start LLDP polling
-    m_timer->start(c_poll_interval * 1000);
+    startTimer(c_poll_interval * 1000);
 }
 
 void LinkDiscovery::portUp(Switch *dp, of13::Port port)
@@ -110,62 +183,22 @@ void LinkDiscovery::portDown(Switch *dp, uint32_t port_no)
     clearLinkAt(switch_and_port{dp->id(), port_no});
 }
 
-TINS_BEGIN_PACK
-struct lldp_packet {
-    uint64_t dst_mac:48;
-    uint64_t src_mac:48;
-    uint16_t eth_type;
-
-    uint16_t chassis_id_header;
-    uint8_t chassis_id_sub;
-    uint64_t chassis_id_sub_mac:48;
-
-    uint16_t port_id_header;
-    uint8_t port_id_sub;
-    uint32_t port_id_sub_component;
-
-    uint16_t ttl_header;
-    uint16_t ttl_seconds;
-
-    uint16_t dpid_header;
-    uint32_t dpid_oui:24;
-    uint8_t  dpid_sub;
-    uint64_t dpid_data;
-
-    uint16_t end;
-} TINS_END_PACK;
-
 void LinkDiscovery::sendLLDP(Switch *dp, of13::Port port)
 {
     lldp_packet lldp;
-    lldp.dst_mac = hton64(0x0180c200000eULL) >> 16ULL;
     uint8_t* mac = port.hw_addr().get_data();
-    lldp.src_mac = hton64(((uint64_t) mac[0] << 40ULL) |
-                         ((uint64_t) mac[1] << 32ULL) |
-                         ((uint64_t) mac[2] << 24ULL) |
-                         ((uint64_t) mac[3] << 16ULL) |
-                         ((uint64_t) mac[4] << 8ULL) |
-                         (uint64_t) mac[5] ) >> 16ULL;
-    lldp.eth_type = hton16(LLDP_ETH_TYPE);
+    lldp.src_mac = ((uint64_t) mac[0] << 40ULL) |
+                   ((uint64_t) mac[1] << 32ULL) |
+                   ((uint64_t) mac[2] << 24ULL) |
+                   ((uint64_t) mac[3] << 16ULL) |
+                   ((uint64_t) mac[4] << 8ULL) |
+                    (uint64_t) mac[5];
 
-    lldp.chassis_id_header = lldp_tlv_header(LLDP_CHASSIS_ID_TLV, 7);
-    lldp.chassis_id_sub    = LLDP_CHASSIS_ID_SUB_MAC;
     // lower 48 bits of datapath id represents switch MAC address
-    lldp.chassis_id_sub_mac = hton64(dp->id()) >> 16;
-
-    lldp.port_id_header = lldp_tlv_header(LLDP_PORT_ID_TLV, 5);
-    lldp.port_id_sub    = LLDP_PORT_ID_SUB_COMPONENT;
-    lldp.port_id_sub_component = hton32(port.port_no());
-
-    lldp.ttl_header = lldp_tlv_header(LLDP_TTL_TLV, 2);
-    lldp.ttl_seconds = hton16(c_poll_interval);
-
-    lldp.dpid_header = lldp_tlv_header(127, 12);
-    lldp.dpid_oui    = hton32(0x0026e1) >> 8; // OpenFlow
-    lldp.dpid_sub    = 0;
-    lldp.dpid_data   = hton64(dp->id());
-
-    lldp.end = 0;
+    lldp.chassis_id_sub_mac = dp->id();
+    lldp.port_id_sub_component = port.port_no();
+    lldp.ttl_seconds = c_poll_interval;
+    lldp.dpid_data   = dp->id();
 
     VLOG(5) << "Sending LLDP packet to " << port.name();
     of13::PacketOut po;
@@ -175,63 +208,16 @@ void LinkDiscovery::sendLLDP(Switch *dp, of13::Port port)
     po.add_action(action);
 
     // Send packet 3 times to prevent drops
-    dp->send(&po);
-    dp->send(&po);
-    dp->send(&po);
+    dp->connection()->send(po);
+    dp->connection()->send(po);
+    dp->connection()->send(po);
 }
 
-OFMessageHandler::Action LinkDiscovery::Handler::processMiss(OFConnection *ofconn, Flow *flow)
+void LinkDiscovery::handleBeacon(switch_and_port from, switch_and_port to)
 {
-    if (flow->match(of13::EthType(LLDP_ETH_TYPE))) {
-        Switch* sw = app->m_switch_manager->getSwitch(ofconn);
-        if (sw == nullptr)
-            return Stop;
-
-        lldp_packet lldp;
-
-        flow->idleTimeout(0);
-        flow->timeToLive(0);
-        flow->setFlags(Flow::Disposable);
-
-        auto pkt = flow->pkt()->serialize();
-        if (pkt.size() < sizeof lldp) {
-            LOG(ERROR) << "LLDP packet received is too small";
-            return Stop;
-        }
-        memcpy(&lldp, pkt.data(), sizeof lldp);
-
-        switch_and_port source;
-        switch_and_port target;
-        source.dpid = ntoh64(lldp.dpid_data);
-        source.port = ntoh32(lldp.port_id_sub_component);
-        target.dpid = sw->id();
-        target.port = flow->pkt()->readInPort();
-        try{
-            DVLOG(5) << "LLDP packet received on " << sw->port(target.port).name();
-        } catch (...) {}
-
-        if (!(source < target))
-            std::swap(source, target);
-        emit app->lldpReceived(source, target);
-
-        return Stop;
-    } else {
-        return Continue;
-    }
-}
-
-DiscoveredLink::DiscoveredLink(switch_and_port const &source_,
-        switch_and_port const &target_, valid_through_t const & valid_through_)
-    : source(source_), target(target_), valid_through(valid_through_)
-{
-    if (!(source < target))
-        std::swap(source, target);
-}
-
-void LinkDiscovery::onLldpReceived(switch_and_port from, switch_and_port to)
-{
-    DiscoveredLink link(from, to, std::chrono::steady_clock::now() +
-                        std::chrono::seconds(c_poll_interval * 2));
+    DiscoveredLink link{ from, to,
+                         std::chrono::steady_clock::now() +
+                            std::chrono::seconds(c_poll_interval * 2) };
     bool isNew = true;
 
     // Remove older edge
@@ -255,7 +241,7 @@ void LinkDiscovery::onLldpReceived(switch_and_port from, switch_and_port to)
 
 void LinkDiscovery::clearLinkAt(const switch_and_port &source)
 {
-    VLOG(5) << "clearLinkAt " << FORMAT_DPID << source.dpid << ':' << source.port;
+    VLOG(5) << "clearLinkAt " << source.dpid << ':' << source.port;
 
     switch_and_port target;
     auto out_edges_it = m_out_edges.find(source);
@@ -278,9 +264,10 @@ void LinkDiscovery::clearLinkAt(const switch_and_port &source)
         emit linkBroken(source, target);
     else
         emit linkBroken(target, source);
+    ctrl->invalidateTraceTree(); // TODO : smart invalidation
 }
 
-void LinkDiscovery::pollTimeout()
+void LinkDiscovery::timerEvent(QTimerEvent*)
 {
     auto now = std::chrono::steady_clock::now();
 
@@ -302,19 +289,3 @@ void LinkDiscovery::pollTimeout()
         }
     }
 }
-
-std::unique_ptr<OFMessageHandler> LinkDiscovery::makeOFMessageHandler()
-{
-    return std::unique_ptr<OFMessageHandler>(new Handler(this));
-}
-
-std::string LinkDiscovery::orderingName() const
-{
-    return "link-discovery";
-}
-
-bool LinkDiscovery::isPostreq(const std::string &name) const
-{
-    return (name == "forwarding");
-}
-

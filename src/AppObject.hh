@@ -52,11 +52,6 @@ public:
     void connectedSince(time_t time);
 
     /**
-     * Translate 64-bit identifier (DPID in switches) to string format
-     */
-    static std::string uint64_to_string(uint64_t id);
-
-    /**
      * Define the equality operator between objects
      */
     friend bool operator==(const AppObject& o1, const AppObject& o2);

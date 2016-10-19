@@ -19,6 +19,7 @@
 #include <fstream>
 #include <sstream>
 #include "json11.hpp"
+#include "SwitchConnection.hh"
 
 #include "Loader.hh"
 
@@ -47,12 +48,12 @@ int main(int argc, char* argv[]) {
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint64_t>("uint64_t");
     qRegisterMetaType<std::string>("std::string");
-    qRegisterMetaType<Flow::FlowState>("FlowState");
     qRegisterMetaType<of13::PortStatus>();
     qRegisterMetaType<of13::FeaturesReply>();
     qRegisterMetaType< std::shared_ptr<of13::Error> >();
     qRegisterMetaType<of13::Port>();
     qRegisterMetaType<of13::Match>();
+    qRegisterMetaType<runos::SwitchConnectionPtr>("SwitchConnectionPtr");
 
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();

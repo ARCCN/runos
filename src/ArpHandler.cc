@@ -16,10 +16,36 @@
 
 #include "ArpHandler.hh"
 
-#include <tins/arp.h>
-#include <tins/ethernetII.h>
+#include "api/Packet.hh"
+#include "api/PacketMissHandler.hh"
+#include "api/TraceablePacket.hh"
+
+#include "types/ethaddr.hh"
+
+#include "SwitchConnection.hh"
 #include "Controller.hh"
 #include "HostManager.hh"
+#include "AppObject.hh" // uint32_t_ip_to_string
+
+using namespace boost::endian;
+
+struct Reply{
+    big_uint48_t dst;
+    big_uint48_t src;
+    big_uint16_t type = 0x0806;
+    struct Arp
+    {
+        big_uint16_t htype = 0x0001;
+        big_uint16_t ptype = 0x0800;
+        big_uint8_t hlen = 0x6;
+        big_uint8_t plen = 0x4;
+        big_uint16_t oper = 0x0002;
+        big_uint48_t sha;
+        big_uint32_t spa;
+        big_uint48_t tha;
+        big_uint32_t tpa;
+    } arp;
+};
 
 constexpr auto ARP_ETH_TYPE = 0x0806;
 constexpr auto ARP_REQUEST = 1;
@@ -27,46 +53,60 @@ constexpr auto ARP_REPLY = 2;
 
 REGISTER_APPLICATION(ArpHandler, {"controller","switch-manager", "host-manager", ""})
 
+//TODO : deal with it application
 void ArpHandler::init(Loader *loader, const Config& config)
 {
         Controller* ctrl = Controller::get(loader);
         host_manager = HostManager::get(loader);
-        ctrl->registerHandler(this);
-}
+        ctrl->registerHandler("arp-handler",
+            [=](SwitchConnectionPtr connection) {
+                const auto ofb_in_port = oxm::in_port();
+                const auto ofb_eth_type = oxm::eth_type();
+                const auto ofb_arp_op = oxm::arp_op();
+                const auto ofb_arp_tpa = oxm::arp_tpa();
+                const auto ofb_arp_spa = oxm::arp_spa();
+                const auto ofb_arp_sha = oxm::arp_sha();
+                const auto ofb_eth_src = oxm::eth_src();
+                return [=](Packet& pkt, FlowPtr, Decision decision){
+                    auto tpkt = packet_cast<TraceablePacket>(pkt);
+                    if (pkt.test(ofb_eth_type == ARP_ETH_TYPE) && tpkt.test(ofb_arp_op == ARP_REQUEST)) {
+                        auto arp_tpa = tpkt.watch(ofb_arp_tpa);
+                        IPAddress ip(arp_tpa);
+                        Host *target = host_manager->getHost(ip);
+                        if (target) {
+                            // arp_tha is declared above
+                            auto arp_tha = target->mac();
+                            auto arp_spa = tpkt.watch(ofb_arp_spa);
+                            auto arp_sha = tpkt.watch(ofb_arp_sha);
+                            Reply reply;
+                            reply.dst = ethaddr(tpkt.watch(ofb_eth_src)).to_number();
+                            reply.src = ethaddr(arp_tha).to_number();
+                            reply.arp.sha = ethaddr(arp_tha).to_number();
+                            reply.arp.spa = bit_cast<uint32_t>(arp_tpa.value_bits());
+                            reply.arp.tha = ethaddr(arp_sha.value_bits()).to_number();
+                            reply.arp.tpa = bit_cast<uint32_t>(arp_spa.value_bits());
 
-OFMessageHandler::Action ArpHandler::Handler::processMiss(OFConnection* ofconn, Flow* flow)
-{     
-    if (flow->pkt()->readEthType() == ARP_ETH_TYPE && flow->pkt()->readARPOp() == ARP_REQUEST) {
-        IPAddress ip = flow->pkt()->readARPTPA();
-        Host* target = app->host_manager->getHost(ip);
-        if (target) {
-            flow->setFlags(Flow::Disposable);
+                            uint8_t* data = (uint8_t *)&(reply);
+                            of13::PacketOut out;
+                            out.buffer_id(OFP_NO_BUFFER);
+                            out.data(data, sizeof(reply));
+                            of13::OutputAction action(uint32_t(tpkt.watch(ofb_in_port)), 0);
+                            out.add_action(action);
 
-            Tins::EthernetII arp;
-            arp = Tins::ARP::make_arp_reply(Tins::IPv4Address(flow->pkt()->readARPSPA().getIPv4()), \
-                Tins::IPv4Address(ip.getIPv4()), flow->pkt()->readARPSHA().to_string(), target->mac());
-
-            Tins::PDU::serialization_type ser = arp.serialize();
-            uint8_t* data = &(ser[0]);
-            of13::PacketOut out;
-            out.buffer_id(OFP_NO_BUFFER);
-            out.data(data, arp.size());
-            of13::OutputAction action(flow->pkt()->readInPort(), 0);
-            out.add_action(action);
-
-            uint8_t* buffer = out.pack();
-            ofconn->send(buffer, out.length());
-            OFMsg::free_buffer(buffer);
-
-            DVLOG(10) << "We said " << flow->pkt()->readARPSHA().to_string()
-                         << " (" << Tins::IPv4Address(flow->pkt()->readARPSPA().getIPv4()).to_string()
-                         << ") that IP = "
-                         << Tins::IPv4Address(ip.getIPv4()).to_string() << " has " << target->mac();
-
-            return Stop;
-
-        }
-    }
-
-    return Continue;
+                            connection->send(out);
+                            auto string_ip = AppObject::uint32_t_ip_to_string(arp_tpa);
+                            VLOG(10) << "We said " << arp_sha
+                                         << " (" << arp_spa
+                                         << ") that IP = "
+                                         << string_ip << " has " << arp_tha;
+                            return decision
+                            .idle_timeout(std::chrono::seconds::zero())
+                            .drop() // To controller with arpheader lenght
+                            .return_();
+                        }
+                        return decision.idle_timeout(std::chrono::seconds::zero());
+                    }
+                    return decision;
+                };
+            });
 }

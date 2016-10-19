@@ -17,13 +17,19 @@
 #include "STP.hh"
 
 #include "Topology.hh"
+#include "Controller.hh"
+#include "SwitchConnection.hh"
+REGISTER_APPLICATION(STP, {"controller", "switch-manager", "link-discovery", "topology", ""})
 
-REGISTER_APPLICATION(STP, {"switch-manager", "link-discovery", "topology", ""})
+enum {
+    FLOOD_GROUP = 0xf100d
+};
 
 void SwitchSTP::computeSTP()
 {
     parent->computePathForSwitch(this->sw->id());
 }
+
 
 void SwitchSTP::resetBroadcast()
 {
@@ -33,6 +39,53 @@ void SwitchSTP::resetBroadcast()
     }
 }
 
+void SwitchSTP::updateGroup()
+{
+    of13::GroupMod gm;
+    gm.commmand(of13::OFPGC_MODIFY);
+    gm.group_type(of13::OFPGT_ALL);
+    gm.group_id(FLOOD_GROUP);
+    STPPorts ports = parent->getSTP(sw->id());
+    for (auto port : ports) {
+        of13::Bucket b;
+        b.watch_port(of13::OFPP_ANY);
+        b.watch_group(of13::OFPG_ANY);
+        //b.weight(0);
+        b.add_action(new of13::OutputAction(port, 0));
+        gm.add_bucket(b);
+    }
+    sw->connection()->send(gm);
+}
+
+void SwitchSTP::clearGroup()
+{
+    if (sw){
+        of13::GroupMod gm;
+        gm.commmand(of13::OFPGC_DELETE);
+        gm.group_type(of13::OFPGT_ALL);
+        gm.group_id(FLOOD_GROUP);
+        sw->connection()->send(gm);
+    }
+}
+
+void SwitchSTP::installGroup()
+{
+    of13::GroupMod gm;
+    gm.commmand(of13::OFPGC_ADD);
+    gm.group_type(of13::OFPGT_ALL);
+    gm.group_id(FLOOD_GROUP);
+    STPPorts ports = parent->getSTP(sw->id());
+    for (auto port : ports) {
+        of13::Bucket b;
+        b.watch_port(of13::OFPP_ANY);
+        b.watch_group(of13::OFPG_ANY);
+        //b.weight(0);
+        b.add_action(new of13::OutputAction(port, 0));
+        gm.add_bucket(b);
+    }
+    sw->connection()->send(gm);
+}
+
 void SwitchSTP::setSwitchPort(uint32_t port_no, uint64_t dpid)
 {
     ports.at(port_no)->to_switch = true;
@@ -40,18 +93,23 @@ void SwitchSTP::setSwitchPort(uint32_t port_no, uint64_t dpid)
 }
 
 void STP::init(Loader* loader, const Config& config)
-{    
+{
     QObject* ld = ILinkDiscovery::get(loader);
-
+    auto subconfig = config_cd(config, "stp");
+    poll_timeout = config_get(subconfig, "poll-timeout", 3);
     connect(ld, SIGNAL(linkDiscovered(switch_and_port, switch_and_port)),
                      this, SLOT(onLinkDiscovered(switch_and_port, switch_and_port)));
     connect(ld, SIGNAL(linkBroken(switch_and_port, switch_and_port)),
                      this, SLOT(onLinkBroken(switch_and_port, switch_and_port)));
 
+    Controller *ctrl = Controller::get(loader);
+    ctrl->registerFlood([this](uint64_t dpid){
+        return new of13::GroupAction(FLOOD_GROUP);
+    });
     SwitchManager* sw = SwitchManager::get(loader);
     connect(sw, &SwitchManager::switchDiscovered, this, &STP::onSwitchDiscovered);
     connect(sw, &SwitchManager::switchDown, this, &STP::onSwitchDown);
-
+    connect(sw, &SwitchManager::switchUp, this, &STP::onSwitchUp);
     topo = Topology::get(loader);
 }
 
@@ -62,7 +120,7 @@ STPPorts STP::getSTP(uint64_t dpid)
         return ports;
     }
 
-    SwitchSTP* sw = switch_list[dpid];    
+    SwitchSTP* sw = switch_list[dpid];
     if (!sw->computed) {
         return ports;
     }
@@ -87,8 +145,10 @@ void STP::onLinkDiscovered(switch_and_port from, switch_and_port to)
         Port* port = new Port(from.port);
         sw->ports[from.port] = port;
     }
-    if (!sw->root)
+    if (!sw->root){
         sw->unsetBroadcast(from.port);
+        sw->updateGroup();
+    }
     sw->setSwitchPort(from.port, to.dpid);
 
     sw = switch_list[to.dpid];
@@ -96,8 +156,10 @@ void STP::onLinkDiscovered(switch_and_port from, switch_and_port to)
         Port* port = new Port(to.port);
         sw->ports[to.port] = port;
     }
-    if (!sw->root)
+    if (!sw->root){
         sw->unsetBroadcast(to.port);
+        sw->updateGroup();
+    }
     sw->setSwitchPort(to.port, from.dpid);
 
     // recompute pathes for all switches
@@ -119,8 +181,10 @@ void STP::onLinkBroken(switch_and_port from, switch_and_port to)
 void STP::onSwitchDiscovered(Switch* dp)
 {
     SwitchSTP* sw;
-    if (switch_list.empty())
+    if (switch_list.empty()){
         sw = new SwitchSTP(dp, this, true, true);
+        VLOG(10) << "Set " << dp->id() << " as root";
+    }
     else
         sw = new SwitchSTP(dp, this);
 
@@ -128,7 +192,7 @@ void STP::onSwitchDiscovered(Switch* dp)
 
     connect(dp, &Switch::portUp, this, &STP::onPortUp);
     connect(sw->timer, SIGNAL(timeout()), sw, SLOT(computeSTP()));
-    sw->timer->start(POLL_TIMEOUT * 1000);
+    sw->timer->start(poll_timeout * 1000);
 }
 
 void STP::onSwitchDown(Switch* dp)
@@ -141,6 +205,25 @@ void STP::onSwitchDown(Switch* dp)
     }
 }
 
+void STP::onSwitchUp(Switch* dp)
+{
+    if (switch_list.count(dp->id()) == 0) {
+        SwitchSTP* sw;
+        if (switch_list.empty()){
+            sw = new SwitchSTP(dp, this, true, true);
+            VLOG(10) << "Set " << dp->id() << " as root";
+        }
+        else
+            sw = new SwitchSTP(dp, this);
+
+        switch_list[dp->id()] = sw;
+
+        connect(dp, &Switch::portUp, this, &STP::onPortUp);
+        connect(sw->timer, SIGNAL(timeout()), sw, SLOT(computeSTP()));
+        sw->timer->start(poll_timeout * 1000);
+    }
+}
+
 void STP::onPortUp(Switch *dp, of13::Port port)
 {
     if (switch_list.count(dp->id()) > 0) {
@@ -149,6 +232,7 @@ void STP::onPortUp(Switch *dp, of13::Port port)
             Port* p = new Port(port.port_no());
             sw->ports[port.port_no()] = p;
         }
+        sw->updateGroup();
     }
 }
 
@@ -164,17 +248,17 @@ SwitchSTP* STP::findRoot()
 void STP::computePathForSwitch(uint64_t dpid)
 {
     static std::mutex compute;
-    if (!switch_list[dpid]->computed) {
+    SwitchSTP *sw = switch_list[dpid];
+    if (!sw->computed) {
         SwitchSTP* root = findRoot();
         if (root == nullptr) {
             LOG(ERROR) << "Root switch not found!";
-            SwitchSTP* sw = switch_list[dpid];
             sw->root = true;
             sw->computed = true;
+            sw->updateGroup();
+            VLOG(10) << "Set " << sw->sw->id() << " as root";
             return;
         }
-
-        SwitchSTP* sw = switch_list[dpid];
         std::vector<uint32_t> old_broadcast = getSTP(dpid);
 
         compute.lock();
@@ -193,9 +277,10 @@ void STP::computePathForSwitch(uint64_t dpid)
             data_link_route r_route = topo->computeRoute(route[1].dpid, dpid);
             SwitchSTP* r_sw = switch_list[r_route[0].dpid];
             uint32_t r_broadcast_port = r_route[0].port;
-            if (r_sw->existsPort(r_broadcast_port))
+            if (r_sw->existsPort(r_broadcast_port)){
                 r_sw->setBroadcast(r_broadcast_port);
-
+                r_sw->updateGroup();
+            }
             for (auto port : sw->ports) {
                 if (port.second->to_switch) {
                     if (port.second->nextSwitch->nextSwitchToRoot == sw) {
@@ -204,12 +289,15 @@ void STP::computePathForSwitch(uint64_t dpid)
                 }
             }
 
-            if (getSTP(dpid).size() == old_broadcast.size())
+            if (getSTP(dpid).size() == old_broadcast.size()){
                 sw->computed = true;
+                sw->updateGroup();
+                VLOG(10) << "Computed for  : " << sw->sw->id();
 
+            }
         } else {
-            LOG(WARNING) << "Path between " << FORMAT_DPID << dpid
-                << " and root switch " << FORMAT_DPID << root->sw->id() << " not found";
+            LOG(WARNING) << "Path between " << dpid
+                << " and root switch " << root->sw->id() << " not found";
         }
         compute.unlock();
     }

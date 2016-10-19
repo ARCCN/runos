@@ -16,6 +16,8 @@
 
 #include "WebUIManager.hh"
 
+#include <boost/lexical_cast.hpp>
+
 #include "Switch.hh"
 #include "RestListener.hh"
 #include "HostManager.hh"
@@ -46,7 +48,7 @@ WebObject::WebObject(uint64_t _id, bool is_router)
         m->icon = "router";
     else
         m->icon = "aimac";
-    m->display_name = AppObject::uint64_to_string(_id);
+    m->display_name = boost::lexical_cast<std::string>(_id);
 }
 
 WebObject::~WebObject()
