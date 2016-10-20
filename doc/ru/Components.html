@@ -1,0 +1,602 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>3. Компоненты RUNOS &mdash; Документация RUNOS 0.6</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
+        <link rel="next" title="4. Первые шаги в написании собственного приложения" href="FirstStep.html"/>
+        <link rel="prev" title="2. Обзор приложений" href="ApplicationOverView.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">3. Компоненты RUNOS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">3.1. Базовые</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">3.2. Приложения</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">3.3. Инструменты</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">3.4. Библиотеки</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#api">3.4.1. api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#maple">3.4.2. maple</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#openflow">3.4.3. openflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#oxm">3.4.4. oxm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#types">3.4.5. types</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">RUNOS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>3. Компоненты RUNOS</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/Components.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="runos">
+<h1>3. Компоненты RUNOS<a class="headerlink" href="#runos" title="Ссылка на этот заголовок">¶</a></h1>
+<div class="section" id="id1">
+<h2>3.1. Базовые<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>Common.hh</dt>
+<dd><dl class="first last docutils">
+<dt>Подключает:</dt>
+<dd><ul class="first last simple">
+<li>Библиотеку логгирования <a class="reference external" href="https://github.com/google/glog">GLOG</a></li>
+<li><a class="reference external" href="http://doc.qt.io/qt-5/qtcore-index.html">QtCore</a></li>
+<li><a class="reference external" href="http://opennetworkingfoundation.github.io/libfluid/">LibFluidMsg</a></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Flow.hh</dt>
+<dd><p class="first last">Представление потока.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>SwitchConnection.hh</dt>
+<dd><p class="first last">Представление соединения с коммутатором.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Decision.hh</dt>
+<dd><p class="first last">Решения для <a class="reference internal" href="WorkingWithController.html#ref-packetmisshandler"><span>PacketMissHandler</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Controller.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-controller-overview"><span>Controller</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Application.hh</dt>
+<dd><p class="first last">Базовый тип для приложений.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Config.hh</dt>
+<dd><p class="first last">Инструмент для работы с конфигурационном файлом.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>FluidOXMAdapter.hh</dt>
+<dd><p class="first last">Связующее звено между RUNOS::OXM и <cite>LibFluid</cite></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Loader.hh</dt>
+<dd><p class="first last">Загрузчик приложений : <a class="reference internal" href="ApplicationOverView.html#ref-loader"><span>Loader</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>PacketParser.hh</dt>
+<dd><p class="first last">Разбор пакетов протоколов семейтсва TCP/IP.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>3.2. Приложения<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>ArpHandler.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-arphandler-overview"><span>ArpHandler</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>FlowManager.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-flowmanager-overview"><span>FlowManager</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>HostManager.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-hostmanager-overview"><span>HostManager</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>LearningSwitch.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-learningswitch-overview"><span>LearningSwitch</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>LinkDiscovery.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-linkdiscovery-overview"><span>LinkDiscovery</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>RestListener.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>SimpleLearningSwitch.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-learningswitch-overview"><span>LearningSwitch</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>StaticFlowPusher.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-staticflowpusher-overview"><span>StaticFlowPusher</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Stats.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-switchstats-overview"><span>SwitchStats</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>STP.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-stp-overview"><span>STP</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Switch.hh</dt>
+<dd><p class="first last">Представление коммутатора и <a class="reference internal" href="ApplicationOverView.html#ref-switchmanager-overview"><span>SwitchManager</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Topology.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-topology-overview"><span>Topology</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>WebUIManager.hh</dt>
+<dd><p class="first last"><a class="reference internal" href="ApplicationOverView.html#ref-webuimanager-overview"><span>WebUIManager</span></a>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2>3.3. Инструменты<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>AppObect.hh</dt>
+<dd><p class="first last">Базовый класс для объектов event-модели</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Event.hh</dt>
+<dd><p class="first last">event-модель</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>ILinkDiscovery.hh</dt>
+<dd><p class="first last">Интерфейс приложения <a class="reference internal" href="ApplicationOverView.html#ref-linkdiscovery-overview"><span>LinkDiscovery</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>json11.hpp</dt>
+<dd><p class="first last"><a class="reference external" href="https://github.com/dropbox/json11">Json библиотека</a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>LLDP.hh</dt>
+<dd><p class="first last">описание LLDP заголовка пакета.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>OFMsgUnion.hh</dt>
+<dd><p class="first last">OpenFlow сообщения.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>ORTransaction.hh</dt>
+<dd><p class="first last">Канал для общения с коммутаторами.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Rest.hh</dt>
+<dd><p class="first last">Базовый класс для приложений, поддерживающих REST</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h2>3.4. Библиотеки<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="api">
+<h3>3.4.1. api<a class="headerlink" href="#api" title="Ссылка на этот заголовок">¶</a></h3>
+<blockquote>
+<div><p>Интерфейс для некоторых компонентов RUNOS</p>
+<ul>
+<li><dl class="first docutils">
+<dt>api/Packet.hh</dt>
+<dd><p class="first last">Интерфейс для чтения и изменения полей пакета протоколоа семейтсва TCP/IP.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>api/PacketMissHandler.hh</dt>
+<dd><p class="first last">Интерфейс для функций обработчик в <a class="reference internal" href="WorkingWithController.html#ref-packetmisshandler"><span>PacketMissHandler</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>api/SerializablePacket.hh</dt>
+<dd><p class="first last">Интерфейс для сериализации пакетов протоколов семейства TCP/IP.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>api/TraceablePacket.hh</dt>
+<dd><p class="first last">Интерфейс для Packet, работающим с runos::maple</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="maple">
+<h3>3.4.2. maple<a class="headerlink" href="#maple" title="Ссылка на этот заголовок">¶</a></h3>
+<blockquote>
+<div><p>Реализация ядра maple.</p>
+<ul>
+<li><dl class="first docutils">
+<dt>maple/Backend.hh</dt>
+<dd><p class="first last">Интерфейс для maple, для работы с сетью</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>maple/Flow.hh</dt>
+<dd><p class="first last">Представление потока для maple</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>maple/Tracer.hh</dt>
+<dd><p class="first last">Трассировка PacketMissHandler&#8217;ов</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>maple/TraceTree.hh</dt>
+<dd><p class="first last">Релазиация TraceTree</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>maple/TraceablePacketImpl.hh</dt>
+<dd><p class="first last">Реализация Packet, работающим с maple</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>maple/LoggableTracer.hh</dt>
+<dd><p class="first last">Tracer с логированием.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>maple/Runtime.hh</dt>
+<dd><p class="first last">Интерфейс maple.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="openflow">
+<h3>3.4.3. openflow<a class="headerlink" href="#openflow" title="Ссылка на этот заголовок">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>openflow/common.hh</dt>
+<dd><p class="first last">база  openflow</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>openflow/openflow-1.0.h</dt>
+<dd><p class="first last">OpenFlow1 definitions</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>openflow/openflow-1.3.5.h</dt>
+<dd><p class="first last">OpenFlow1.3 definitions</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>openflow/openflow-1.5.1.h</dt>
+<dd><p class="first last">OpenFlow1.5 definitons.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="oxm">
+<h3>3.4.4. oxm<a class="headerlink" href="#oxm" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Библиотека реализующая oxm поля OpenFlow.</p>
+<ul>
+<li><dl class="first docutils">
+<dt>oxm/bit_traits.hh</dt>
+<dd><p class="first last">Размеры типов в битах.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>oxm/errors.hh</dt>
+<dd><p class="first last">Возможные exceptions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>oxm/field.hh</dt>
+<dd><p class="first last">filed, value and mask</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>oxm/field_set.hh</dt>
+<dd><p class="first last">Наборы полей.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>oxm/openflow_basic.hh</dt>
+<dd><p class="first last">Основные поля TCP/IP.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="types">
+<h3>3.4.5. types<a class="headerlink" href="#types" title="Ссылка на этот заголовок">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>types/ethaddr.hh</dt>
+<dd><p class="first last">обретка для ethernet адреса</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>types/IPv6Addr.hh</dt>
+<dd><p class="first last">обертка для IPv6 адреса</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>types/exception.hh</dt>
+<dd><p class="first last">Базовый тип для exception</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="FirstStep.html" class="btn btn-neutral float-right" title="4. Первые шаги в написании собственного приложения" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ApplicationOverView.html" class="btn btn-neutral" title="2. Обзор приложений" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, ARCCN.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/translations.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

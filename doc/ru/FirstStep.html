@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>4. Первые шаги в написании собственного приложения &mdash; Документация RUNOS 0.6</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
+        <link rel="next" title="5. Работа с Controller" href="WorkingWithController.html"/>
+        <link rel="prev" title="3. Компоненты RUNOS" href="Components.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">4. Первые шаги в написании собственного приложения</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">4.1. Введиение</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#application">4.2. класс Application</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">4.3. Инициализация</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">4.4. Старт приложения</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">4.5. Регестрация приложения</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loader">4.6. Loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">4.7. Работа с конфигурационным файлом</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">RUNOS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>4. Первые шаги в написании собственного приложения</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/FirstStep.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ref-first-step">
+<span id="id1"></span><h1>4. Первые шаги в написании собственного приложения<a class="headerlink" href="#ref-first-step" title="Ссылка на этот заголовок">¶</a></h1>
+<p>Вы можете писать свои приложения для управления сетью.</p>
+<div class="section" id="id2">
+<h2>4.1. Введиение<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Так как RUNOS написан на языке с++, то для эффективности приложения дописываются к существующему коду, то есть после написания вашего приложения вам придется пересобирать RUNOS.</p>
+<p>Предполгается, что вы хорошо владете языком C++ и <a class="reference external" href="https://www.qt.io/">фреймворком qt</a>. Так же полезны базовые знанияе утилиты <a class="reference external" href="https://cmake.org/">cmake</a>.</p>
+<p>Все файлы, которые вы создаете вам необходимо указывать в подходящем CMakeList.txt, в соответсвии с тем в какой директории находится ваш модуль.</p>
+<p>После этого RUNOS будет компилироваться с вашими файлами.</p>
+</div>
+<div class="section" id="application">
+<span id="ref-application"></span><h2>4.2. класс Application<a class="headerlink" href="#application" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Приложение в RUNOS это класс, который наследован от абстрактного класса Application, который объявлен в файле Application.hh:</p>
+<dl class="class">
+<dt id="_CPPv211Application">
+<span id="Application"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Application</code> : <em class="property">public</em> <code class="descclassname"></code><code class="descname">QObject</code><a class="headerlink" href="#_CPPv211Application" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<p>Вам необходимо вставить макрос внутрь вашего класса
+(как в <a class="reference external" href="http://doc.qt.io/qt-5/qobject.html#Q_OBJECT">Q_OBJECT</a>),
+для того, чтобы ваш класс удовлетоврял необходимым требованиям :</p>
+<dl class="function">
+<dt id="c.SIMPLE_APPLICATION">
+<code class="descname">SIMPLE_APPLICATION</code><span class="sig-paren">(</span>your_klass, provides_val<span class="sig-paren">)</span><a class="headerlink" href="#c.SIMPLE_APPLICATION" title="Ссылка на это определение">¶</a></dt>
+<dd><p>your_klass &#8211; Ваш класс.</p>
+<p>provides_val &#8211; имя вашего класса.</p>
+<p>Данный макрос так же добавит в ваш класс статический метод <code class="docutils literal"><span class="pre">get(Loader</span> <span class="pre">*)</span></code> который позволит остальным приложениями получать доступ к вашему приложению.</p>
+</dd></dl>
+
+<p>Например:</p>
+<div class="highlight-python"><div class="highlight"><pre>#include &quot;Application.hh&quot;
+#include &quot;Loader.hh&quot;
+
+class YourApp : public Application
+{
+SIMPLE_APPLICATION(YourApp, &quot;your-application-name&quot;)
+public:
+   void init(Loader*, const Config&amp;) override;
+};
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>4.3. Инициализация<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="function">
+<dt id="_CPPv2N11Application4initEP6LoaderRK6Config">
+<span id="Application::init__LoaderP.ConfigCR"></span>void <code class="descclassname">Application::</code><code class="descname">init</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv26Loader" title="Loader">Loader</a> *, <em class="property">const</em> Config&amp;<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N11Application4initEP6LoaderRK6Config" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Вам необходимо переопредилить данный метод, который вызывается при запуске контроллера, и приложение готово к инициализации, т.е. все зависимости готовы к старту.</p>
+</dd></dl>
+
+<p>Данный метод должен реализовывать все связи вашего приложения с
+остальными приложением (Например <a class="reference external" href="http://doc.qt.io/qt-4.8/signalsandslots.html">connect сигналов</a> или регистрации обработчиков)</p>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>#include &quot;Common.hh&quot;
+
+void YourApp::init(Loader *, const Config&amp; )
+{
+     LOG(INFO) &lt;&lt; &quot;Hello World&quot;;
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>4.4. Старт приложения<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="function">
+<dt id="_CPPv2N11Application7startUpEP6Loader">
+<span id="Application::startUp__LoaderP"></span>void <code class="descclassname">Application::</code><code class="descname">startUp</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv26Loader" title="Loader">Loader</a> *<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N11Application7startUpEP6Loader" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Данный метод вызывается, когда все приложения проиницилизированы.</p>
+<p>В нем вам необходимо выполнить все побочные эффекты вашего приложения, напиример прослушание портов.</p>
+</dd></dl>
+
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>#include &quot;Common.hh&quot; // For log
+
+void YourApp::startUp(Loader *)
+{
+  LOG(INFO) &lt;&lt; &quot;All services inited&quot;;
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h2>4.5. Регестрация приложения<a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h2>
+<p>После того, как вы создали класс для вашего приложения, вам необходимо сообщить ядру контроллера о сущестовании вашего приложения.</p>
+<p>Для этого необходимо зарегестрировать ваше приложение с помощью макроса</p>
+<blockquote>
+<div><dl class="function">
+<dt id="c.REGISTER_APPLICATION">
+<code class="descname">REGISTER_APPLICATION</code><span class="sig-paren">(</span>your_class, list_of_dependeces<span class="sig-paren">)</span><a class="headerlink" href="#c.REGISTER_APPLICATION" title="Ссылка на это определение">¶</a></dt>
+<dd><p>your_class &#8211; имя вашего класса.</p>
+<p>list_of_depenedeces &#8211; Список, приложений, от которых заваисит ваше приложение. Последним необходимо указать <code class="docutils literal"><span class="pre">&quot;&quot;</span></code>.</p>
+<div class="admonition attention">
+<p class="first admonition-title">Внимание</p>
+<p class="last">Данный макрос нельзя прописывать в заголовочном файле!</p>
+</div>
+</dd></dl>
+
+</div></blockquote>
+<div class="admonition warning">
+<p class="first admonition-title">Предупреждение</p>
+<p class="last">Нельзя зацикиливать зависимости.</p>
+</div>
+<p>Теперь будет создаваться объект вашего приложения,
+однако все еще не будут вызываться методы
+<a class="reference internal" href="#_CPPv2N11Application4initEP6LoaderRK6Config" title="Application::init"><code class="xref cpp cpp-func docutils literal"><span class="pre">Application::init()</span></code></a>
+и
+<a class="reference internal" href="#_CPPv2N11Application7startUpEP6Loader" title="Application::startUp"><code class="xref cpp cpp-func docutils literal"><span class="pre">Application::startUp()</span></code></a>, потому что контроллер не считает нужным запускать ваше приложение.</p>
+<p>Вам необходимо указать имя своего приложения в <code class="docutils literal"><span class="pre">network-settings.json</span></code> в списке <code class="docutils literal"><span class="pre">services</span></code>, чтобы ваше приложение запустилось.</p>
+<p>После этого ваше приложение запуститься и может управлять сетью.</p>
+</div>
+<div class="section" id="loader">
+<h2>4.6. Loader<a class="headerlink" href="#loader" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="class">
+<dt id="_CPPv26Loader">
+<span id="Loader"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Loader</code><a class="headerlink" href="#_CPPv26Loader" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<p>Методы <a class="reference internal" href="#_CPPv2N11Application4initEP6LoaderRK6Config" title="Application::init"><code class="xref cpp cpp-func docutils literal"><span class="pre">Application::init()</span></code></a> и <a class="reference internal" href="#_CPPv2N11Application7startUpEP6Loader" title="Application::startUp"><code class="xref cpp cpp-func docutils literal"><span class="pre">Application::startUp()</span></code></a> принимают как парметр указатель на <a class="reference internal" href="#_CPPv26Loader" title="Loader"><code class="xref cpp cpp-class docutils literal"><span class="pre">Loader</span></code></a>.</p>
+<p><a class="reference internal" href="#_CPPv26Loader" title="Loader"><code class="xref cpp cpp-class docutils literal"><span class="pre">Loader</span></code></a> это загрузчик приложений, который и инициализирует ваши приложения.</p>
+<p>Вы можете получать объекты других приложений с помощью статического метода <code class="docutils literal"><span class="pre">get</span></code> этих приложений, и передав им <a class="reference internal" href="#_CPPv26Loader" title="Loader"><code class="xref cpp cpp-class docutils literal"><span class="pre">Loader</span></code></a> как аргумент.</p>
+<p>Например:</p>
+<div class="highlight-python"><div class="highlight"><pre>#include &quot;Controller.hh&quot;
+#include &quot;Loader.hh&quot;
+#include &quot;SwitchConnection.hh&quot;
+#include &quot;Common.hh&quot;
+
+REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;&quot;})
+
+...
+
+void YourApp::init(Loader *loader, const Config&amp; )
+{
+  Controller *ctrl = Controller::get(loader);
+  QObject::connect(ctrl, &amp;Controller::switchUp,
+      [](SwitchConnectionPtr conn, of13::FeaturesReply fr)
+      {
+          LOG(INFO) &lt;&lt; &quot;This is SWITCH!!!!&quot;;
+      };)
+}
+</pre></div>
+</div>
+<div class="admonition attention">
+<p class="first admonition-title">Внимание</p>
+<p class="last">Добавляйте приложения, которые вы используется в список зависимостей! Это гарантирует, то что эти приложения будут проиницилизированы.</p>
+</div>
+</div>
+<div class="section" id="id6">
+<h2>4.7. Работа с конфигурационным файлом<a class="headerlink" href="#id6" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Ваше приложение может считывать настройки из конфигурационного файла.</p>
+<dl class="function">
+<dt id="_CPPv210config_getRK6ConfigRKNSt6stringERK4Type">
+<span id="config_get__ConfigCR.ssCR.TypeCR"></span>Type <code class="descclassname"></code><code class="descname">config_get</code><span class="sig-paren">(</span><em class="property">const</em> Config &amp;<em>config</em>, <em class="property">const</em> std::string &amp;<em>key</em>, <em class="property">const</em> Type &amp;<em>defval</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv210config_getRK6ConfigRKNSt6stringERK4Type" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Считать из файла настроек <code class="docutils literal"><span class="pre">network-settings.json</span></code> значение по ключу.
+Если данный ключ не найдет, будет возвращен defval.</p>
+<p>На данный момент поддерживаются следующие типы :</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">std::string</span></code></li>
+<li><code class="docutils literal"><span class="pre">int</span></code></li>
+<li><code class="docutils literal"><span class="pre">double</span></code></li>
+<li><code class="docutils literal"><span class="pre">bool</span></code></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv29config_cdRK6ConfigRKNSt6stringE">
+<span id="config_cd__ConfigCR.ssCR"></span>Config <code class="descclassname"></code><code class="descname">config_cd</code><span class="sig-paren">(</span><em class="property">const</em> Config &amp;<em>config</em>, <em class="property">const</em> std::string &amp;<em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv29config_cdRK6ConfigRKNSt6stringE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>получить описание объекта json по ключу.</p>
+</dd></dl>
+
+<p>Дополнительные возможности см в <a class="reference external" href="https://github.com/dropbox/json11">документации по json11</a>.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="WorkingWithController.html" class="btn btn-neutral float-right" title="5. Работа с Controller" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Components.html" class="btn btn-neutral" title="3. Компоненты RUNOS" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, ARCCN.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/translations.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

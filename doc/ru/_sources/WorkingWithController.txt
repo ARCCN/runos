@@ -1,0 +1,563 @@
+.. _ref-with-controller:
+
+Работа с Controller
+=======================
+
+
+.. cpp:class:: Controller
+
+    Объявлен в файле ``Controller.hh``
+
+    :ref:`ref-controller-overview` принимает на себя низкоуровневые обязанности по устанвке, поддержке и обмене сообщениеми с коммутаторами.
+
+Так как контроллер это основное приложение, то для полезной работы вам придется прямо или косвенно взаимодейстовавать с контроллером.
+
+.. note::
+
+    :cpp:class:`Controller` активно использует библиотеку `LibFluid <http://opennetworkingfoundation.github.io/libfluid/>`_.
+
+.. _ref-controller-signals:
+
+Сигналы
+-------
+
+:cpp:class:`Controller` инициирует некоторые `сигналы <http://doc.qt.io/qt-4.8/signalsandslots.html>`_ о событиях, которые произошли в сети:
+
+    * .. cpp:function::  void Controller::switchUp(SwitchConnectionPtr conn, of13::FeaturesReply fr)
+
+         К контроллеру подключился коммутатор.
+
+    * .. cpp:function::  void Controller::portStatus(SwitchConnectionPtr ofconn, of13::PortStatus ps)
+
+          Коммутатор сообщил об  изменении состояния портов.
+
+    * .. cpp:function::  void Controller::switchDown(SwitchConnectionPtr ofconn)
+
+          Соедение с коммутатором прервалось.
+
+
+Пример::
+
+  #include "YourApp.hh"
+
+  #include "Controller.hh"
+  #include "Common.hh"
+
+  REGISTER_APPLICATION(YourApp, {"controller", ""})
+
+
+  void YourApp::init(Loader* loader, const Config&)
+  {
+    Controller *ctrl = Controller::get(loader);
+
+    QObject::connect(ctrl, Controller::switchUp,
+                     [](SwitchConnectionPtr conn, of13::FeatireReply fr){
+        LOG(INFO) << "Connected switch : " << conn->dpid();
+        });
+
+    QObject::connect(ctrl, Controller::portStatus,
+                     [](SwitchConnectionPtr conn, of13::PortStatus ps){
+        LOG(INFO) << "port states chages on switch : " << conn->dpid();
+        });
+
+    QObject::connect(ctrl, Controller::switchDown, [](SwitchConnectionPtr conn){
+        LOG(INFO) << "swith disconnected : " << conn->dpid();
+        });
+  }
+
+.. _ref-statictransaction:
+
+StaticTransaction
+-----------------
+
+Registering static transaction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:cpp:class:`Controller` предоставляет возможность напрямую отправлять OpenFlow сообщения на коммутаторы, и принимать от них ответы.
+
+.. cpp:class:: OFTransaction
+
+    Класс, который предоставляет инструменты для общения с коммутаторами.
+
+.. cpp:function::  OFTransaction* Controller::registerStaticTransaction(Application* caller)
+
+  Регистрация вашего приложения для статического обмена пакетами с коммутаторами.
+
+  Данный метод создаст для вас объект класса :cpp:class:`OFTransaction`, через который вы можете отправлять пакеты.
+
+  .. note::
+
+      :cpp:class:`Controller` рарезервирует за вами *xid*.
+      Все сообщения от вас будут помечаться данным *xid*.
+      И наоборот,:cpp:class::`OFTransaction` будет доставлять вашему приложению, только сообщения с данным *xid*.
+
+OFTransaction
+~~~~~~~~~~~~~
+
+.. cpp:function:: void OFTransaction::request(SwitchConnectionPtr conn, OFMsg& msg)
+
+    Отправить OpenFlow сообщение на коммутатор.
+
+    SwitchConnectionPtr conn -- соедениение с коммутатором, на который надо отправить сообщение.
+
+    OFMsg& msg -- OpenFlow сообщение.
+
+.. cpp:function:: void OFTransaction::response(SwitchConnectionPtr conn,\
+                                              std::shared_ptr<OFMsgUnion> reply)
+
+    `Qt сигнал <http://doc.qt.io/qt-4.8/signalsandslots.html>`_ с ответом на OpenFlow запрос.
+
+    SwitchConnectionPtr conn -- соединеие с коммутаторм, от которого пришло сообщение.
+
+    std::shared_ptr<OFMsgUnion> reply -- сообщение.
+
+.. TODO error signal.
+
+Пример::
+
+    void YourApp::init(Loader* loader, const Config&)
+    {
+      Controller* ctrl = Controller::get(loader);
+      OFTransaction oftran = ctrl.registerStaticTransaction(this);
+      QObject::connect(ctrl, Controller::switchUp,
+          [oftran](SwitchConnectionPtr conn, of13::FeatireReply)
+          {
+            of13::MultipartRequestFlow mprf;
+            mprf.table_id(of13::OFPTT_ALL);
+            mprf.out_port(of13::OFPP_ANY);
+            mprf.out_group(of13::OFPG_ANY);
+            mprf.cookie(0x0);
+            mprf.cookie_mask(0x0);
+            mprf.flags(0);
+            oftran->request(conn,  mprf);
+          });
+      QObject::connect(oftran, OFTransaction::response,
+          [](SwitchConnectionPtr conn, std::shared_ptr<OFMsgUnion> reply)
+          {
+            LOG(INFO) << "Switch responsed ! ";
+          });
+    }
+
+Резервирование таблицы потоков
+------------------------------
+
+Если вашему приложению нужна своя таблица потоков вы можете запросить ее у контроллера.
+
+.. cpp:function:: uint8_t Controller::reserveTable()
+
+    Контроллер выделит вам таблицу потоков, в которую вы можете добавлять свои правила
+
+.. TODO описать невозможность выбрать номер таблицы
+
+.. Danger::
+
+    **RUNOS** не ограничивает вас в добавлении правил в другие таблицы потоков.
+    Однако это не гарантирует корректную работу вашего и других сервисов.
+
+Пример::
+
+  void ExampleFireWall::init(Loader* loader, const Config&)
+  {
+    Controller* ctrl = Controller::get(loader);
+    uint8_t table_no = ctrl->reservTable();
+    QObject::connect(ctrl, Controller::SwitchUp,
+        [table_no](SwitchConnectionPtr conn, of13::FeatireReply)
+        {
+          of13::FlowMod fm;
+          fm.table_id(table_no);
+          fm.match(new EthSrc("ff:ff:ff:ff:ff:ff"));
+          conn->send(fm);
+        });
+  }
+
+.. _ref-packetmisshandler:
+
+PacketMissHandler
+-----------------
+
+Введние
+~~~~~~~~~~~~
+
+Задача модуля обработчика PacketIn'ов абстрагировать вас от низкоуровневых OpenFlow команд и пакетов и тем самым повысить удобство программирования.
+
+Программист приложений для контроллера может писать данный обработчик пакетов сосредоточившись только на основной логике своей программы.
+Ему не надо будет самому формировать FlowMod, за него это сделает ядро **RUNOS**,
+Все что нужно программисту, это программисту это прочитать необходимые ему поля пакета,
+и на основании этого выбрать действие с пакетом.
+
+Структура
+~~~~~~~~~
+
+Функция обработчик : функция которая определяет действие с пакетом для коммутатора, она вызывается на каждый PacketIn.
+
+Для каждого коммутатора описывается отдельная функция обработчик. Поэтому программисту необходимо описать не одну функцию обработчик, а *фабрику*, которая будет создавать для каждого коммутатора свою функцию обработчик.
+
+.. image:: PacketMissFactory.png
+
+В контроллере могут обыть одновременно зарегистировано множество обработчиков, они все выстраиваются в конвеер и выполняются один за другим.
+Порядок определяется файлом настроек ``network-settings.json``.
+
+Обработчик *PacketMissHandler* -- это callable объект, который  имеет следующию сигнатуру :
+
+    .. cpp:function:: Decision PacketMissHandler(Packet& pkt, FlowPtr flow, Decision decision)
+
+    На вход подается пакет, который пришел как PacketIn.
+
+    Парметр  decision  это решение обработчиков, которые выполнялись до вашего обработчика.
+
+    Возвращается действие над пакетом.
+
+Фабрика *PacketMissHandlerFactory* -- это callable объект, который имеет следующую сигнатуру :
+
+    .. cpp:function:: PacketMissHandler PacketMissHandlerFactory(SwitchConnectionPtr conn)
+
+        На вход ей подается соедение с коммутатором, а она генерирует функцию обработчик.
+
+
+Регистрация
+~~~~~~~~~~~
+
+Регистрировать фабрику обработчиков необходимо во время инициализации вашего приложения.
+
+.. cpp:function:: void Controller::registerHandler(const char* name, PacketMissHandlerFactory factory)
+
+    Вам необходимо зарегистрировать фабрику оброботчиков, и имя обработчика.
+
+    Имя обработчика надо указываеть в файле ``network-settings.json``, чтобы :cpp:class:`Controller` запускал ее в pipeline.
+
+Вам необходимо указать ваш обработчик в списке обработчиков в ``network-settings.json`` в ``"controller" : { "pipeline" : [ ... , "example", ... ] }``.
+Обработчики выполняются в порядке, указанном в данном списке.
+
+
+Пример::
+
+    void Exmaple::init(Loader* loader, const Config& )
+    {
+        Controller* ctrl = Controller::get(loader);
+        ctrl->registerHandler( "exmaple",
+            [](SwitchConnectionPtr conn)
+            {
+              return [](Packet& pkt, FlowPtr , Decision decision)
+              {
+                LOG(INFO) << "Packet In !";
+                return decision;
+              };
+            });
+     }
+
+Packet
+~~~~~~
+
+Вы можете читать необходимые поля из пакета, для этого существуют специальные функции :
+
+* .. cpp:function:: oxm::field<> Packet::load(oxm::mask<> mask) const
+
+    Прочитать поле пакета.
+
+* .. cpp:function:: bool Packet::test(oxm::field<> need) const
+
+        Проверить состояния поля пакета на заданное значение.
+
+Для представляния полей используется библиотека RUNOS::oxm.
+
+  Данная библиотека кодирует в себе значения поля.
+  Существуют три вида кодирования :
+
+    * ``oxm::value`` -- значание в поле.
+    * ``oxm::mask`` -- маска поля.
+    * ``oxm::field`` -- значание и маска.
+
+Пример::
+
+  void Example::init(Loader* loader, const Config& )
+  {
+    Controller* ctrl = Controller::get(loader);
+    ctrl->registerHandler("exmaple",
+        [](SwitchConnectionPtr conn)
+        {
+          const auto ofb_eth_type = oxm::eth_type(); // for optimization
+          const auto ofb_ipv4_dst = oxm::ipv4_dst();
+          return [](Packet& pkt, FlowPtr, Decision decision)
+          {
+            if (pkt.test(ofb_eth_type == 0x0800)) // ip
+            {
+               uint32_t  dst_ip  = pkt.load(ofb_ipv4_dst);
+               LOG(INFO) << dst_ip; // TODO : pretty print
+            }
+            return decision;
+          };
+        });
+    }
+
+Поддерживается маскирование с помощью оператора ``&`` для некоторых полей.
+
+Пример::
+
+  void Example::init(Loader* loader, const Config& )
+  {
+    Controller* ctrl = Controller::get(loader);
+    ctrl->registerHandler("exmaple",
+        [](SwitchConnectionPtr conn)
+        {
+          const auto ofb_eth_src = oxm::eth_src();
+          return [=](Packet& pkt, FlowPtr, Decision decision)
+          {
+            ethaddr src_mac = pkt.load(ofb_eth_src & "ff:ff:ff:00:00:00");
+            LOG(INFO) << src_mac;
+            return decision;
+          };
+        });
+    }
+
+Вы так же можете изменять поля пакета :
+
+    .. cpp:function:: void Packet::modify(oxm::field<> need)
+
+Пример::
+
+  void Exmaple::init(Loader* loader, const Config& )
+  {
+    Controller* ctrl = Controller::get(loader);
+    ctrl->registerHandler("exmaple",
+        [](SwitchConnectionPtr conn)
+        {
+          const auto ofb_eth_dst = oxm::eth_dst();
+          return [=](Packet& pkt, FlowPtr, Decision decision)
+          {
+            pkt.modify(ofb_eth_dst == "11:22:33:44:55:66");
+            return decision;
+          };
+        });
+  }
+
+
+RUNOS::OXM поддерживает следующие типы :
+
+  =========   ====================  ===========  ===============
+  Поле        Название              Базовый тип  Поддержка маски
+  =========   ====================  ===========  ===============
+  in_port     входящий порт пакета  uint8_t      нет
+  eth_type    тип ethernet          uint16_t     нет
+  eth_src     ethernet адрес        ethernet     да
+              отправителя
+  eth_dst     ethernt адрес         ethernet     да
+              получателя
+  ip_proto    протокол IP           uint8_t      нет
+  ipv4_src    IP адрес отправителя  uint32_t     да
+              версии 4
+  ipv4_dst    IP адрес получателя   uint32_t     да
+              версии 4
+  tcp_src     TCP порт источника    uint16_t     нет
+  tcp_dst     TCP порт назначения   uint16_t     нет
+  udp_src     UDP порт источника    uint16_t     нет
+  udp_dst     UDP порт назначения   uint16_t     нет
+  arp_spa     логический адрес      uint32_t     да
+              отправителя
+  arp_tpa     логический адрес      uint32_t     да
+              получателя
+  arp_sha     физический адрес      uint32_t     да
+              отправителя
+  arp_tha     физический адрес      uint32_t     да
+              получателя
+  arp_op      Код операции          uint16_t     нет
+  vlan_vid    Идентификатор vlan    uint16_t     нет
+  ipv6_src    IP адрес отправителя  IPv6Addr     да
+              версии 6
+  ipv6_dst    IP адрес получателя   IPv6Addr     да
+              версии 6
+  icmp_type   Тип ICMP сообщения    uint8_t      нет
+  icmp_code   Код ICMP сообщения    uint8_t      нет
+  =========   ====================  ===========  ===============
+
+.. warning::
+
+    Вызов функций Packet::load и Packet::test должен определятся *только* входящим пакетом
+    и не зависить от внешних состояний.
+
+Decision
+~~~~~~~~
+
+Действия
+""""""""
+
+Функция обработчик возвращает свое решения о действии с пакетом.
+
+.. cpp:class:: Decision
+
+Существую следующие типы действий.
+
+* **Inspect** -- отправить пакет на контроллер:
+
+    .. cpp:function:: Decision Decision::inspect(uint16_t bytes) const
+
+      параметр ``bytes`` количество байт заголовка пакета, которые будут отправлены на контроллер.
+
+* **Drop** -- отбросить пакет.
+
+    .. cpp:function:: Decision Decision::drop() const
+
+* **Unicast** -- отправить пакет на определленный порт.
+
+    .. cpp:function:: Decision Decision::unicast(uint32_t port) const
+
+    Парметр : port -- номер порта, на который отправить данный пакет.
+
+* **Multicast** -- отправить пакет на множество портов.
+
+    .. cpp:function:: Decision Decision::multicast(Multicast::PortSet ports) const
+
+        парметр : ports -- список портов
+
+* **Broadcast** -- широковещательная рассылка.
+
+    .. cpp:function:: Decision Decision::broadcast() const
+
+    политика отправки определяется зарегистрированной функцией широковещательной рассылки
+    . По умолчанию пакет отправляется на все физические порты, кроме входного.
+
+.. attention::
+
+    методы :cpp:class:`Decision` возвращают новый экземпляр класса, но не меняют старый.
+
+Пример::
+
+  void Example::init(Loader* loader, const Config& )
+  {
+    Controller* ctrl = Controller::get(loader);
+    ctrl->registerHandler("example", [](SwitchConnectionPtr conn)
+        {
+          const auto ofb_eth_dst = oxm::eth_dst();
+          return [](Packet& pkt, FlowPtr, Decision decision)
+          {
+            if (pkt.test(ofb_eth_dst == "ff:ff:ff:ff:ff:ff"))
+                return decision.broadcast();
+            else
+                return decision;
+          };
+         });
+  }
+
+Time
+""""
+
+Decision позволяет настраивать время устанавленного правила:
+
+  .. cpp:type:: std::chrono::duration<uint32_t> Decision::duration
+
+      Время жизни правила.
+      По умолчанию бесконечное время жизни.
+
+      ``std::chrono::seconds::zero()`` -- Применить правило только к данному пакету.
+
+Методы :cpp:class:`Decision` для работы со временем :
+
+    * .. cpp:function:: Decision Decision::idle_timeout(durantion seconds) const
+
+        Установить тайм-аут простоя.
+
+        Правило удаляется, если в течении ``seconds`` времени ни один пакет не прошел по этому правилу
+
+    * .. cpp:function:: Decision Decision::hard_timeout(duration seconds) const
+
+        Установить тайм-аут.
+
+        Правило удаляется после по истечении `seconds` времени.
+
+.. note::
+
+    Каждое приложение может выбирать свое время тайм-аута. В этом случае выбирается меньший из всех.
+
+Пример::
+
+  void ExampleLearningSwitch::init(Loader *loader, const Config &)
+  {
+      Controller* ctrl = Controller::get(loader);
+      ctrl->registerHandler("exmaple-forwarding", [](SwitchConnectionPtr) {
+          // MAC -> port mapping for EVERY switch
+          std::unordered_map<ethaddr, uint32_t> seen_port;
+          const auto ofb_in_port = oxm::in_port();
+          const auto ofb_eth_src = oxm::eth_src();
+          const auto ofb_eth_dst = oxm::eth_dst();
+
+          return [=](Packet& pkt, FlowPtr, Decision decision) mutable {
+              // Learn on packet data
+              ethaddr src_mac = pkt.load(ofb_eth_src);
+              // Forward by packet destination
+              ethaddr dst_mac = pkt.load(ofb_eth_dst);
+
+              seen_port[src_mac] = pkt.load(ofb_in_port);
+
+              // forward
+              auto it = seen_port.find(dst_mac);
+
+              if (it != seen_port.end()) {
+                  return decision.unicast(it->second)
+                                 .idle_timeout(std::chrono::seconds(60))
+                                 .hard_timeout(std::chrono::minutes(30));
+              } else {
+                  auto ret = decision.broadcast();
+                  if (not is_broadcast(dst_mac)) {
+                      LOG(INFO) << "Flooding for unknown address " << dst_mac;
+                      ret.hard_timeout(std::chrono::seconds::zero());
+                  }
+                  return ret;
+              }
+          };
+      });
+  }
+
+Остановка конвеера
+""""""""""""""""""
+
+Ваше приложение способно остановить выполнение pipeline:
+
+  .. cpp:function:: Decision Decision::return_() const
+
+      Pipeline не будет выполняться дальше вашего приложения.
+
+Пример::
+
+  void ExmapleFireWall::init(Loader *loader, const Config &)
+  {
+      Controller* ctrl = Controller::get(loader);
+      ctrl->registerHandler("firewall"", [](SwitchConnectionPtr) {
+          const auto ofb_eth_src = oxm::eth_src();
+
+          return [=](Packet& pkt, FlowPtr, Decision decision) mutable {
+              if (pkt.test(ofb_eth_src == "ff:ff:ff:ff:ff:ff")){
+                  return decision.drop().return_();
+              }
+              return decision;
+          };
+      });
+  }
+
+Реализация рассылки широковещательного сообщения
+-------------------------------------------------
+
+RUNOS предоставляет вам возможность реализовать свою низкоуровневую реализацию *Bradcast-правила*.
+
+.. cpp:type:: std::function< Action*(uint64_t dpid) > FloodImplementation
+
+    Функция, которая реализует рассылку широковещательных сообщений.
+
+.. cpp:function:: void Controller::registerFlood(FloodImplementation flood)
+
+  Функция, которая регестрирует реализацию рассылки широковещательных сообщений.
+
+  По-умолчанию, сообщения рассылаются на все порты.
+
+  Вызывать необходимо в методе ``init`` вашего приложения.
+
+  .. note:: одновременно в контроллере не может быть зарегестрировано больше одной реализации рассылки широковещательных сообщений.
+
+Пример::
+
+  void ExmapleSTP::init(Loader* loader, const Config&)
+  {
+    Controller* ctrl = Controller::get(loader);
+    ctrl->registerFlood("exmaple-stp", [](uint64_t dpid)
+        {
+            return new of13::GroupAction(FLOOD_GROUP); // Указать Group table, с реализаций широковещания
+        });
+  }

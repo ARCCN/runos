@@ -1,0 +1,119 @@
+.. _ref_getting_started:
+
+Введение
+===============
+
+.. _MiniNet: http://mininet.org/
+
+Что из себя представляет RUNOS
+------------------------------
+
+**RUNOS** предназначен для централизованного управления программно-конфигурируемыми сетями (SDN) в корпоративном сегменте.
+Он обладает всей необходимой функциональностью для управления корпоративными сетями:
+надежность и отказоустойчивость,
+балансировка нагрузки,
+согласованное видение всей сети,
+работа с распределенными сетевыми приложениями,
+безопасность и противодействие внешним нагрузкам.
+
+Быстрый старт
+--------------
+
+RUNOS написан под операционную систему *Ubuntu*. Рекомендуется устанавливать на версию не ниже *ubuntu 15.10*.
+
+Зависимости
+~~~~~~~~~~~
+
+Сначала необходимо установить все зависимости ::
+
+    $ sudo apt-get install build-essential cmake autoconf libtool \
+        pkg-config libgoogle-glog-dev libevent-dev \
+        libssl-dev qtbase5-dev libboost-graph-dev libboost-system-dev \
+        libboost-thread-dev libboost-coroutine-dev libboost-context-dev \
+        libgoogle-perftools-dev curl \
+
+Также необходимо установить javascript пакеты ::
+
+    # If you have old versions of Node.js or UglifyJS,
+    # you should remove them
+    $ sudo npm un uglify-js -g
+    $ sudo apt-get remove node nodejs npm
+    # Install Node.js, npm and UglifyJS via package manager
+    # (according to https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
+    $ curl -sL https://deb.nodesource.com/setup | sudo bash -
+    $ sudo apt-get install nodejs
+    $ sudo npm install uglify-js -g
+
+**RUNOS** трубует библеотеку *libevent2.1.5* которая еще в бета версии на данный момент. Ее надо установить вручную ::
+
+    # Get source code
+    $ wget https://github.com/libevent/libevent/releases/download/release-2.1.5-beta/libevent-2.1.5-beta.tar.gz
+    $ tar -xvf libevent-2.1.5-beta.tar.gz
+    $ cd libevent-2.1.5-beta
+    # And build
+    $ ./configure
+    $ make
+    $ sudo make install
+
+Сборка RUNOS
+~~~~~~~~~~~~
+
+Установка **RUNOS** из исходного кода ::
+
+    # Initialize third-party libraries
+    $ third_party/bootstrap.sh
+
+    # Create out of source build directory
+    $ mkdir -p build; cd build
+    # Configure (if you use g++)
+    $ CXX=g++-5.2 cmake -DCMAKE_BUILD_TYPE=Release ..
+    # OR configure (otherwise)
+    $ cmake -DCMAKE_BUILD_TYPE=Release ..
+
+    # Build third-party libraries
+    $ make prefix -j2
+    # Build RuNOS
+    $ make -j2
+
+Запуск RUNOS
+~~~~~~~~~~~~
+
+Setup environment variables (run once per shell session)::
+
+    # Run it INSIDE build directory
+    $ source ../debug_run_env.sh
+
+Run the controller: ::
+
+    $ cd .. # Go out of build dir
+    $ build/runos
+
+You can use this arguments for `MiniNet`_::
+
+    $ sudo mn --topo $YOUR_TOPO --switch ovsk,protocols=OpenFlow13 \
+                --controller remote,ip=$CONTROLLER_IP,port=6653
+
+
+To run web UI, open the following link in your browser::
+
+    http://$CONTROLLER_IP:8000/topology.html
+
+Be sure your `MiniNet`_ installation supports OpenFlow 1.3.
+See `this <https://wiki.opendaylight.org/view/OpenDaylight_OpenFlow_Plugin::Test_Environment#Setup_CPqD_Openflow_1.3_Soft_Switch>`_ for more instructions.
+
+
+Виртуальная Машина
+--------------
+
+Вы так же можете воспользоваться `виртуальной машиной <http://bit.ly/runos-vm-latest>`_ с предустановленным **RUNOS**.
+
+Docker
+------
+
+Comming soon!!!
+
+Конфигурационный файл
+---------------------
+
+**RUNOS** можно настраивать с помощью файла ``network-settings.json``,
+в котором можно указать слушающий порт, количество потоков, пользовательские конфигурации приложений и т.д.

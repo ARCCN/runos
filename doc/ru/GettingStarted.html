@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>1. Введение &mdash; Документация RUNOS 0.6</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
+        <link rel="next" title="2. Обзор приложений" href="ApplicationOverView.html"/>
+        <link rel="prev" title="Welcome to RUNOS’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">1. Введение</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#runos">1.1. Что из себя представляет RUNOS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">1.2. Быстрый старт</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id3">1.2.1. Зависимости</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">1.2.2. Сборка RUNOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">1.2.3. Запуск RUNOS</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">1.3. Виртуальная Машина</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docker">1.4. Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id8">1.5. Конфигурационный файл</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Components.html">3. компоненты RUNOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">RUNOS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>1. Введение</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/GettingStarted.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ref-getting-started">
+<span id="id1"></span><h1>1. Введение<a class="headerlink" href="#ref-getting-started" title="Ссылка на этот заголовок">¶</a></h1>
+<div class="section" id="runos">
+<h2>1.1. Что из себя представляет RUNOS<a class="headerlink" href="#runos" title="Ссылка на этот заголовок">¶</a></h2>
+<p><strong>RUNOS</strong> предназначен для централизованного управления программно-конфигурируемыми сетями (SDN) в корпоративном сегменте.
+Он обладает всей необходимой функциональностью для управления корпоративными сетями:
+надежность и отказоустойчивость,
+балансировка нагрузки,
+согласованное видение всей сети,
+работа с распределенными сетевыми приложениями,
+безопасность и противодействие внешним нагрузкам.</p>
+</div>
+<div class="section" id="id2">
+<h2>1.2. Быстрый старт<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
+<p>RUNOS написан под операционную систему <em>Ubuntu</em>. Рекомендуется устанавливать на версию не ниже <em>ubuntu 15.10</em>.</p>
+<div class="section" id="id3">
+<h3>1.2.1. Зависимости<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Сначала необходимо установить все зависимости</p>
+<div class="highlight-python"><div class="highlight"><pre>$ sudo apt-get install build-essential cmake autoconf libtool \
+    pkg-config libgoogle-glog-dev libevent-dev \
+    libssl-dev qtbase5-dev libboost-graph-dev libboost-system-dev \
+    libboost-thread-dev libboost-coroutine-dev libboost-context-dev \
+    libgoogle-perftools-dev curl \
+</pre></div>
+</div>
+<p>Также необходимо установить javascript пакеты</p>
+<div class="highlight-python"><div class="highlight"><pre># If you have old versions of Node.js or UglifyJS,
+# you should remove them
+$ sudo npm un uglify-js -g
+$ sudo apt-get remove node nodejs npm
+# Install Node.js, npm and UglifyJS via package manager
+# (according to https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
+$ curl -sL https://deb.nodesource.com/setup | sudo bash -
+$ sudo apt-get install nodejs
+$ sudo npm install uglify-js -g
+</pre></div>
+</div>
+<p><strong>RUNOS</strong> трубует библеотеку <em>libevent2.1.5</em> которая еще в бета версии на данный момент. Ее надо установить вручную</p>
+<div class="highlight-python"><div class="highlight"><pre># Get source code
+$ wget https://github.com/libevent/libevent/releases/download/release-2.1.5-beta/libevent-2.1.5-beta.tar.gz
+$ tar -xvf libevent-2.1.5-beta.tar.gz
+$ cd libevent-2.1.5-beta
+# And build
+$ ./configure
+$ make
+$ sudo make install
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h3>1.2.2. Сборка RUNOS<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Установка <strong>RUNOS</strong> из исходного кода</p>
+<div class="highlight-python"><div class="highlight"><pre># Initialize third-party libraries
+$ third_party/bootstrap.sh
+
+# Create out of source build directory
+$ mkdir -p build; cd build
+# Configure (if you use g++)
+$ CXX=g++-5.2 cmake -DCMAKE_BUILD_TYPE=Release ..
+# OR configure (otherwise)
+$ cmake -DCMAKE_BUILD_TYPE=Release ..
+
+# Build third-party libraries
+$ make prefix -j2
+# Build RuNOS
+$ make -j2
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3>1.2.3. Запуск RUNOS<a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Setup environment variables (run once per shell session):</p>
+<div class="highlight-python"><div class="highlight"><pre># Run it INSIDE build directory
+$ source ../debug_run_env.sh
+</pre></div>
+</div>
+<p>Run the controller:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd .. # Go out of build dir
+$ build/runos
+</pre></div>
+</div>
+<p>You can use this arguments for <a class="reference external" href="http://mininet.org/">MiniNet</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ sudo mn --topo $YOUR_TOPO --switch ovsk,protocols=OpenFlow13 \
+            --controller remote,ip=$CONTROLLER_IP,port=6653
+</pre></div>
+</div>
+<p>To run web UI, open the following link in your browser:</p>
+<div class="highlight-python"><div class="highlight"><pre>http://$CONTROLLER_IP:8000/topology.html
+</pre></div>
+</div>
+<p>Be sure your <a class="reference external" href="http://mininet.org/">MiniNet</a> installation supports OpenFlow 1.3.
+See <a class="reference external" href="https://wiki.opendaylight.org/view/OpenDaylight_OpenFlow_Plugin::Test_Environment#Setup_CPqD_Openflow_1.3_Soft_Switch">this</a> for more instructions.</p>
+</div>
+</div>
+<div class="section" id="id6">
+<h2>1.3. Виртуальная Машина<a class="headerlink" href="#id6" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Вы так же можете воспользоваться <a class="reference external" href="http://bit.ly/runos-vm-latest">виртуальной машиной</a> с предустановленным <strong>RUNOS</strong>.</p>
+</div>
+<div class="section" id="docker">
+<h2>1.4. Docker<a class="headerlink" href="#docker" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Comming soon!!!</p>
+</div>
+<div class="section" id="id8">
+<h2>1.5. Конфигурационный файл<a class="headerlink" href="#id8" title="Ссылка на этот заголовок">¶</a></h2>
+<p><strong>RUNOS</strong> можно настраивать с помощью файла <code class="docutils literal"><span class="pre">network-settings.json</span></code>,
+в котором можно указать слушающий порт, количество потоков, пользовательские конфигурации приложений и т.д.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ApplicationOverView.html" class="btn btn-neutral float-right" title="2. Обзор приложений" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to RUNOS’s documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, ARCCN.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/translations.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

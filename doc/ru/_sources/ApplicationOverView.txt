@@ -1,0 +1,408 @@
+.. _ref-appliaction-overview:
+
+====================
+Обзор приложений
+====================
+
+.. image:: apps4.png
+
+Концепция RUNOS это микросервисы, отвечающие за свою функцию. Поэтому RUNOS неотделим от своих приложений.
+
+И так же посокольку контроллер управляет единой физической сетью, то при написании своих приложений вам необходимо знать, что делают другие приложения в сети, чтобы не возникло противорчий.
+
+В данном разделе описаны основные приложения контроллера, их функции, и настройки, от каких приложений они зависят.
+
+.. _ref-loader:
+
+Loader
+------
+
+Формально **Loader** не является приложением.
+Это загрузчик приложений, он создает объекты приложений, читает конфигурационный файл ``network-settings.json`` и запускает необходимые приложения.
+
+**Loader** проходит по списку *services* и инициализрует все сервисы и их зависимости.
+
+**Настройки**
+
+* services [ list of service ] -- список приложений, которые необходимо запустить.
+
+* loader : { threads [ number ] } -- число потоков.
+
+CoreApplication
+---------------
+
+.. _ref-controller-overview:
+
+Controller
+~~~~~~~~~~
+
+*Controller* -- основное приложение, отвечающие за регистрацию остальных приложений и предоставление им доступ к управления сетью.
+
+**ИМЯ** : *controller*
+
+*Controller* предоставляет два способа управления сетью :
+
+* Реактивный
+
+    Возможность определить функцию оброботчик *PacketIn'ов*.
+
+    Каждое приложение имеет возможность зарегестрировать неограниченное число обработчиков.
+    Они будут вызываться по очереди в соответствии с ``network-settings.json``.
+    Порядок определен в ``controller { pipeline = [] }``.
+
+    .. warning ::
+
+        Каждый обработчик может прервать очередь выполнения. Поэтому важен порядок имен в ``network-settings.json``.
+
+    Для больших подробностей см. :ref:`ref-packetmisshandler`.
+
+
+* Проактивный
+
+    Приложению выделяется канал для общения с коммутатарами. Приложения могут отправлять запросы на коммутаатор и получать ответы. (См. :ref:`ref-statictransaction`).
+
+
+**Настройки** :
+
+    * address ["0-255.0-255.0-255.0-255"] : ip адрес на котором работает контроллер.
+
+    * port [number] : TCP порт, который слушает контроллер, и по котрому к нему подключаются коммутаторы.
+
+    * nthreads [number] : количество нитей на которых выполняется pipeline.
+
+    * secure [true|false] : Использовать TLS для соединения с коммутаторами.
+
+..
+    * cbench [true|false]: Тестирование
+
+    * pipeline [ ["name", "of", "handlers"] ] : список обработчиков.
+
+.. _ref-switchmanager-overview:
+
+SwitchManager
+~~~~~~~~~~~~~
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-restlistener-overview`.
+
+Приложение предоставлят интерфейс к работе с абстракциями коммутаторов.
+
+**ИМЯ** : *switch-manager*.
+**REST ИМЯ** : *switch-manager*.
+**Displaed Name** : *Switch Manager*.
+
+*switch-manager* управляет объектами *Switch*, которые являются абстракцией коммутатра.
+Он позволяет получить объект *Switch* по *dpid*, или вектор *Switch*.
+
+*SwitchManager* поддерживает Rest интерефейс :
+
+    Request : GET /api/switch-manager/switches/all
+
+    Reply   : Информация о коммуторах в сети.
+
+*SwitchManager* поддерживает модель событий :
+
+    Коммутатор появился в сети, изменил состояние, исчез.
+
+*SwitchManager* имеет свою web страницу
+
+    **Web Страница**  : ``http://ControllerIp:8000/switch.html``
+
+..
+    **Настройки** :
+    * pin-to-thread [number] : ???
+
+.. _ref-linkDiscovery-overview:
+
+LinkDiscovery
+~~~~~~~~~~~~~
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`.
+
+Приложение исследуюет соедения в сети.
+
+   Данное приложение необходимо для поддержания информации о топологии.
+   Переодически отправляя LLDP пакеты, оно следит за состоянием соеденений между коммутатарами.
+
+*LinkDiscovery* работает в ControllerPipeline под именем ``link-discovery``.
+
+    Обрабатывает LLDP покаеты и останавливает выполнение конвеера.
+
+    Остальные пакеты проходят *LinkDiscovery* без изменений.
+
+**Настройки** :
+
+    * poll-intervall [number] : Интервал (в секундах) через который отправляются LLDP пакеты.
+
+..
+    * pin-to-thread [number] : ????
+
+.. _ref-stp-overview:
+
+STP
+~~~
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-linkdiscovery-overview`, :ref:`ref-topology-overview`
+
+Предотвращает широковещательный шторм в сети, используя логику Spanning Tree протокола.
+
+    *STP* подменяет broadcast правило в конвеере контроллера.
+
+..
+    *STP* Устанавливает group правило с id = 0xf100d, в котором указываются порты для отправки broadcast пакета. Порты определяются по алгоритму Spanning Tree.
+
+.. note::
+
+    Не перегружайте broadcast правило, когда у вас включено приложение STP.
+
+.. _ref-restlistener-overview:
+
+RestListener
+~~~~~~~~~~~~
+
+Dependes of : :ref:`ref-controller-overview`.
+
+Обеспечивает Rest интерфейс для приложений.
+
+    Это приложение необходимо вам, если вы хотите добавить Rest интерфейс к вашему приложению.
+
+**ИМЯ** : *rest-listener*.
+
+    *RestListener* позволяет вам зарагестрировать свое приложение c обработкой REST
+    запросов, после которого вы сможете обращаться с запросами к своему приложение
+    по адресу ``/api/your-application``.
+
+    По умолчанию *RestListener* слушает 8000 порт.
+
+    Подробнее см. В работе с REST интерфейсом.
+
+RestListener так же реализует модель событий. Подробнее см модель событий.
+
+RestListener поддерживает некоторые встроеные запросы:
+
+    * *GET /apps* # получить список всех приложений, которые поддерживают REST интерфейс
+
+    * *GET /timeout/<app_lsit>/<last_event>*
+
+        Получить события, которые зарегестрировали приложения с некоторого момента.
+
+        * <app_list> = ``app_1&app_2&...&app_n`` список приложений, чьи события будут показываться.
+
+        * <last_event> = ``unsinged integer``, номер события, после которого нас интересуют новые события.
+
+**Настройки** :
+
+    * port [number] -- порт который слушает *RestListener*.
+
+    * web-dir [path-to-dir] -- путь к директории, в которой расположены web страницы приложений.
+
+Сервисы
+--------
+
+.. _ref-topology-overview:
+
+Topology
+~~~~~~~~
+
+Dependes of : :ref:`ref-linkdiscovery-overview`, :ref:`ref-restlistener-overview`.
+
+**ИМЯ** : *topology*
+**REST ИМЯ** : *topology*
+
+Представление топологии сети.
+
+Поддерживает REST интерфей:
+
+    GET /api/topology/links получить представление сети.
+
+Имеет свою Web страницу : *topology.html*.
+
+.. _ref-simplelearningswitch-overview:
+
+SimpleLearingSwitch
+~~~~~~~~~~~~~~~~~~~
+Dependes of : :ref:`ref-controller-overview`.
+
+.. note ::
+
+    По умолчанию выключен.
+
+**ИМЯ** : simple-learning-switch.
+
+Реализация простого LeareningL2Switch, где каждый коммутатор работает независимо от остальных, и содержит свою таблицу mac-port.
+
+    *SimpleLearningSwitch* обпеспечевиает доставку пакетов до адресатов.
+
+    Его основное преимущество, то что он не зависит от остальных приложений.
+
+*SimpleLearningSwitch* Работает в controller pipeline под именем *forwarding*.
+
+.. _ref-learningswitch-overview:
+
+LearningSwitch
+~~~~~~~~~~~~~~
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-topology-overview`.
+
+**ИМЯ** : learning-switch.
+
+Реализация усовершествованного L2Switch, который знает топологию сети и отправляет пакет по кратчайшему пути, он обеспечивает доставку пактов до адресатов.
+
+*LearningSwitch* работает в controller pipeline под именем *forwarding* и должен выполняться последним.
+
+.. note::
+
+    SimpleLearningSwitch и LearningSwitch реализуют одну и ту же функциональность и не могут быть запущены одновременно на контроллере, поэтому их pipeline именя одинаковы.
+
+.. _ref-switchstats-overview:
+
+SwitchStats
+~~~~~~~~~~~
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
+
+Собирает статистику с коммутаторов.
+
+**ИМЯ** : *switch-stats*.
+
+**Настройки** :
+
+    * poll-interval [number] - период сбора статистики
+
+..
+    * pin-to-thread [number] - ???
+
+.. _ref-arphandler-overview:
+
+ArpHandler
+~~~~~~~~~~
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-hostmanager-overview`.
+
+**ИМЯ** : *arp-handler*.
+
+*ArpHandler* обрабатывает arp-request, и если он знает mac-адрес хоста, отправляет arp-reply, если не знает -- передает управление дальше по pipeline.
+
+*ArpHandler* работает в controller pipeline под именем *arp-handler*.
+
+.. _ref-staticflowpusher-overview:
+
+StaticFlowPusher
+~~~~~~~~~~~~~~~~
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
+
+**ИМЯ** : *static-flow-pusher*
+
+Статическая установка правил на коммутаторы.
+
+Возможна установка правил через REST интерфейс и из network-settings.json.
+
+REST интерфейс :
+
+    POST /api/static-flow-pusher/newflow/<switch_id> {Json of new_flow}
+
+        Json поддерживает :
+
+            * "in_port"
+
+            * eth_src, eth_dst
+
+            * eth_type
+
+            * ip_src, ip_dst
+
+            * out_port
+
+
+**Настройки**
+
+    В настройках можно описывать правила следующим образом::
+
+      "flows" : [
+        {
+          "dpid": <switch>,
+          "flows" : [
+
+            ...
+
+            {
+              <set_of_match>
+              <set_of_action>
+              <set_of_config>
+            }
+
+            ...
+
+          ]
+        }
+      ]
+
+  Где :
+
+    * <switch> = "all" или dpid коммутатора в формате "0000000000001".
+    * <set_of_match> -- Набор строк, указывающие поля пакета.
+
+      * in_port : [number]
+      * eth_src : ["ethernet_address"]
+      * eth_dst : ["ethernet_address"]
+      * ip_src : ["ip adress"]
+      * ip_dst : ["ip_adress"]
+
+    * <set_of_action> -- действия с пакетом :
+
+      * out_port : [number | "to-controller"] -- отправить на указанный порт
+
+    * <set_of_config> : набор конфигураций потока.
+
+      * priority : [number]  -- приоритет потока
+      * "idle" : [number]  -- тайм-аут простоя потока
+      * "hard" : [number]  -- тайм-аут потока
+
+REST
+----
+
+.. _ref-flowmanager-overview:
+
+FlowManager
+~~~~~~~~~~~
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
+
+**ИМЯ** : flow-manager.
+
+**REST ИМЯ** : flow.
+
+Исследует и удаляет потоки.
+
+    *FlowManager* опрашивает коммутаторы о правилах, которые установлены на них, и может удалить правила.
+
+*FlowManager* обеспечивает REST интерфейс :
+
+    GET /api/flow/<switch_id>/all : получить информацию о потоках на коммутаторе
+
+    DELETE /api/flow/<switch_id>/<switch_id>/<flow_id> : удалить поток.
+
+*FlowManager* поддерживает Модель событий.
+
+.. _ref-hostmanager-overview:
+
+HostManager
+~~~~~~~~~~~
+
+Dependes of : :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
+
+**ИМЯ** : *host-manager*
+
+Исследует хосты.
+
+    *HostManager* следит за пакетами, появляющемися в сети, и запоминает mac- и ip-адреса хостов.
+
+Работает в pipeline под именем *host-manager*, читает необходимые поля, и передает управление дальше.
+
+.. _ref-webuimanager-overview:
+
+WebUIManager
+~~~~~~~~~~~~
+
+Dependes of : :ref:`ref-switchmanager-overview`, :ref:`ref-hostmanager-overview`, :ref:`ref-restlistener-overview`.
+
+Обеспечивает Web интерфейс контроллера.

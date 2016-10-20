@@ -1,0 +1,540 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>2. Обзор приложений &mdash; Документация RUNOS 0.6</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
+        <link rel="next" title="3. Компоненты RUNOS" href="Components.html"/>
+        <link rel="prev" title="1. Введение" href="GettingStarted.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">2. Обзор приложений</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#loader">2.1. Loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coreapplication">2.2. CoreApplication</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#controller">2.2.1. Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#switchmanager">2.2.2. SwitchManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linkdiscovery">2.2.3. LinkDiscovery</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stp">2.2.4. STP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#restlistener">2.2.5. RestListener</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">2.3. Сервисы</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#topology">2.3.1. Topology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simplelearingswitch">2.3.2. SimpleLearingSwitch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#learningswitch">2.3.3. LearningSwitch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#switchstats">2.3.4. SwitchStats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#arphandler">2.3.5. ArpHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#staticflowpusher">2.3.6. StaticFlowPusher</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#rest">2.4. REST</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#flowmanager">2.4.1. FlowManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hostmanager">2.4.2. HostManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#webuimanager">2.4.3. WebUIManager</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">RUNOS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>2. Обзор приложений</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/ApplicationOverView.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ref-appliaction-overview">
+<span id="id1"></span><h1>2. Обзор приложений<a class="headerlink" href="#ref-appliaction-overview" title="Ссылка на этот заголовок">¶</a></h1>
+<img alt="_images/apps4.png" src="_images/apps4.png" />
+<p>Концепция RUNOS это микросервисы, отвечающие за свою функцию. Поэтому RUNOS неотделим от своих приложений.</p>
+<p>И так же посокольку контроллер управляет единой физической сетью, то при написании своих приложений вам необходимо знать, что делают другие приложения в сети, чтобы не возникло противорчий.</p>
+<p>В данном разделе описаны основные приложения контроллера, их функции, и настройки, от каких приложений они зависят.</p>
+<div class="section" id="loader">
+<span id="ref-loader"></span><h2>2.1. Loader<a class="headerlink" href="#loader" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Формально <strong>Loader</strong> не является приложением.
+Это загрузчик приложений, он создает объекты приложений, читает конфигурационный файл <code class="docutils literal"><span class="pre">network-settings.json</span></code> и запускает необходимые приложения.</p>
+<p><strong>Loader</strong> проходит по списку <em>services</em> и инициализрует все сервисы и их зависимости.</p>
+<p><strong>Настройки</strong></p>
+<ul class="simple">
+<li>services [ list of service ] &#8211; список приложений, которые необходимо запустить.</li>
+<li>loader : { threads [ number ] } &#8211; число потоков.</li>
+</ul>
+</div>
+<div class="section" id="coreapplication">
+<h2>2.2. CoreApplication<a class="headerlink" href="#coreapplication" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="controller">
+<span id="ref-controller-overview"></span><h3>2.2.1. Controller<a class="headerlink" href="#controller" title="Ссылка на этот заголовок">¶</a></h3>
+<p><em>Controller</em> &#8211; основное приложение, отвечающие за регистрацию остальных приложений и предоставление им доступ к управления сетью.</p>
+<p><strong>ИМЯ</strong> : <em>controller</em></p>
+<p><em>Controller</em> предоставляет два способа управления сетью :</p>
+<ul>
+<li><p class="first">Реактивный</p>
+<blockquote>
+<div><p>Возможность определить функцию оброботчик <em>PacketIn&#8217;ов</em>.</p>
+<p>Каждое приложение имеет возможность зарегестрировать неограниченное число обработчиков.
+Они будут вызываться по очереди в соответствии с <code class="docutils literal"><span class="pre">network-settings.json</span></code>.
+Порядок определен в <code class="docutils literal"><span class="pre">controller</span> <span class="pre">{</span> <span class="pre">pipeline</span> <span class="pre">=</span> <span class="pre">[]</span> <span class="pre">}</span></code>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Предупреждение</p>
+<p class="last">Каждый обработчик может прервать очередь выполнения. Поэтому важен порядок имен в <code class="docutils literal"><span class="pre">network-settings.json</span></code>.</p>
+</div>
+<p>Для больших подробностей см. <a class="reference internal" href="WorkingWithController.html#ref-packetmisshandler"><span>PacketMissHandler</span></a>.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Проактивный</p>
+<blockquote>
+<div><p>Приложению выделяется канал для общения с коммутатарами. Приложения могут отправлять запросы на коммутаатор и получать ответы. (См. <a class="reference internal" href="WorkingWithController.html#ref-statictransaction"><span>StaticTransaction</span></a>).</p>
+</div></blockquote>
+</li>
+</ul>
+<p><strong>Настройки</strong> :</p>
+<blockquote>
+<div><ul class="simple">
+<li>address [&#8220;0-255.0-255.0-255.0-255&#8221;] : ip адрес на котором работает контроллер.</li>
+<li>port [number] : TCP порт, который слушает контроллер, и по котрому к нему подключаются коммутаторы.</li>
+<li>nthreads [number] : количество нитей на которых выполняется pipeline.</li>
+<li>secure [true|false] : Использовать TLS для соединения с коммутаторами.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="switchmanager">
+<span id="ref-switchmanager-overview"></span><h3>2.2.2. SwitchManager<a class="headerlink" href="#switchmanager" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p>Приложение предоставлят интерфейс к работе с абстракциями коммутаторов.</p>
+<p><strong>ИМЯ</strong> : <em>switch-manager</em>.
+<strong>REST ИМЯ</strong> : <em>switch-manager</em>.
+<strong>Displaed Name</strong> : <em>Switch Manager</em>.</p>
+<p><em>switch-manager</em> управляет объектами <em>Switch</em>, которые являются абстракцией коммутатра.
+Он позволяет получить объект <em>Switch</em> по <em>dpid</em>, или вектор <em>Switch</em>.</p>
+<p><em>SwitchManager</em> поддерживает Rest интерефейс :</p>
+<blockquote>
+<div><p>Request : GET /api/switch-manager/switches/all</p>
+<p>Reply   : Информация о коммуторах в сети.</p>
+</div></blockquote>
+<p><em>SwitchManager</em> поддерживает модель событий :</p>
+<blockquote>
+<div>Коммутатор появился в сети, изменил состояние, исчез.</div></blockquote>
+<p><em>SwitchManager</em> имеет свою web страницу</p>
+<blockquote>
+<div><strong>Web Страница</strong>  : <code class="docutils literal"><span class="pre">http://ControllerIp:8000/switch.html</span></code></div></blockquote>
+</div>
+<div class="section" id="linkdiscovery">
+<span id="ref-linkdiscovery-overview"></span><h3>2.2.3. LinkDiscovery<a class="headerlink" href="#linkdiscovery" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>.</p>
+<p>Приложение исследуюет соедения в сети.</p>
+<blockquote>
+<div>Данное приложение необходимо для поддержания информации о топологии.
+Переодически отправляя LLDP пакеты, оно следит за состоянием соеденений между коммутатарами.</div></blockquote>
+<p><em>LinkDiscovery</em> работает в ControllerPipeline под именем <code class="docutils literal"><span class="pre">link-discovery</span></code>.</p>
+<blockquote>
+<div><p>Обрабатывает LLDP покаеты и останавливает выполнение конвеера.</p>
+<p>Остальные пакеты проходят <em>LinkDiscovery</em> без изменений.</p>
+</div></blockquote>
+<p><strong>Настройки</strong> :</p>
+<blockquote>
+<div><ul class="simple">
+<li>poll-intervall [number] : Интервал (в секундах) через который отправляются LLDP пакеты.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="stp">
+<span id="ref-stp-overview"></span><h3>2.2.4. STP<a class="headerlink" href="#stp" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-linkdiscovery-overview"><span>LinkDiscovery</span></a>, <a class="reference internal" href="#ref-topology-overview"><span>Topology</span></a></p>
+<p>Предотвращает широковещательный шторм в сети, используя логику Spanning Tree протокола.</p>
+<blockquote>
+<div><em>STP</em> подменяет broadcast правило в конвеере контроллера.</div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">Не перегружайте broadcast правило, когда у вас включено приложение STP.</p>
+</div>
+</div>
+<div class="section" id="restlistener">
+<span id="ref-restlistener-overview"></span><h3>2.2.5. RestListener<a class="headerlink" href="#restlistener" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>.</p>
+<p>Обеспечивает Rest интерфейс для приложений.</p>
+<blockquote>
+<div>Это приложение необходимо вам, если вы хотите добавить Rest интерфейс к вашему приложению.</div></blockquote>
+<p><strong>ИМЯ</strong> : <em>rest-listener</em>.</p>
+<blockquote>
+<div><p><em>RestListener</em> позволяет вам зарагестрировать свое приложение c обработкой REST
+запросов, после которого вы сможете обращаться с запросами к своему приложение
+по адресу <code class="docutils literal"><span class="pre">/api/your-application</span></code>.</p>
+<p>По умолчанию <em>RestListener</em> слушает 8000 порт.</p>
+<p>Подробнее см. В работе с REST интерфейсом.</p>
+</div></blockquote>
+<p>RestListener так же реализует модель событий. Подробнее см модель событий.</p>
+<p>RestListener поддерживает некоторые встроеные запросы:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><em>GET /apps</em> # получить список всех приложений, которые поддерживают REST интерфейс</p>
+</li>
+<li><p class="first"><em>GET /timeout/&lt;app_lsit&gt;/&lt;last_event&gt;</em></p>
+<blockquote>
+<div><p>Получить события, которые зарегестрировали приложения с некоторого момента.</p>
+<ul class="simple">
+<li>&lt;app_list&gt; = <code class="docutils literal"><span class="pre">app_1&amp;app_2&amp;...&amp;app_n</span></code> список приложений, чьи события будут показываться.</li>
+<li>&lt;last_event&gt; = <code class="docutils literal"><span class="pre">unsinged</span> <span class="pre">integer</span></code>, номер события, после которого нас интересуют новые события.</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+<p><strong>Настройки</strong> :</p>
+<blockquote>
+<div><ul class="simple">
+<li>port [number] &#8211; порт который слушает <em>RestListener</em>.</li>
+<li>web-dir [path-to-dir] &#8211; путь к директории, в которой расположены web страницы приложений.</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>2.3. Сервисы<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="topology">
+<span id="ref-topology-overview"></span><h3>2.3.1. Topology<a class="headerlink" href="#topology" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-linkdiscovery-overview"><span>LinkDiscovery</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p><strong>ИМЯ</strong> : <em>topology</em>
+<strong>REST ИМЯ</strong> : <em>topology</em></p>
+<p>Представление топологии сети.</p>
+<p>Поддерживает REST интерфей:</p>
+<blockquote>
+<div>GET /api/topology/links получить представление сети.</div></blockquote>
+<p>Имеет свою Web страницу : <em>topology.html</em>.</p>
+</div>
+<div class="section" id="simplelearingswitch">
+<span id="ref-simplelearningswitch-overview"></span><h3>2.3.2. SimpleLearingSwitch<a class="headerlink" href="#simplelearingswitch" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">По умолчанию выключен.</p>
+</div>
+<p><strong>ИМЯ</strong> : simple-learning-switch.</p>
+<p>Реализация простого LeareningL2Switch, где каждый коммутатор работает независимо от остальных, и содержит свою таблицу mac-port.</p>
+<blockquote>
+<div><p><em>SimpleLearningSwitch</em> обпеспечевиает доставку пакетов до адресатов.</p>
+<p>Его основное преимущество, то что он не зависит от остальных приложений.</p>
+</div></blockquote>
+<p><em>SimpleLearningSwitch</em> Работает в controller pipeline под именем <em>forwarding</em>.</p>
+</div>
+<div class="section" id="learningswitch">
+<span id="ref-learningswitch-overview"></span><h3>2.3.3. LearningSwitch<a class="headerlink" href="#learningswitch" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-topology-overview"><span>Topology</span></a>.</p>
+<p><strong>ИМЯ</strong> : learning-switch.</p>
+<p>Реализация усовершествованного L2Switch, который знает топологию сети и отправляет пакет по кратчайшему пути, он обеспечивает доставку пактов до адресатов.</p>
+<p><em>LearningSwitch</em> работает в controller pipeline под именем <em>forwarding</em> и должен выполняться последним.</p>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">SimpleLearningSwitch и LearningSwitch реализуют одну и ту же функциональность и не могут быть запущены одновременно на контроллере, поэтому их pipeline именя одинаковы.</p>
+</div>
+</div>
+<div class="section" id="switchstats">
+<span id="ref-switchstats-overview"></span><h3>2.3.4. SwitchStats<a class="headerlink" href="#switchstats" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p>Собирает статистику с коммутаторов.</p>
+<p><strong>ИМЯ</strong> : <em>switch-stats</em>.</p>
+<p><strong>Настройки</strong> :</p>
+<blockquote>
+<div><ul class="simple">
+<li>poll-interval [number] - период сбора статистики</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="arphandler">
+<span id="ref-arphandler-overview"></span><h3>2.3.5. ArpHandler<a class="headerlink" href="#arphandler" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-hostmanager-overview"><span>HostManager</span></a>.</p>
+<p><strong>ИМЯ</strong> : <em>arp-handler</em>.</p>
+<p><em>ArpHandler</em> обрабатывает arp-request, и если он знает mac-адрес хоста, отправляет arp-reply, если не знает &#8211; передает управление дальше по pipeline.</p>
+<p><em>ArpHandler</em> работает в controller pipeline под именем <em>arp-handler</em>.</p>
+</div>
+<div class="section" id="staticflowpusher">
+<span id="ref-staticflowpusher-overview"></span><h3>2.3.6. StaticFlowPusher<a class="headerlink" href="#staticflowpusher" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p><strong>ИМЯ</strong> : <em>static-flow-pusher</em></p>
+<p>Статическая установка правил на коммутаторы.</p>
+<p>Возможна установка правил через REST интерфейс и из network-settings.json.</p>
+<p>REST интерфейс :</p>
+<blockquote>
+<div><p>POST /api/static-flow-pusher/newflow/&lt;switch_id&gt; {Json of new_flow}</p>
+<blockquote>
+<div><p>Json поддерживает :</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8220;in_port&#8221;</li>
+<li>eth_src, eth_dst</li>
+<li>eth_type</li>
+<li>ip_src, ip_dst</li>
+<li>out_port</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+<p><strong>Настройки</strong></p>
+<blockquote>
+<div><blockquote>
+<div><p>В настройках можно описывать правила следующим образом:</p>
+<div class="highlight-python"><div class="highlight"><pre>&quot;flows&quot; : [
+  {
+    &quot;dpid&quot;: &lt;switch&gt;,
+    &quot;flows&quot; : [
+
+      ...
+
+      {
+        &lt;set_of_match&gt;
+        &lt;set_of_action&gt;
+        &lt;set_of_config&gt;
+      }
+
+      ...
+
+    ]
+  }
+]
+</pre></div>
+</div>
+</div></blockquote>
+<p>Где :</p>
+<blockquote>
+<div><ul class="simple">
+<li>&lt;switch&gt; = &#8220;all&#8221; или dpid коммутатора в формате &#8220;0000000000001&#8221;.</li>
+<li>&lt;set_of_match&gt; &#8211; Набор строк, указывающие поля пакета.<ul>
+<li>in_port : [number]</li>
+<li>eth_src : [&#8220;ethernet_address&#8221;]</li>
+<li>eth_dst : [&#8220;ethernet_address&#8221;]</li>
+<li>ip_src : [&#8220;ip adress&#8221;]</li>
+<li>ip_dst : [&#8220;ip_adress&#8221;]</li>
+</ul>
+</li>
+<li>&lt;set_of_action&gt; &#8211; действия с пакетом :<ul>
+<li>out_port : [number | &#8220;to-controller&#8221;] &#8211; отправить на указанный порт</li>
+</ul>
+</li>
+<li>&lt;set_of_config&gt; : набор конфигураций потока.<ul>
+<li>priority : [number]  &#8211; приоритет потока</li>
+<li>&#8220;idle&#8221; : [number]  &#8211; тайм-аут простоя потока</li>
+<li>&#8220;hard&#8221; : [number]  &#8211; тайм-аут потока</li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="rest">
+<h2>2.4. REST<a class="headerlink" href="#rest" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="flowmanager">
+<span id="ref-flowmanager-overview"></span><h3>2.4.1. FlowManager<a class="headerlink" href="#flowmanager" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p><strong>ИМЯ</strong> : flow-manager.</p>
+<p><strong>REST ИМЯ</strong> : flow.</p>
+<p>Исследует и удаляет потоки.</p>
+<blockquote>
+<div><em>FlowManager</em> опрашивает коммутаторы о правилах, которые установлены на них, и может удалить правила.</div></blockquote>
+<p><em>FlowManager</em> обеспечивает REST интерфейс :</p>
+<blockquote>
+<div><p>GET /api/flow/&lt;switch_id&gt;/all : получить информацию о потоках на коммутаторе</p>
+<p>DELETE /api/flow/&lt;switch_id&gt;/&lt;switch_id&gt;/&lt;flow_id&gt; : удалить поток.</p>
+</div></blockquote>
+<p><em>FlowManager</em> поддерживает Модель событий.</p>
+</div>
+<div class="section" id="hostmanager">
+<span id="ref-hostmanager-overview"></span><h3>2.4.2. HostManager<a class="headerlink" href="#hostmanager" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p><strong>ИМЯ</strong> : <em>host-manager</em></p>
+<p>Исследует хосты.</p>
+<blockquote>
+<div><em>HostManager</em> следит за пакетами, появляющемися в сети, и запоминает mac- и ip-адреса хостов.</div></blockquote>
+<p>Работает в pipeline под именем <em>host-manager</em>, читает необходимые поля, и передает управление дальше.</p>
+</div>
+<div class="section" id="webuimanager">
+<span id="ref-webuimanager-overview"></span><h3>2.4.3. WebUIManager<a class="headerlink" href="#webuimanager" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Dependes of : <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-hostmanager-overview"><span>HostManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p>Обеспечивает Web интерфейс контроллера.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Components.html" class="btn btn-neutral float-right" title="3. Компоненты RUNOS" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="GettingStarted.html" class="btn btn-neutral" title="1. Введение" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, ARCCN.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/translations.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

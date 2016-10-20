@@ -1,0 +1,931 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>5. Работа с Controller &mdash; Документация RUNOS 0.6</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
+        <link rel="prev" title="4. Первые шаги в написании собственного приложения" href="FirstStep.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">5. Работа с Controller</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ref-controller-signals">5.1. Сигналы</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#statictransaction">5.2. StaticTransaction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#registering-static-transaction">5.2.1. Registering static transaction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#oftransaction">5.2.2. OFTransaction</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">5.3. Резервирование таблицы потоков</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#packetmisshandler">5.4. PacketMissHandler</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id4">5.4.1. Введние</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">5.4.2. Структура</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">5.4.3. Регистрация</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#packet">5.4.4. Packet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#decision">5.4.5. Decision</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id7">5.4.5.1. Действия</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#time">5.4.5.2. Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id8">5.4.5.3. Остановка конвеера</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id9">5.5. Реализация рассылки широковещательного сообщения</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">RUNOS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>5. Работа с Controller</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/WorkingWithController.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="controller">
+<span id="ref-with-controller"></span><h1>5. Работа с Controller<a class="headerlink" href="#controller" title="Ссылка на этот заголовок">¶</a></h1>
+<dl class="class">
+<dt id="_CPPv210Controller">
+<span id="Controller"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Controller</code><a class="headerlink" href="#_CPPv210Controller" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Объявлен в файле <code class="docutils literal"><span class="pre">Controller.hh</span></code></p>
+<p><a class="reference internal" href="ApplicationOverView.html#ref-controller-overview"><span>Controller</span></a> принимает на себя низкоуровневые обязанности по устанвке, поддержке и обмене сообщениеми с коммутаторами.</p>
+</dd></dl>
+
+<p>Так как контроллер это основное приложение, то для полезной работы вам придется прямо или косвенно взаимодейстовавать с контроллером.</p>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last"><a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> активно использует библиотеку <a class="reference external" href="http://opennetworkingfoundation.github.io/libfluid/">LibFluid</a>.</p>
+</div>
+<div class="section" id="ref-controller-signals">
+<span id="id1"></span><h2>5.1. Сигналы<a class="headerlink" href="#ref-controller-signals" title="Ссылка на этот заголовок">¶</a></h2>
+<p><a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> инициирует некоторые <a class="reference external" href="http://doc.qt.io/qt-4.8/signalsandslots.html">сигналы</a> о событиях, которые произошли в сети:</p>
+<blockquote>
+<div><ul>
+<li><dl class="function">
+<dt id="_CPPv2N10Controller8switchUpE19SwitchConnectionPtrN4of1313FeaturesReplyE">
+<span id="Controller::switchUp__SwitchConnectionPtr.of13::FeaturesReply"></span>void <code class="descclassname">Controller::</code><code class="descname">switchUp</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>conn</em>, of13::FeaturesReply <em>fr</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller8switchUpE19SwitchConnectionPtrN4of1313FeaturesReplyE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>К контроллеру подключился коммутатор.</p>
+</dd></dl>
+
+</li>
+<li><dl class="function">
+<dt id="_CPPv2N10Controller10portStatusE19SwitchConnectionPtrN4of1310PortStatusE">
+<span id="Controller::portStatus__SwitchConnectionPtr.of13::PortStatus"></span>void <code class="descclassname">Controller::</code><code class="descname">portStatus</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>ofconn</em>, of13::PortStatus <em>ps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller10portStatusE19SwitchConnectionPtrN4of1310PortStatusE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Коммутатор сообщил об  изменении состояния портов.</p>
+</dd></dl>
+
+</li>
+<li><dl class="function">
+<dt id="_CPPv2N10Controller10switchDownE19SwitchConnectionPtr">
+<span id="Controller::switchDown__SwitchConnectionPtr"></span>void <code class="descclassname">Controller::</code><code class="descname">switchDown</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>ofconn</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller10switchDownE19SwitchConnectionPtr" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Соедение с коммутатором прервалось.</p>
+</dd></dl>
+
+</li>
+</ul>
+</div></blockquote>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>#include &quot;YourApp.hh&quot;
+
+#include &quot;Controller.hh&quot;
+#include &quot;Common.hh&quot;
+
+REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;&quot;})
+
+
+void YourApp::init(Loader* loader, const Config&amp;)
+{
+  Controller *ctrl = Controller::get(loader);
+
+  QObject::connect(ctrl, Controller::switchUp,
+                   [](SwitchConnectionPtr conn, of13::FeatireReply fr){
+      LOG(INFO) &lt;&lt; &quot;Connected switch : &quot; &lt;&lt; conn-&gt;dpid();
+      });
+
+  QObject::connect(ctrl, Controller::portStatus,
+                   [](SwitchConnectionPtr conn, of13::PortStatus ps){
+      LOG(INFO) &lt;&lt; &quot;port states chages on switch : &quot; &lt;&lt; conn-&gt;dpid();
+      });
+
+  QObject::connect(ctrl, Controller::switchDown, [](SwitchConnectionPtr conn){
+      LOG(INFO) &lt;&lt; &quot;swith disconnected : &quot; &lt;&lt; conn-&gt;dpid();
+      });
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="statictransaction">
+<span id="ref-statictransaction"></span><h2>5.2. StaticTransaction<a class="headerlink" href="#statictransaction" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="registering-static-transaction">
+<h3>5.2.1. Registering static transaction<a class="headerlink" href="#registering-static-transaction" title="Ссылка на этот заголовок">¶</a></h3>
+<p><a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> предоставляет возможность напрямую отправлять OpenFlow сообщения на коммутаторы, и принимать от них ответы.</p>
+<dl class="class">
+<dt id="_CPPv213OFTransaction">
+<span id="OFTransaction"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">OFTransaction</code><a class="headerlink" href="#_CPPv213OFTransaction" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Класс, который предоставляет инструменты для общения с коммутаторами.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N10Controller25registerStaticTransactionEP11Application">
+<span id="Controller::registerStaticTransaction__ApplicationP"></span><a class="reference internal" href="#_CPPv213OFTransaction" title="OFTransaction">OFTransaction</a> *<code class="descclassname">Controller::</code><code class="descname">registerStaticTransaction</code><span class="sig-paren">(</span><a class="reference internal" href="FirstStep.html#_CPPv211Application" title="Application">Application</a> *<em>caller</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller25registerStaticTransactionEP11Application" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Регистрация вашего приложения для статического обмена пакетами с коммутаторами.</p>
+<p>Данный метод создаст для вас объект класса <a class="reference internal" href="#_CPPv213OFTransaction" title="OFTransaction"><code class="xref cpp cpp-class docutils literal"><span class="pre">OFTransaction</span></code></a>, через который вы можете отправлять пакеты.</p>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last"><a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> рарезервирует за вами <em>xid</em>.
+Все сообщения от вас будут помечаться данным <em>xid</em>.
+И наоборот,:cpp:class::<cite>OFTransaction</cite> будет доставлять вашему приложению, только сообщения с данным <em>xid</em>.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="oftransaction">
+<h3>5.2.2. OFTransaction<a class="headerlink" href="#oftransaction" title="Ссылка на этот заголовок">¶</a></h3>
+<dl class="function">
+<dt id="_CPPv2N13OFTransaction7requestE19SwitchConnectionPtrR5OFMsg">
+<span id="OFTransaction::request__SwitchConnectionPtr.OFMsgR"></span>void <code class="descclassname">OFTransaction::</code><code class="descname">request</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>conn</em>, OFMsg &amp;<em>msg</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N13OFTransaction7requestE19SwitchConnectionPtrR5OFMsg" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Отправить OpenFlow сообщение на коммутатор.</p>
+<p>SwitchConnectionPtr conn &#8211; соедениение с коммутатором, на который надо отправить сообщение.</p>
+<p>OFMsg&amp; msg &#8211; OpenFlow сообщение.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N13OFTransaction8responseE19SwitchConnectionPtrNSt10shared_ptrI10OFMsgUnionEE">
+<span id="OFTransaction::response__SwitchConnectionPtr.std::shared_ptr:OFMsgUnion:"></span>void <code class="descclassname">OFTransaction::</code><code class="descname">response</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>conn</em>, std::shared_ptr&lt;OFMsgUnion&gt; <em>reply</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N13OFTransaction8responseE19SwitchConnectionPtrNSt10shared_ptrI10OFMsgUnionEE" title="Ссылка на это определение">¶</a></dt>
+<dd><p><a class="reference external" href="http://doc.qt.io/qt-4.8/signalsandslots.html">Qt сигнал</a> с ответом на OpenFlow запрос.</p>
+<p>SwitchConnectionPtr conn &#8211; соединеие с коммутаторм, от которого пришло сообщение.</p>
+<p>std::shared_ptr&lt;OFMsgUnion&gt; reply &#8211; сообщение.</p>
+</dd></dl>
+
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void YourApp::init(Loader* loader, const Config&amp;)
+{
+  Controller* ctrl = Controller::get(loader);
+  OFTransaction oftran = ctrl.registerStaticTransaction(this);
+  QObject::connect(ctrl, Controller::switchUp,
+      [oftran](SwitchConnectionPtr conn, of13::FeatireReply)
+      {
+        of13::MultipartRequestFlow mprf;
+        mprf.table_id(of13::OFPTT_ALL);
+        mprf.out_port(of13::OFPP_ANY);
+        mprf.out_group(of13::OFPG_ANY);
+        mprf.cookie(0x0);
+        mprf.cookie_mask(0x0);
+        mprf.flags(0);
+        oftran-&gt;request(conn,  mprf);
+      });
+  QObject::connect(oftran, OFTransaction::response,
+      [](SwitchConnectionPtr conn, std::shared_ptr&lt;OFMsgUnion&gt; reply)
+      {
+        LOG(INFO) &lt;&lt; &quot;Switch responsed ! &quot;;
+      });
+}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>5.3. Резервирование таблицы потоков<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Если вашему приложению нужна своя таблица потоков вы можете запросить ее у контроллера.</p>
+<dl class="function">
+<dt id="_CPPv2N10Controller12reserveTableEv">
+<span id="Controller::reserveTable"></span>uint8_t <code class="descclassname">Controller::</code><code class="descname">reserveTable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller12reserveTableEv" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Контроллер выделит вам таблицу потоков, в которую вы можете добавлять свои правила</p>
+</dd></dl>
+
+<div class="admonition danger">
+<p class="first admonition-title">Опасно</p>
+<p class="last"><strong>RUNOS</strong> не ограничивает вас в добавлении правил в другие таблицы потоков.
+Однако это не гарантирует корректную работу вашего и других сервисов.</p>
+</div>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void ExampleFireWall::init(Loader* loader, const Config&amp;)
+{
+  Controller* ctrl = Controller::get(loader);
+  uint8_t table_no = ctrl-&gt;reservTable();
+  QObject::connect(ctrl, Controller::SwitchUp,
+      [table_no](SwitchConnectionPtr conn, of13::FeatireReply)
+      {
+        of13::FlowMod fm;
+        fm.table_id(table_no);
+        fm.match(new EthSrc(&quot;ff:ff:ff:ff:ff:ff&quot;));
+        conn-&gt;send(fm);
+      });
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="packetmisshandler">
+<span id="ref-packetmisshandler"></span><h2>5.4. PacketMissHandler<a class="headerlink" href="#packetmisshandler" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="id4">
+<h3>5.4.1. Введние<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Задача модуля обработчика PacketIn&#8217;ов абстрагировать вас от низкоуровневых OpenFlow команд и пакетов и тем самым повысить удобство программирования.</p>
+<p>Программист приложений для контроллера может писать данный обработчик пакетов сосредоточившись только на основной логике своей программы.
+Ему не надо будет самому формировать FlowMod, за него это сделает ядро <strong>RUNOS</strong>,
+Все что нужно программисту, это программисту это прочитать необходимые ему поля пакета,
+и на основании этого выбрать действие с пакетом.</p>
+</div>
+<div class="section" id="id5">
+<h3>5.4.2. Структура<a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Функция обработчик : функция которая определяет действие с пакетом для коммутатора, она вызывается на каждый PacketIn.</p>
+<p>Для каждого коммутатора описывается отдельная функция обработчик. Поэтому программисту необходимо описать не одну функцию обработчик, а <em>фабрику</em>, которая будет создавать для каждого коммутатора свою функцию обработчик.</p>
+<img alt="_images/PacketMissFactory.png" src="_images/PacketMissFactory.png" />
+<p>В контроллере могут обыть одновременно зарегистировано множество обработчиков, они все выстраиваются в конвеер и выполняются один за другим.
+Порядок определяется файлом настроек <code class="docutils literal"><span class="pre">network-settings.json</span></code>.</p>
+<p>Обработчик <em>PacketMissHandler</em> &#8211; это callable объект, который  имеет следующию сигнатуру :</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv217PacketMissHandlerR6Packet7FlowPtr8Decision">
+<span id="PacketMissHandler__PacketR.FlowPtr.Decision"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname"></code><code class="descname">PacketMissHandler</code><span class="sig-paren">(</span>Packet &amp;<em>pkt</em>, FlowPtr <em>flow</em>, <a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <em>decision</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv217PacketMissHandlerR6Packet7FlowPtr8Decision" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<p>На вход подается пакет, который пришел как PacketIn.</p>
+<p>Парметр  decision  это решение обработчиков, которые выполнялись до вашего обработчика.</p>
+<p>Возвращается действие над пакетом.</p>
+</div></blockquote>
+<p>Фабрика <em>PacketMissHandlerFactory</em> &#8211; это callable объект, который имеет следующую сигнатуру :</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv224PacketMissHandlerFactory19SwitchConnectionPtr">
+<span id="PacketMissHandlerFactory__SwitchConnectionPtr"></span><a class="reference internal" href="#_CPPv217PacketMissHandlerR6Packet7FlowPtr8Decision" title="PacketMissHandler">PacketMissHandler</a> <code class="descclassname"></code><code class="descname">PacketMissHandlerFactory</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>conn</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv224PacketMissHandlerFactory19SwitchConnectionPtr" title="Ссылка на это определение">¶</a></dt>
+<dd><p>На вход ей подается соедение с коммутатором, а она генерирует функцию обработчик.</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="id6">
+<h3>5.4.3. Регистрация<a class="headerlink" href="#id6" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Регистрировать фабрику обработчиков необходимо во время инициализации вашего приложения.</p>
+<dl class="function">
+<dt id="_CPPv2N10Controller15registerHandlerEPKc24PacketMissHandlerFactory">
+<span id="Controller::registerHandler__cCP.PacketMissHandlerFactory"></span>void <code class="descclassname">Controller::</code><code class="descname">registerHandler</code><span class="sig-paren">(</span><em class="property">const</em> char *<em>name</em>, <a class="reference internal" href="#_CPPv224PacketMissHandlerFactory19SwitchConnectionPtr" title="PacketMissHandlerFactory">PacketMissHandlerFactory</a> <em>factory</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller15registerHandlerEPKc24PacketMissHandlerFactory" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Вам необходимо зарегистрировать фабрику оброботчиков, и имя обработчика.</p>
+<p>Имя обработчика надо указываеть в файле <code class="docutils literal"><span class="pre">network-settings.json</span></code>, чтобы <a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> запускал ее в pipeline.</p>
+</dd></dl>
+
+<p>Вам необходимо указать ваш обработчик в списке обработчиков в <code class="docutils literal"><span class="pre">network-settings.json</span></code> в <code class="docutils literal"><span class="pre">&quot;controller&quot;</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">&quot;pipeline&quot;</span> <span class="pre">:</span> <span class="pre">[</span> <span class="pre">...</span> <span class="pre">,</span> <span class="pre">&quot;example&quot;,</span> <span class="pre">...</span> <span class="pre">]</span> <span class="pre">}</span></code>.
+Обработчики выполняются в порядке, указанном в данном списке.</p>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void Exmaple::init(Loader* loader, const Config&amp; )
+{
+    Controller* ctrl = Controller::get(loader);
+    ctrl-&gt;registerHandler( &quot;exmaple&quot;,
+        [](SwitchConnectionPtr conn)
+        {
+          return [](Packet&amp; pkt, FlowPtr , Decision decision)
+          {
+            LOG(INFO) &lt;&lt; &quot;Packet In !&quot;;
+            return decision;
+          };
+        });
+ }
+</pre></div>
+</div>
+</div>
+<div class="section" id="packet">
+<h3>5.4.4. Packet<a class="headerlink" href="#packet" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Вы можете читать необходимые поля из пакета, для этого существуют специальные функции :</p>
+<ul>
+<li><dl class="function">
+<dt id="_CPPv2NK6Packet4loadEN3oxm4maskIXEEE">
+<span id="Packet::load__oxm::mask::C"></span>oxm::field&lt;&gt; <code class="descclassname">Packet::</code><code class="descname">load</code><span class="sig-paren">(</span>oxm::mask&lt;&gt; <em>mask</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK6Packet4loadEN3oxm4maskIXEEE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Прочитать поле пакета.</p>
+</dd></dl>
+
+</li>
+<li><dl class="function">
+<dt id="_CPPv2NK6Packet4testEN3oxm5fieldIXEEE">
+<span id="Packet::test__oxm::field::C"></span>bool <code class="descclassname">Packet::</code><code class="descname">test</code><span class="sig-paren">(</span>oxm::field&lt;&gt; <em>need</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK6Packet4testEN3oxm5fieldIXEEE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Проверить состояния поля пакета на заданное значение.</p>
+</dd></dl>
+
+</li>
+</ul>
+<p>Для представляния полей используется библиотека RUNOS::oxm.</p>
+<blockquote>
+<div><p>Данная библиотека кодирует в себе значения поля.
+Существуют три вида кодирования :</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">oxm::value</span></code> &#8211; значание в поле.</li>
+<li><code class="docutils literal"><span class="pre">oxm::mask</span></code> &#8211; маска поля.</li>
+<li><code class="docutils literal"><span class="pre">oxm::field</span></code> &#8211; значание и маска.</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void Example::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;exmaple&quot;,
+      [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_type = oxm::eth_type(); // for optimization
+        const auto ofb_ipv4_dst = oxm::ipv4_dst();
+        return [](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          if (pkt.test(ofb_eth_type == 0x0800)) // ip
+          {
+             uint32_t  dst_ip  = pkt.load(ofb_ipv4_dst);
+             LOG(INFO) &lt;&lt; dst_ip; // TODO : pretty print
+          }
+          return decision;
+        };
+      });
+  }
+</pre></div>
+</div>
+<p>Поддерживается маскирование с помощью оператора <code class="docutils literal"><span class="pre">&amp;</span></code> для некоторых полей.</p>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void Example::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;exmaple&quot;,
+      [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_src = oxm::eth_src();
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          ethaddr src_mac = pkt.load(ofb_eth_src &amp; &quot;ff:ff:ff:00:00:00&quot;);
+          LOG(INFO) &lt;&lt; src_mac;
+          return decision;
+        };
+      });
+  }
+</pre></div>
+</div>
+<p>Вы так же можете изменять поля пакета :</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2N6Packet6modifyEN3oxm5fieldIXEEE">
+<span id="Packet::modify__oxm::field::"></span>void <code class="descclassname">Packet::</code><code class="descname">modify</code><span class="sig-paren">(</span>oxm::field&lt;&gt; <em>need</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N6Packet6modifyEN3oxm5fieldIXEEE" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+</div></blockquote>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void Exmaple::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;exmaple&quot;,
+      [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_dst = oxm::eth_dst();
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          pkt.modify(ofb_eth_dst == &quot;11:22:33:44:55:66&quot;);
+          return decision;
+        };
+      });
+}
+</pre></div>
+</div>
+<p>RUNOS::OXM поддерживает следующие типы :</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="36%" />
+<col width="20%" />
+<col width="27%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Поле</th>
+<th class="head">Название</th>
+<th class="head">Базовый тип</th>
+<th class="head">Поддержка маски</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>in_port</td>
+<td>входящий порт пакета</td>
+<td>uint8_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-odd"><td>eth_type</td>
+<td>тип ethernet</td>
+<td>uint16_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-even"><td>eth_src</td>
+<td>ethernet адрес
+отправителя</td>
+<td>ethernet</td>
+<td>да</td>
+</tr>
+<tr class="row-odd"><td>eth_dst</td>
+<td>ethernt адрес
+получателя</td>
+<td>ethernet</td>
+<td>да</td>
+</tr>
+<tr class="row-even"><td>ip_proto</td>
+<td>протокол IP</td>
+<td>uint8_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-odd"><td>ipv4_src</td>
+<td>IP адрес отправителя
+версии 4</td>
+<td>uint32_t</td>
+<td>да</td>
+</tr>
+<tr class="row-even"><td>ipv4_dst</td>
+<td>IP адрес получателя
+версии 4</td>
+<td>uint32_t</td>
+<td>да</td>
+</tr>
+<tr class="row-odd"><td>tcp_src</td>
+<td>TCP порт источника</td>
+<td>uint16_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-even"><td>tcp_dst</td>
+<td>TCP порт назначения</td>
+<td>uint16_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-odd"><td>udp_src</td>
+<td>UDP порт источника</td>
+<td>uint16_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-even"><td>udp_dst</td>
+<td>UDP порт назначения</td>
+<td>uint16_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-odd"><td>arp_spa</td>
+<td>логический адрес
+отправителя</td>
+<td>uint32_t</td>
+<td>да</td>
+</tr>
+<tr class="row-even"><td>arp_tpa</td>
+<td>логический адрес
+получателя</td>
+<td>uint32_t</td>
+<td>да</td>
+</tr>
+<tr class="row-odd"><td>arp_sha</td>
+<td>физический адрес
+отправителя</td>
+<td>uint32_t</td>
+<td>да</td>
+</tr>
+<tr class="row-even"><td>arp_tha</td>
+<td>физический адрес
+получателя</td>
+<td>uint32_t</td>
+<td>да</td>
+</tr>
+<tr class="row-odd"><td>arp_op</td>
+<td>Код операции</td>
+<td>uint16_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-even"><td>vlan_vid</td>
+<td>Идентификатор vlan</td>
+<td>uint16_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-odd"><td>ipv6_src</td>
+<td>IP адрес отправителя
+версии 6</td>
+<td>IPv6Addr</td>
+<td>да</td>
+</tr>
+<tr class="row-even"><td>ipv6_dst</td>
+<td>IP адрес получателя
+версии 6</td>
+<td>IPv6Addr</td>
+<td>да</td>
+</tr>
+<tr class="row-odd"><td>icmp_type</td>
+<td>Тип ICMP сообщения</td>
+<td>uint8_t</td>
+<td>нет</td>
+</tr>
+<tr class="row-even"><td>icmp_code</td>
+<td>Код ICMP сообщения</td>
+<td>uint8_t</td>
+<td>нет</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<div class="admonition warning">
+<p class="first admonition-title">Предупреждение</p>
+<p class="last">Вызов функций Packet::load и Packet::test должен определятся <em>только</em> входящим пакетом
+и не зависить от внешних состояний.</p>
+</div>
+</div>
+<div class="section" id="decision">
+<h3>5.4.5. Decision<a class="headerlink" href="#decision" title="Ссылка на этот заголовок">¶</a></h3>
+<div class="section" id="id7">
+<h4>5.4.5.1. Действия<a class="headerlink" href="#id7" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Функция обработчик возвращает свое решения о действии с пакетом.</p>
+<dl class="class">
+<dt id="_CPPv28Decision">
+<span id="Decision"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Decision</code><a class="headerlink" href="#_CPPv28Decision" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<p>Существую следующие типы действий.</p>
+<ul>
+<li><p class="first"><strong>Inspect</strong> &#8211; отправить пакет на контроллер:</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2NK8Decision7inspectE8uint16_t">
+<span id="Decision::inspect__uint16_tC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">inspect</code><span class="sig-paren">(</span>uint16_t <em>bytes</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision7inspectE8uint16_t" title="Ссылка на это определение">¶</a></dt>
+<dd><p>параметр <code class="docutils literal"><span class="pre">bytes</span></code> количество байт заголовка пакета, которые будут отправлены на контроллер.</p>
+</dd></dl>
+
+</div></blockquote>
+</li>
+<li><p class="first"><strong>Drop</strong> &#8211; отбросить пакет.</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2NK8Decision4dropEv">
+<span id="Decision::dropC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">drop</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision4dropEv" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+</div></blockquote>
+</li>
+<li><p class="first"><strong>Unicast</strong> &#8211; отправить пакет на определленный порт.</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2NK8Decision7unicastE8uint32_t">
+<span id="Decision::unicast__uint32_tC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">unicast</code><span class="sig-paren">(</span>uint32_t <em>port</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision7unicastE8uint32_t" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<p>Парметр : port &#8211; номер порта, на который отправить данный пакет.</p>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>Multicast</strong> &#8211; отправить пакет на множество портов.</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2NK8Decision9multicastEN9Multicast7PortSetE">
+<span id="Decision::multicast__Multicast::PortSetC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">multicast</code><span class="sig-paren">(</span>Multicast::PortSet <em>ports</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision9multicastEN9Multicast7PortSetE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>парметр : ports &#8211; список портов</p>
+</dd></dl>
+
+</div></blockquote>
+</li>
+<li><p class="first"><strong>Broadcast</strong> &#8211; широковещательная рассылка.</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2NK8Decision9broadcastEv">
+<span id="Decision::broadcastC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">broadcast</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision9broadcastEv" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<p>политика отправки определяется зарегистрированной функцией широковещательной рассылки
+. По умолчанию пакет отправляется на все физические порты, кроме входного.</p>
+</div></blockquote>
+</li>
+</ul>
+<div class="admonition attention">
+<p class="first admonition-title">Внимание</p>
+<p class="last">методы <a class="reference internal" href="#_CPPv28Decision" title="Decision"><code class="xref cpp cpp-class docutils literal"><span class="pre">Decision</span></code></a> возвращают новый экземпляр класса, но не меняют старый.</p>
+</div>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void Example::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;example&quot;, [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_dst = oxm::eth_dst();
+        return [](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          if (pkt.test(ofb_eth_dst == &quot;ff:ff:ff:ff:ff:ff&quot;))
+              return decision.broadcast();
+          else
+              return decision;
+        };
+       });
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="time">
+<h4>5.4.5.2. Time<a class="headerlink" href="#time" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Decision позволяет настраивать время устанавленного правила:</p>
+<blockquote>
+<div><dl class="type">
+<dt id="_CPPv2N8Decision8durationE">
+<span id="Decision::duration"></span><em class="property">type </em>std::chrono::duration&lt;uint32_t&gt; <code class="descclassname">Decision::</code><code class="descname">duration</code><a class="headerlink" href="#_CPPv2N8Decision8durationE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Время жизни правила.
+По умолчанию бесконечное время жизни.</p>
+<p><code class="docutils literal"><span class="pre">std::chrono::seconds::zero()</span></code> &#8211; Применить правило только к данному пакету.</p>
+</dd></dl>
+
+</div></blockquote>
+<p>Методы <a class="reference internal" href="#_CPPv28Decision" title="Decision"><code class="xref cpp cpp-class docutils literal"><span class="pre">Decision</span></code></a> для работы со временем :</p>
+<blockquote>
+<div><ul>
+<li><dl class="function">
+<dt id="_CPPv2NK8Decision12idle_timeoutE9durantion">
+<span id="Decision::idle_timeout__durantionC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">idle_timeout</code><span class="sig-paren">(</span>durantion <em>seconds</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision12idle_timeoutE9durantion" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Установить тайм-аут простоя.</p>
+<p>Правило удаляется, если в течении <code class="docutils literal"><span class="pre">seconds</span></code> времени ни один пакет не прошел по этому правилу</p>
+</dd></dl>
+
+</li>
+<li><dl class="function">
+<dt id="_CPPv2NK8Decision12hard_timeoutE8duration">
+<span id="Decision::hard_timeout__durationC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">hard_timeout</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv2N8Decision8durationE" title="Decision::duration">duration</a> <em>seconds</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision12hard_timeoutE8duration" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Установить тайм-аут.</p>
+<p>Правило удаляется после по истечении <cite>seconds</cite> времени.</p>
+</dd></dl>
+
+</li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">Каждое приложение может выбирать свое время тайм-аута. В этом случае выбирается меньший из всех.</p>
+</div>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void ExampleLearningSwitch::init(Loader *loader, const Config &amp;)
+{
+    Controller* ctrl = Controller::get(loader);
+    ctrl-&gt;registerHandler(&quot;exmaple-forwarding&quot;, [](SwitchConnectionPtr) {
+        // MAC -&gt; port mapping for EVERY switch
+        std::unordered_map&lt;ethaddr, uint32_t&gt; seen_port;
+        const auto ofb_in_port = oxm::in_port();
+        const auto ofb_eth_src = oxm::eth_src();
+        const auto ofb_eth_dst = oxm::eth_dst();
+
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision) mutable {
+            // Learn on packet data
+            ethaddr src_mac = pkt.load(ofb_eth_src);
+            // Forward by packet destination
+            ethaddr dst_mac = pkt.load(ofb_eth_dst);
+
+            seen_port[src_mac] = pkt.load(ofb_in_port);
+
+            // forward
+            auto it = seen_port.find(dst_mac);
+
+            if (it != seen_port.end()) {
+                return decision.unicast(it-&gt;second)
+                               .idle_timeout(std::chrono::seconds(60))
+                               .hard_timeout(std::chrono::minutes(30));
+            } else {
+                auto ret = decision.broadcast();
+                if (not is_broadcast(dst_mac)) {
+                    LOG(INFO) &lt;&lt; &quot;Flooding for unknown address &quot; &lt;&lt; dst_mac;
+                    ret.hard_timeout(std::chrono::seconds::zero());
+                }
+                return ret;
+            }
+        };
+    });
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id8">
+<h4>5.4.5.3. Остановка конвеера<a class="headerlink" href="#id8" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Ваше приложение способно остановить выполнение pipeline:</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2NK8Decision7return_Ev">
+<span id="Decision::return_C"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">return_</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision7return_Ev" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Pipeline не будет выполняться дальше вашего приложения.</p>
+</dd></dl>
+
+</div></blockquote>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void ExmapleFireWall::init(Loader *loader, const Config &amp;)
+{
+    Controller* ctrl = Controller::get(loader);
+    ctrl-&gt;registerHandler(&quot;firewall&quot;&quot;, [](SwitchConnectionPtr) {
+        const auto ofb_eth_src = oxm::eth_src();
+
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision) mutable {
+            if (pkt.test(ofb_eth_src == &quot;ff:ff:ff:ff:ff:ff&quot;)){
+                return decision.drop().return_();
+            }
+            return decision;
+        };
+    });
+}
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="id9">
+<h2>5.5. Реализация рассылки широковещательного сообщения<a class="headerlink" href="#id9" title="Ссылка на этот заголовок">¶</a></h2>
+<p>RUNOS предоставляет вам возможность реализовать свою низкоуровневую реализацию <em>Bradcast-правила</em>.</p>
+<dl class="type">
+<dt id="_CPPv219FloodImplementation">
+<span id="FloodImplementation"></span><em class="property">type </em>std::function&lt;Action*(uint64_t dpid)&gt; <code class="descclassname"></code><code class="descname">FloodImplementation</code><a class="headerlink" href="#_CPPv219FloodImplementation" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Функция, которая реализует рассылку широковещательных сообщений.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N10Controller13registerFloodE19FloodImplementation">
+<span id="Controller::registerFlood__FloodImplementation"></span>void <code class="descclassname">Controller::</code><code class="descname">registerFlood</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv219FloodImplementation" title="FloodImplementation">FloodImplementation</a> <em>flood</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller13registerFloodE19FloodImplementation" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Функция, которая регестрирует реализацию рассылки широковещательных сообщений.</p>
+<p>По-умолчанию, сообщения рассылаются на все порты.</p>
+<p>Вызывать необходимо в методе <code class="docutils literal"><span class="pre">init</span></code> вашего приложения.</p>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">одновременно в контроллере не может быть зарегестрировано больше одной реализации рассылки широковещательных сообщений.</p>
+</div>
+</dd></dl>
+
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void ExmapleSTP::init(Loader* loader, const Config&amp;)
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerFlood(&quot;exmaple-stp&quot;, [](uint64_t dpid)
+      {
+          return new of13::GroupAction(FLOOD_GROUP); // Указать Group table, с реализаций широковещания
+      });
+}
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="FirstStep.html" class="btn btn-neutral" title="4. Первые шаги в написании собственного приложения" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, ARCCN.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/translations.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

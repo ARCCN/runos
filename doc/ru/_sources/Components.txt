@@ -1,0 +1,205 @@
+.. _ref-components:
+
+.. _LibFluid: http://opennetworkingfoundation.github.io/libfluid/
+
+Компоненты RUNOS
+================
+
+Базовые
+-------
+
+* Common.hh
+    Подключает:
+       * Библиотеку логгирования `GLOG <https://github.com/google/glog>`_
+       * `QtCore <http://doc.qt.io/qt-5/qtcore-index.html>`_
+       * `LibFluidMsg <http://opennetworkingfoundation.github.io/libfluid/>`_
+
+* Flow.hh
+    Представление потока.
+
+* SwitchConnection.hh
+     Представление соединения с коммутатором.
+
+* Decision.hh
+     Решения для :ref:`ref-packetmisshandler`.
+
+* Controller.hh
+     :ref:`ref-controller-overview`.
+
+* Application.hh
+     Базовый тип для приложений.
+
+* Config.hh
+     Инструмент для работы с конфигурационном файлом.
+
+* FluidOXMAdapter.hh
+     Связующее звено между RUNOS::OXM и `LibFluid`
+
+* Loader.hh
+    Загрузчик приложений : :ref:`ref-loader`.
+
+* PacketParser.hh
+     Разбор пакетов протоколов семейтсва TCP/IP.
+
+Приложения
+------------
+
+* ArpHandler.hh
+      :ref:`ref-arphandler-overview`.
+
+* FlowManager.hh
+      :ref:`ref-flowmanager-overview`.
+
+* HostManager.hh
+      :ref:`ref-hostmanager-overview`.
+
+* LearningSwitch.hh
+      :ref:`ref-learningswitch-overview`.
+
+* LinkDiscovery.hh
+      :ref:`ref-linkdiscovery-overview`.
+
+* RestListener.hh
+      :ref:`ref-restlistener-overview`.
+
+* SimpleLearningSwitch.hh
+      :ref:`ref-learningswitch-overview`.
+
+* StaticFlowPusher.hh
+      :ref:`ref-staticflowpusher-overview`.
+
+* Stats.hh
+      :ref:`ref-switchstats-overview`.
+
+* STP.hh
+      :ref:`ref-stp-overview`.
+
+* Switch.hh
+      Представление коммутатора и :ref:`ref-switchmanager-overview`.
+
+* Topology.hh
+      :ref:`ref-topology-overview`.
+
+* WebUIManager.hh
+      :ref:`ref-webuimanager-overview`.
+
+
+Инструменты
+-----------
+
+* AppObect.hh
+      Базовый класс для объектов event-модели
+
+* Event.hh
+      event-модель
+
+* ILinkDiscovery.hh
+      Интерфейс приложения :ref:`ref-linkdiscovery-overview`.
+
+* json11.hpp
+      `Json библиотека <https://github.com/dropbox/json11>`_.
+
+* LLDP.hh
+      описание LLDP заголовка пакета.
+
+* OFMsgUnion.hh
+      OpenFlow сообщения.
+
+* ORTransaction.hh
+      Канал для общения с коммутаторами.
+
+* Rest.hh
+      Базовый класс для приложений, поддерживающих REST
+
+Библиотеки
+----------
+
+api
+~~~
+
+  Интерфейс для некоторых компонентов RUNOS
+
+  * api/Packet.hh
+        Интерфейс для чтения и изменения полей пакета протоколоа семейтсва TCP/IP.
+
+  * api/PacketMissHandler.hh
+        Интерфейс для функций обработчик в :ref:`ref-packetmisshandler`.
+
+  * api/SerializablePacket.hh
+        Интерфейс для сериализации пакетов протоколов семейства TCP/IP.
+
+  * api/TraceablePacket.hh
+        Интерфейс для Packet, работающим с runos::maple
+
+maple
+~~~~~
+
+  Реализация ядра maple.
+
+  * maple/Backend.hh
+        Интерфейс для maple, для работы с сетью
+
+  * maple/Flow.hh
+        Представление потока для maple
+
+  * maple/Tracer.hh
+        Трассировка PacketMissHandler'ов
+
+  * maple/TraceTree.hh
+        Релазиация TraceTree
+
+  * maple/TraceablePacketImpl.hh
+        Реализация Packet, работающим с maple
+
+  * maple/LoggableTracer.hh
+        Tracer с логированием.
+
+  * maple/Runtime.hh
+        Интерфейс maple.
+
+openflow
+~~~~~~~~
+
+* openflow/common.hh
+      база  openflow
+
+* openflow/openflow-1.0.h
+      OpenFlow1 definitions
+
+* openflow/openflow-1.3.5.h
+      OpenFlow1.3 definitions
+
+* openflow/openflow-1.5.1.h
+      OpenFlow1.5 definitons.
+
+oxm
+~~~
+
+Библиотека реализующая oxm поля OpenFlow.
+
+* oxm/bit_traits.hh
+      Размеры типов в битах.
+
+* oxm/errors.hh
+      Возможные exceptions.
+
+* oxm/field.hh
+      filed, value and mask
+
+* oxm/field_set.hh
+      Наборы полей.
+
+* oxm/openflow_basic.hh
+      Основные поля TCP/IP.
+
+types
+~~~~~
+
+* types/ethaddr.hh
+      обретка для ethernet адреса
+
+* types/IPv6Addr.hh
+      обертка для IPv6 адреса
+
+* types/exception.hh
+      Базовый тип для exception
