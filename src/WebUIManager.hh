@@ -54,7 +54,6 @@ class WebUIManager: public Application, private RestHandler {
     class SwitchManager* m_switch_manager;
     Controller* ctrl;
 public:
-    std::string restName() override { return "webui"; }
     bool eventable() override {return false; }
     AppType type() override { return AppType::None; }
     json11::Json handleGET(std::vector<std::string> params, std::string body) override;

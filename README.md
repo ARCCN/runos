@@ -1,5 +1,17 @@
 <img src="https://raw.githubusercontent.com/ARCCN/runos/master/logo_runos_small.jpg" alt="RUNOS logo" width="50%" height="50%">
 
+# What is RuNOS
+
+Runos is an OpenFlow Controller.
+
+It is fully userspace controller with high functionality, easy to develop your apps, relatively high performance comparing with existing controllers.
+It supports OpenFlow 1.3.
+
+More info: http://arccn.github.io/runos/
+
+Slides: http://www.slideshare.net/AlexanderShalimov/runos-openflow-controller-eng
+
+RuNOS documentation [ru]: http://arccn.github.io/runos/doc/ru/index.html
 
 # Build prerequirements
 
@@ -113,7 +125,31 @@ See https://wiki.opendaylight.org/view/OpenDaylight_OpenFlow_Plugin::Test_Enviro
         * `GLOG_colorlogtostderr` to `1`
 5. Compile and run!
 
+# Using JetBrains CLion
+1. Add project to CLion by `File->Open...` and select the project root's location. Further we will call it as `./`
+2. Mark `./third_party` directory as Library root (right click to the directory name in `Project view` panel) and restart the IDE.
+You may also need to install `libfluid` system-wide: it will be used by CLion for making smart suggestions (not for compilation).
+3. Configure project.
+Bad news are that Clion is still not be able to build project natively (via `Build` action), but you can build it by running a bash comand (write your own or use listed bellow one).
+Good news are that graphical debugger and other aspects of using IDE works perfect!
+So, `Edit configurations... -> runos`:
+    * Executable: select `./build/runos`
+    * Working directory: `./`
+    * Environment variables:
+        * `LD_LIBRARY_PATH` to `./prefix/lib` for Linux
+        * `GLOG_logtostderr` to `1`
+        * `GLOG_colorlogtostderr` to `1`
+    * Before launch:
+        * Remove `Build`
+        * Add `Run external tool -> Add...`:
+            * Program: `/bin/bash`
+            * Parameters: `-c "cd ./build/ && make -j2 && source ../debug_run_env.sh"`
+    * Mark the configuration as `Single instance only`
+4. Compile and run via `Run` action or launch debugging session via `Debug` action!
+
 # Writing your first RuNOS app
+
+Note: look at full documentation in Russian: http://arccn.github.io/runos/doc/ru/index.html 
 
 ## Step 1: Override Application class
 
@@ -342,7 +378,6 @@ To make REST for your application `class MyApp`:
         #include "AppObject.hh"
         #include <string>
         class MyApp : public Application, RestHandler {
-            std::string restName() override { return "my-app"; }
             bool eventable() override { return false; }
             std::string displayedName() override { return "My beautiful application"; } // or skip this
             std::string page() override { return "my_page.html"; } // if your application has webpage

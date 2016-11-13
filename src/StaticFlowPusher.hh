@@ -15,6 +15,13 @@
  */
 
 /** @file */
+
+/* Allows to set rules to a switch proactively.
+ * Flow entries descriptions must be located in network-settings.json before controller starts.
+ *
+ * There is also a deprecated REST interface for flow construction.
+ * Allows to add new flow entries to a switch.
+ */
 #pragma once
 
 #include <string>
@@ -31,6 +38,12 @@
 typedef of13::OXMTLV* ModifyElem;
 typedef std::vector<ModifyElem> ModifyList;
 
+struct FlowDescImpl;
+
+/**
+ * An interface to construct flow_mod messages.
+ * Just a proxy between you and libfluid, that makes your code smaller.
+ */
 class FlowDesc {
     struct FlowDescImpl* m;
 public:
@@ -65,10 +78,10 @@ public:
 };
 
 /**
- * This application allow push flows on the switch.
+ * This application allows to push flows on the switch.
  *
- * POST /api/static-flow-pusher/newflow/<switch_id>
- *  body of request: JSON description of new flow
+ * POST /api/static-flow-pusher/flow/<switch_id>
+ * body of request: JSON description of new flow
  */
 class StaticFlowPusher : public Application, RestHandler {
     SIMPLE_APPLICATION(StaticFlowPusher, "static-flow-pusher")
@@ -77,12 +90,12 @@ public:
 
     /**
      * install flow on switch
+     *
      * @param dp switch, on which flow will be installed
      * @param fd description of flow
      */
     void sendToSwitch(Switch* dp, FlowDesc* fd);
 
-    std::string restName() override { return "static-flow-pusher"; }
     bool eventable() override { return false; }
     AppType type() override { return AppType::Service; }
 

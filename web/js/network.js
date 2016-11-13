@@ -130,7 +130,7 @@ Net = function () {
     }
 
     function init () {
-        Server.ajax('GET', '/timeout/switch-manager&topology&host-manager&flow/' + last_ev, setNet);
+        Server.ajax('GET', '/timeout/switch-manager&topology&host-manager&flow-manager/' + last_ev, setNet);
 
         function setNet (response) {
             var _switches = [],
@@ -147,7 +147,7 @@ Net = function () {
             if (events["host-manager"])
                 _hosts = events["host-manager"];
             if (events["flow"])
-                _flow = events["flow"];
+                _flow = events["flow-manager"];
 
             var i, len;
             for (i = 0, len = _switches.length; i < len; ++i) {

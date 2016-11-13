@@ -24,6 +24,8 @@
 
 #include "types/exception.hh"
 
+// TODO: fully rewritten; note that 0.5 version contains a lot of comments
+
 namespace runos {
 
 class Flow {

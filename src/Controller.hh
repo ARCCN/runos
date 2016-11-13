@@ -46,8 +46,10 @@ public:
     */
     void registerHandler(const char* name, PacketMissHandlerFactory factory);
 
+    /**
+     *  Get number of Maple's table
+     */
     uint8_t handler_table() const;
-    void handler_table(uint8_t no);
 
     /**
      * If your application needed in own table, use this method

@@ -10,7 +10,9 @@
         "switch-stats",
         "stp",
         "arp-handler",
-        "flow-manager"
+        "flow-manager",
+        "rest-multipart",
+        "rest-flowmod"
     ],
 
     "flow-manager" : {

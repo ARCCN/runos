@@ -21,9 +21,15 @@
 #include "SwitchConnectionFwd.hh"
 using namespace runos;
 
+
+
 /**
-* Used to serve response from the switch.
-*/
+ * Used to serve response from the switch.
+ *
+ * That interface combines request and replay to a transaction. It allows your app to be called when a response with
+ * the same xid (as in request) will be received on the controller.
+ * */
+
 class OFTransaction : public QObject {
     Q_OBJECT
 public:

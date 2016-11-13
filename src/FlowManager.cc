@@ -130,21 +130,17 @@ void Rule::action_list(ActionList acts, std::vector<int> &out_port,
     }
 }
 
-uint64_t Rule::id() const
-{ return rule_id; }
+uint64_t Rule::id() const { return rule_id; }
 
 json11::Json Rule::to_json() const
 {
     json11::Json::object ret;
-
     ret["acitive"] = active ? "yes" : "no";
-
     ret["switch_id"] = boost::lexical_cast<std::string>(switch_id);
-    //hack for correcctly work
+    // hack for correct work
     of13::FlowStats *flow1 = const_cast<of13::FlowStats *>(&flow);
 
     of13::Match match = flow1->match();
-
 
     if (match.in_port())
         ret["in_port"] = (int)(match.in_port()->value());
@@ -162,8 +158,7 @@ json11::Json Rule::to_json() const
     json11::Json::array set;
     std::vector<int> out_port;
 
-    auto instructions_tmp = flow1->instructions();
-    auto instructions = instructions_tmp.instruction_set();
+    auto instructions = flow1->instructions().instruction_set();
     for (of13::Instruction* inst : instructions){
         json11::Json::object tmp;
         switch(inst->type()){
@@ -225,7 +220,7 @@ void FlowManager::startUp(Loader *loader)
 void FlowManager::addRule(Switch *sw, of13::FlowStats flow){
     if (sw) {
         Rule *rule = new Rule(sw->id(), flow);
-        switch_rules[sw->id()].push_back(rule);
+        all_switches_rules[sw->id()].push_back(rule);
         addEvent(Event::Add, rule);
     }
 }
@@ -264,18 +259,18 @@ void FlowManager::onSwitchDown(Switch *dp)
 
 void FlowManager::cleanSwitchRules(Switch *dp)
 {
-    Rules rules = switch_rules[dp->id()];
+    Rules rules = all_switches_rules[dp->id()];
     for (Rule* rule : rules) {
         addEvent(Event::Delete, rule);
         rule->active = false;
     }
-    switch_rules[dp->id()].clear();
+    all_switches_rules[dp->id()].clear();
 }
 
 void FlowManager::updateSwitchRules(Switch *dp,
                     std::vector<of13::FlowStats> flows)
 {
-    Rules& rules = switch_rules[dp->id()];
+    Rules& rules = all_switches_rules[dp->id()];
     auto end = std::remove_if(rules.begin(), rules.end(),
         [&flows, this](Rule *rule)->bool{
             for (auto it = flows.begin(); it != flows.end(); it++){
@@ -309,9 +304,9 @@ json11::Json FlowManager::handleGET(std::vector<std::string> params, std::string
         if (!sw){
             return json11::Json::object{{"error" , "switch not found"}};
         }
-        uint32_t conn_id = sw_m->getSwitch(id)->id();
+        uint64_t dpid = sw_m->getSwitch(id)->id();
         Rules active_rules;
-        for (auto rule : switch_rules[conn_id]) {
+        for (auto rule : all_switches_rules[dpid]) {
             active_rules.push_back(rule);
         }
         return json11::Json(active_rules);
@@ -327,16 +322,18 @@ json11::Json FlowManager::handleDELETE(std::vector<std::string> params, std::str
     if (!sw) {
         return json11::Json::object{{"error" , "switch not found"}};
     }
-    int conn_id = sw->id();
+    auto dpid = sw->id();
     uint64_t flow_id = std::stoull(params[1]);
 
-    if (switch_rules.find(conn_id) == switch_rules.end()) {
+    if (all_switches_rules.find(dpid) == all_switches_rules.end()) {
         return json11::Json::object{{"error" , "switch has not flows"}};
     }
-    Rules rules = switch_rules[conn_id];
+    Rules rules = all_switches_rules[dpid];
     for (Rule* rule : rules) {
         if (rule->id() == flow_id) {
             deleteRule(sw, rule);
+            // note: corresponding elem of all_switches_rules will be deleted automatically on the next
+            // internal view correction (by `updateSwitchRules` call)
             return json11::Json::object{{"flow-manager", "flow deleted"}};
         }
     }
@@ -355,7 +352,7 @@ void FlowManager::sendFlowRequest(Switch* dp){
     mprf.table_id(of13::OFPTT_ALL);
     mprf.out_port(of13::OFPP_ANY);
     mprf.out_group(of13::OFPG_ANY);
-    mprf.cookie(0x0);
+    mprf.cookie(0x0);  // match: cookie & mask == field.cookie & mask
     mprf.cookie_mask(0x0);
     mprf.flags(0);
     transaction->request(dp->connection(), mprf);

@@ -24,6 +24,10 @@
 /**
 * This abstract class is used in applications.
 * Objects in your app must inherit this class if app uses event model
+*
+* It is used to logging your application activity. So you need to inherit this class and implement a few methods to let
+* the controller to log you application activity. Logging is based on remembering object's state (in json representation)
+* For example, you can see the result of logging here: http://192.168.56.101:8000/timeout/switch-manager&topology&host-manager&flow/0
 */
 class AppObject
 {

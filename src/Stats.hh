@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+/* The main purpose of this module is to have stats from all discovered switches.
+ * It is done by a few things:
+ *  - every n seconds we get current set of switches and send stats requests for each of them.
+ *    Then we receive and save to our internal representation their answers.
+ *  - also, we correct out internal representation when SwitchManager discovers a new switch.
+ * Collected stats are sent as responses for REST API requests.
+ * */
+
 #pragma once
 
 #include <QTimer>
@@ -30,17 +38,12 @@
 #include "AppObject.hh"
 #include "json11.hpp"
 
+// represents stats for a port
 struct port_packets_bytes : public AppObject {
-    uint32_t port_no;
-    uint64_t tx_packets;
-    uint64_t rx_packets;
-    uint64_t tx_bytes;
-    uint64_t rx_bytes;
+    // from-switch stats
+    of13::PortStats stats;
 
-    uint64_t tx_byte_speed;
-    uint64_t rx_byte_speed;
-
-    port_packets_bytes(uint32_t pn, uint64_t tp, uint64_t rp, uint64_t tb, uint64_t rb);
+    port_packets_bytes(of13::PortStats stats);
     port_packets_bytes();
 
     uint64_t id() const override;
@@ -55,9 +58,12 @@ private:
     std::unordered_map<int, port_packets_bytes> port_stats;
 
 public:
+    // setters
     void insertElem(std::pair<int, port_packets_bytes> elem) { port_stats.insert(elem); }
+
+    // getters
     port_packets_bytes& getElem(int key) { return port_stats.at(key); }
-    std::vector<port_packets_bytes> getPPB_vec();
+    std::vector<port_packets_bytes> to_vector();
 
     SwitchPortStats(Switch* _sw);
     SwitchPortStats();
@@ -76,7 +82,6 @@ public:
     void init(Loader* loader, const Config& config) override;
     void startUp(Loader* provider) override;
 
-    std::string restName() override {return "stats";}
     bool eventable() override {return false;}
     AppType type() override { return AppType::Service; }
     json11::Json handleGET(std::vector<std::string> params, std::string body) override;
@@ -86,17 +91,20 @@ public slots:
     * Called when a switch has answered with MulipartReplyPortStats message
     */ 
     void portStatsArrived(SwitchConnectionPtr, std::shared_ptr<OFMsgUnion>);
+    // called when a new switch is discovered
     void newSwitch(Switch* sw);
 
 private slots:
+    // sends stats request to each switch, registered on the controller.
+    // The method is called every n (set in config) seconds -- timeout.
+    // And stats getting process continues in `portStatsArrived` method.
     void pollTimeout();
 
 private:
     unsigned c_poll_interval;
     QTimer* m_timer;
     SwitchManager* m_switch_manager;
-    // port stats for each switch
-    std::unordered_map<uint64_t, SwitchPortStats> switch_stats;
+    // port stats for each switch: {dpid: {port_id: stat}}
+    std::unordered_map<uint64_t, SwitchPortStats> all_switches_stats;
     OFTransaction* pdescr;
 };
-

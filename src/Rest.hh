@@ -37,7 +37,7 @@ enum Method {
 typedef std::pair<Method, std::string> RestReq;
 
 /**
- * RuNOS support REST API, and you may write you own REST Application by using RestHandler
+ * RuNOS supports REST API, and you may write you own REST Application by using RestHandler
  */
 class RestHandler {
     std::vector<RestReq> pathes;
@@ -70,6 +70,7 @@ protected:
     }
 
 public:
+    // useless thing :). Probably, used just for apps sepparation in web ui
     enum AppType {
         Application = 0,
         Service = 1,
@@ -77,9 +78,17 @@ public:
     };
 
     /**
+     * Use to get app name
+     */
+    virtual std::string provides() const = 0;
+
+    /**
      * Get name of rest application
      */
-    virtual std::string restName() = 0;
+    virtual std::string restName() final
+    {
+        return provides();
+    }
 
     /**
      * Supporting or not event model
@@ -119,7 +128,7 @@ public:
     uint32_t getHash() { return _hash; }
 
     /**
-     * Get name of rest application
+     * Get name of rest application (name in webUI (left collumn))
      */
     virtual std::string displayedName() { return restName(); }
 

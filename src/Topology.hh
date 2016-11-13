@@ -45,7 +45,6 @@ public:
     void init(Loader* provider, const Config& config) override;
     ~Topology();
 
-    std::string restName() override {return "topology";}
     bool eventable() override {return true;}
     std::string displayedName() override { return "Topology"; }
     std::string page() override { return "topology.html"; }

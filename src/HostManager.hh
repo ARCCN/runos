@@ -75,7 +75,7 @@ public:
     Host* getHost(std::string mac);
     Host* getHost(IPAddress ip);
 
-    std::string restName() override {return "host-manager";}
+    // rest
     bool eventable() override {return true;}
     AppType type() override { return AppType::Service; }
     json11::Json handleGET(std::vector<std::string> params, std::string body) override;

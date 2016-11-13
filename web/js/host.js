@@ -62,7 +62,7 @@ newHost = function () {
     }
     
     function getLinksLoad(id) {       
-        Server.ajax('GET', '/api/stats/port_info/' + id + '/all', setLoad);
+        Server.ajax('GET', '/api/switch-stats/port/' + id + '/all', setLoad);
         
         function setLoad (response) {
             for (var i = 0, len = response.length; i < len; ++i) {

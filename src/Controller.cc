@@ -438,7 +438,7 @@ struct SwitchScope {
         , handler_table{handler_table}
         , flood(std::bind(_flood, dpid))
     {
-        clearTable();
+        clearTables();
         miss->decision( DecisionImpl{}.inspect(128) ); // TODO: unhardcode
 
         for (auto &factory : pipeline_factory) {
@@ -476,7 +476,7 @@ struct SwitchScope {
         return false;
     }
 
-    void clearTable()
+    void clearTables()
     {
         backend.barrier();
         of13::FlowMod fm;
@@ -908,9 +908,6 @@ OFTransaction* Controller::registerStaticTransaction(Application *caller)
 
 uint8_t Controller::handler_table() const
 { return impl->handler_table; }
-
-void Controller::handler_table(uint8_t table)
-{ impl->handler_table = table; }
 
 uint8_t Controller::reserveTable()
 { return impl->handler_table++; }

@@ -29,10 +29,10 @@ struct FlowDescImpl {
     uint32_t in_port{0};
     uint32_t out_port{0};
     uint16_t eth_type{0};
-    EthAddress eth_src{EthAddress()};
-    EthAddress eth_dst{EthAddress()};
-    IPAddress ip_src{IPAddress()};
-    IPAddress ip_dst{IPAddress()};
+    EthAddress eth_src{};
+    EthAddress eth_dst{};
+    IPAddress ip_src{};
+    IPAddress ip_dst{};
 
     int idle{0};
     int hard{0};

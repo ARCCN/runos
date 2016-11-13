@@ -24,6 +24,9 @@ set(SOURCES
     Stats.cc
     ArpHandler.cc
     StaticFlowPusher.cc
+    RestMultipart.cc
+    RestFlowMod.cc
+    RestStringProcessing.cc
     # Loader
     Main.cc
     # REST

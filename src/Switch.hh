@@ -33,7 +33,7 @@ using namespace runos;
 class SwitchManager;
 
 /**
- * Abstraction of switch.
+ * Abstraction of virtual switch.
  */
 class Switch: public QObject, AppObject {
 Q_OBJECT
@@ -154,7 +154,7 @@ public:
     SwitchManager();
     ~SwitchManager();
 
-    std::string restName() override {return "switch-manager";}
+    // rest
     bool eventable() override {return true;}
     std::string displayedName() override { return "Switch Manager"; }
     std::string page() override { return "switch.html"; }

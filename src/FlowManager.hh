@@ -40,6 +40,7 @@ class Rule : public AppObject {
 public:
     Rule(uint64_t _switch_id, of13::FlowStats flow);
 
+    // rest
     uint64_t id() const override;
     json11::Json to_json() const override;
 private:
@@ -59,16 +60,17 @@ private:
     friend class FlowManager;
 };
 
+// a vector of pointers to all rules, that are set in a switch
 typedef std::vector<Rule*> Rules;
 
 /**
  *
  * Application, that allow you manage flows on switchs table by Rest API.
  *
- * You may know which flows is installed on switch by GET request : GET /api/flow/<switch_id>
- * And FlowManager will reply json, which contains following information about flows :
+ * You may know which flows are installed on switch by GET request : GET /api/flow/<switch_id>
+ * And FlowManager will reply a json, which contains following information about flows :
  *
- *  Matchs : input port, ethernet source/destination address, ethernet type, VLAN id, IP source/destenation address, IP protocol
+ *  Matches : input port, ethernet source/destination address, ethernet type, VLAN id, IP source/destenation address, IP protocol
  *  Actions : output port, goto table, metadata and set fields.
  *  Flow identificator.
  *
@@ -83,7 +85,7 @@ public:
     void init(Loader* loader, const Config& rootConfig) override;
     void startUp(Loader *) override;
 
-    std::string restName() override {return "flow";}
+    // rest
     bool eventable() override {return true;}
     AppType type() override { return AppType::Service; }
     json11::Json handleGET(std::vector<std::string> params, std::string body) override;
@@ -104,8 +106,11 @@ private:
     void sendFlowRequest(Switch *dp);
     class Controller* ctrl;
     class SwitchManager* sw_m;
-    std::unordered_map<int, Rules> switch_rules;
-    //std::unordered_map<Flow*, Rule*> flow_rule;
+
+    // a map of all switches (by dpid) and all rules for each of their
+    std::unordered_map<uint64_t, Rules> all_switches_rules;
+    //std::unordered_map<Flow*, Rule*> all_flows_rules;
+
     void cleanSwitchRules(Switch  *dp);
     void updateSwitchRules(Switch *dp, std::vector<of13::FlowStats> flows);
     OFTransaction* transaction;

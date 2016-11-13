@@ -29,14 +29,18 @@
 /**
  * This application creates TCP server and listen some port (8000, by default).
  * It handles all HTTP requests including webpages and REST
- * If REST-request arrived, it parses request and send parameters to requested REST application.
- * When this application returned reply, RestListener send answer to client.
+ * If REST-request arrived, it parses request and sends parameters to requested REST application.
+ * When this application returnes reply, RestListener sends answer to client.
+ *
+ * Note: Do not confuse RestListener and RestHandler classes.
  */
 class RestListener: public Application {
     Q_OBJECT
     SIMPLE_APPLICATION(RestListener, "rest-listener")
 public:
     void init(Loader* loader, const Config& config) override;
+
+    /// the main method: http-server running is here
     void startUp(Loader* loader) override;
 
     void registerRestHandler(RestHandler* handler);
