@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Поиск &mdash; Документация RUNOS 0.6</title>
+  <title>7. Web interface &mdash; Документация RUNOS 0.6</title>
   
 
   
@@ -32,8 +32,9 @@
   
         <link rel="index" title="Алфавитный указатель"
               href="genindex.html"/>
-        <link rel="search" title="Поиск" href="#"/>
-    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/> 
+        <link rel="search" title="Поиск" href="search.html"/>
+    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
+        <link rel="prev" title="6. REST" href="Rest.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -68,7 +69,7 @@
 
           
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="#" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -82,14 +83,14 @@
           
             
             
-                <ul>
+                <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
 <li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Rest.html">6. REST</a></li>
-<li class="toctree-l1"><a class="reference internal" href="WebInterface.html">7. Web interface</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">7. Web interface</a></li>
 </ul>
 
             
@@ -112,7 +113,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -120,8 +121,12 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li></li>
+    <li>7. Web interface</li>
       <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/WebInterface.txt" rel="nofollow"> View page source</a>
+          
         
       </li>
   </ul>
@@ -130,23 +135,33 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <noscript>
-  <div id="fallback" class="admonition warning">
-    <p class="last">
-      Please activate JavaScript to enable the search
-      functionality.
-    </p>
-  </div>
-  </noscript>
+  <div class="section" id="web-interface">
+<span id="ref-web-interface"></span><h1>7. Web interface<a class="headerlink" href="#web-interface" title="Ссылка на этот заголовок">¶</a></h1>
+<p>У Вашего приложения может быть своя html-страница. Для того чтобы добавить ее, реализуйте в классе Вашего приложения метод</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">page</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;my_page.html&quot;</span><span class="p">;</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Файл <code class="docutils literal"><span class="pre">&quot;my_page.html</span></code> должен быть расположен в дирректории <code class="docutils literal"><span class="pre">web/html</span></code>.
+Ваше приложение будет отображаться в списке приложений под именем:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">displayedName</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;My beautiful application&quot;</span><span class="p">;</span> <span class="p">}</span>  <span class="o">//</span> <span class="n">web</span> <span class="n">name</span>
+</pre></div>
+</div>
+<p>Чтобы обратиться к уже существующеу web-интрефейсу, откройте <a class="reference external" href="http://127.1.1.0:8000/topology.html">http://127.1.1.0:8000/topology.html</a></p>
+<hr class="docutils" />
+<p>Веб-интерфейс в RuNOS можно понимать как стороннее приложение, опирающееся на rest-интерфейс контроллера</p>
+</div>
 
-  
-  <div id="search-results">
-  
-  </div>
 
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="Rest.html" class="btn btn-neutral" title="6. REST" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
@@ -185,7 +200,6 @@
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
       <script type="text/javascript" src="_static/translations.js"></script>
-      <script type="text/javascript" src="_static/searchtools.js"></script>
 
   
 
@@ -201,14 +215,7 @@
           SphinxRtdTheme.StickyNav.enable();
       });
   </script>
-  
-  <script type="text/javascript">
-    jQuery(function() { Search.loadIndex("searchindex.js"); });
-  </script>
-  
-  <script type="text/javascript" id="searchindexloader"></script>
    
-
 
 </body>
 </html>

@@ -30,6 +30,9 @@
   
 
   
+        <link rel="index" title="Алфавитный указатель"
+              href="genindex.html"/>
+        <link rel="search" title="Поиск" href="search.html"/>
     <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
         <link rel="next" title="3. Компоненты RUNOS" href="Components.html"/>
         <link rel="prev" title="1. Введение" href="GettingStarted.html"/> 
@@ -83,7 +86,7 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">2. Обзор приложений</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">2. Обзор приложений</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#loader">2.1. Loader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#coreapplication">2.2. CoreApplication</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#controller">2.2.1. Controller</a></li>
@@ -103,9 +106,17 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#rest">2.4. REST</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#flowmanager">2.4.1. FlowManager</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#hostmanager">2.4.2. HostManager</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#webuimanager">2.4.3. WebUIManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rest-2-0">2.4.1. REST 2.0</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#restmultipart">2.4.1.1. RestMultipart</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#restflowmod">2.4.1.2. RestFlowMod</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#rest-1-0-deprecated">2.4.2. REST 1.0 (deprecated)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flowmanager">2.4.2.1. FlowManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hostmanager">2.4.2.2. HostManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#webuimanager">2.4.2.3. WebUIManager</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -113,6 +124,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
 <li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Rest.html">6. REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WebInterface.html">7. Web interface</a></li>
 </ul>
 
             
@@ -135,7 +148,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -192,12 +205,12 @@
 <p class="first admonition-title">Предупреждение</p>
 <p class="last">Каждый обработчик может прервать очередь выполнения. Поэтому важен порядок имен в <code class="docutils literal"><span class="pre">network-settings.json</span></code>.</p>
 </div>
-<p>Для больших подробностей см. <a class="reference internal" href="WorkingWithController.html#ref-packetmisshandler"><span>PacketMissHandler</span></a>.</p>
+<p>Для больших подробностей см. <a class="reference internal" href="WorkingWithController.html#ref-packetmisshandler"><span class="std std-ref">PacketMissHandler</span></a>.</p>
 </div></blockquote>
 </li>
 <li><p class="first">Проактивный</p>
 <blockquote>
-<div><p>Приложению выделяется канал для общения с коммутатарами. Приложения могут отправлять запросы на коммутаатор и получать ответы. (См. <a class="reference internal" href="WorkingWithController.html#ref-statictransaction"><span>StaticTransaction</span></a>).</p>
+<div><p>Приложению выделяется канал для общения с коммутатарами. Приложения могут отправлять запросы на коммутаатор и получать ответы. (См. <a class="reference internal" href="WorkingWithController.html#ref-statictransaction"><span class="std std-ref">StaticTransaction</span></a>).</p>
 </div></blockquote>
 </li>
 </ul>
@@ -213,7 +226,7 @@
 </div>
 <div class="section" id="switchmanager">
 <span id="ref-switchmanager-overview"></span><h3>2.2.2. SwitchManager<a class="headerlink" href="#switchmanager" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
 <p>Приложение предоставлят интерфейс к работе с абстракциями коммутаторов.</p>
 <p><strong>ИМЯ</strong> : <em>switch-manager</em>.
 <strong>REST ИМЯ</strong> : <em>switch-manager</em>.
@@ -234,7 +247,7 @@
 </div>
 <div class="section" id="linkdiscovery">
 <span id="ref-linkdiscovery-overview"></span><h3>2.2.3. LinkDiscovery<a class="headerlink" href="#linkdiscovery" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>.</p>
 <p>Приложение исследуюет соедения в сети.</p>
 <blockquote>
 <div>Данное приложение необходимо для поддержания информации о топологии.
@@ -253,7 +266,7 @@
 </div>
 <div class="section" id="stp">
 <span id="ref-stp-overview"></span><h3>2.2.4. STP<a class="headerlink" href="#stp" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-linkdiscovery-overview"><span>LinkDiscovery</span></a>, <a class="reference internal" href="#ref-topology-overview"><span>Topology</span></a></p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-linkdiscovery-overview"><span class="std std-ref">LinkDiscovery</span></a>, <a class="reference internal" href="#ref-topology-overview"><span class="std std-ref">Topology</span></a></p>
 <p>Предотвращает широковещательный шторм в сети, используя логику Spanning Tree протокола.</p>
 <blockquote>
 <div><em>STP</em> подменяет broadcast правило в конвеере контроллера.</div></blockquote>
@@ -264,7 +277,7 @@
 </div>
 <div class="section" id="restlistener">
 <span id="ref-restlistener-overview"></span><h3>2.2.5. RestListener<a class="headerlink" href="#restlistener" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>.</p>
 <p>Обеспечивает Rest интерфейс для приложений.</p>
 <blockquote>
 <div>Это приложение необходимо вам, если вы хотите добавить Rest интерфейс к вашему приложению.</div></blockquote>
@@ -306,7 +319,7 @@
 <h2>2.3. Сервисы<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
 <div class="section" id="topology">
 <span id="ref-topology-overview"></span><h3>2.3.1. Topology<a class="headerlink" href="#topology" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-linkdiscovery-overview"><span>LinkDiscovery</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-linkdiscovery-overview"><span class="std std-ref">LinkDiscovery</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
 <p><strong>ИМЯ</strong> : <em>topology</em>
 <strong>REST ИМЯ</strong> : <em>topology</em></p>
 <p>Представление топологии сети.</p>
@@ -317,7 +330,7 @@
 </div>
 <div class="section" id="simplelearingswitch">
 <span id="ref-simplelearningswitch-overview"></span><h3>2.3.2. SimpleLearingSwitch<a class="headerlink" href="#simplelearingswitch" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
 <p class="last">По умолчанию выключен.</p>
@@ -332,18 +345,22 @@
 </div>
 <div class="section" id="learningswitch">
 <span id="ref-learningswitch-overview"></span><h3>2.3.3. LearningSwitch<a class="headerlink" href="#learningswitch" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-topology-overview"><span>Topology</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-topology-overview"><span class="std std-ref">Topology</span></a>.</p>
 <p><strong>ИМЯ</strong> : learning-switch.</p>
 <p>Реализация усовершествованного L2Switch, который знает топологию сети и отправляет пакет по кратчайшему пути, он обеспечивает доставку пактов до адресатов.</p>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">Саму тополгию строит приложение <a class="reference internal" href="#ref-topology-overview"><span class="std std-ref">Topology</span></a>, а <code class="docutils literal"><span class="pre">LearningSwitch</span></code> пользуется ею.</p>
+</div>
 <p><em>LearningSwitch</em> работает в controller pipeline под именем <em>forwarding</em> и должен выполняться последним.</p>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
-<p class="last">SimpleLearningSwitch и LearningSwitch реализуют одну и ту же функциональность и не могут быть запущены одновременно на контроллере, поэтому их pipeline именя одинаковы.</p>
+<p class="last">SimpleLearningSwitch и LearningSwitch реализуют одну и ту же функциональность и не могут быть запущены одновременно на контроллере, поэтому их pipeline имена одинаковы.</p>
 </div>
 </div>
 <div class="section" id="switchstats">
 <span id="ref-switchstats-overview"></span><h3>2.3.4. SwitchStats<a class="headerlink" href="#switchstats" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
 <p>Собирает статистику с коммутаторов.</p>
 <p><strong>ИМЯ</strong> : <em>switch-stats</em>.</p>
 <p><strong>Настройки</strong> :</p>
@@ -355,14 +372,14 @@
 </div>
 <div class="section" id="arphandler">
 <span id="ref-arphandler-overview"></span><h3>2.3.5. ArpHandler<a class="headerlink" href="#arphandler" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-hostmanager-overview"><span>HostManager</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-hostmanager-overview"><span class="std std-ref">HostManager</span></a>.</p>
 <p><strong>ИМЯ</strong> : <em>arp-handler</em>.</p>
 <p><em>ArpHandler</em> обрабатывает arp-request, и если он знает mac-адрес хоста, отправляет arp-reply, если не знает &#8211; передает управление дальше по pipeline.</p>
 <p><em>ArpHandler</em> работает в controller pipeline под именем <em>arp-handler</em>.</p>
 </div>
 <div class="section" id="staticflowpusher">
 <span id="ref-staticflowpusher-overview"></span><h3>2.3.6. StaticFlowPusher<a class="headerlink" href="#staticflowpusher" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
 <p><strong>ИМЯ</strong> : <em>static-flow-pusher</em></p>
 <p>Статическая установка правил на коммутаторы.</p>
 <p>Возможна установка правил через REST интерфейс и из network-settings.json.</p>
@@ -386,24 +403,24 @@
 <blockquote>
 <div><blockquote>
 <div><p>В настройках можно описывать правила следующим образом:</p>
-<div class="highlight-python"><div class="highlight"><pre>&quot;flows&quot; : [
-  {
-    &quot;dpid&quot;: &lt;switch&gt;,
-    &quot;flows&quot; : [
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s2">&quot;flows&quot;</span> <span class="p">:</span> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s2">&quot;dpid&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">switch</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;flows&quot;</span> <span class="p">:</span> <span class="p">[</span>
 
-      ...
+      <span class="o">...</span>
 
-      {
-        &lt;set_of_match&gt;
-        &lt;set_of_action&gt;
-        &lt;set_of_config&gt;
-      }
+      <span class="p">{</span>
+        <span class="o">&lt;</span><span class="n">set_of_match</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="n">set_of_action</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="n">set_of_config</span><span class="o">&gt;</span>
+      <span class="p">}</span>
 
-      ...
+      <span class="o">...</span>
 
-    ]
-  }
-]
+    <span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">]</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -436,9 +453,27 @@
 </div>
 <div class="section" id="rest">
 <h2>2.4. REST<a class="headerlink" href="#rest" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="rest-2-0">
+<h3>2.4.1. REST 2.0<a class="headerlink" href="#rest-2-0" title="Ссылка на этот заголовок">¶</a></h3>
+<div class="section" id="restmultipart">
+<span id="ref-restmultipart-overview"></span><h4>2.4.1.1. RestMultipart<a class="headerlink" href="#restmultipart" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
+<p>Обработка запросов на получение. Сводятся к отправке на switch multipart request’ов.</p>
+<p>Подробнее см. в разделе <a class="reference internal" href="Rest.html#ref-rest2-0"><span class="std std-ref">REST 2.0: приложения RestMultipart и RestFlowMod</span></a></p>
+</div>
+<div class="section" id="restflowmod">
+<span id="ref-restflowmod-overview"></span><h4>2.4.1.2. RestFlowMod<a class="headerlink" href="#restflowmod" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
+<p>Обработка запросов на добавление, изменение, удаление. Сводятся к отправке на switch FlowMod-сообщений.
+Приемник rest-интерфейса <a class="reference internal" href="#ref-staticflowpusher-overview"><span class="std std-ref">StaticFlowPusher</span></a>.</p>
+<p>Подробнее см. в разделе <a class="reference internal" href="Rest.html#ref-rest2-0"><span class="std std-ref">REST 2.0: приложения RestMultipart и RestFlowMod</span></a></p>
+</div>
+</div>
+<div class="section" id="rest-1-0-deprecated">
+<h3>2.4.2. REST 1.0 (deprecated)<a class="headerlink" href="#rest-1-0-deprecated" title="Ссылка на этот заголовок">¶</a></h3>
 <div class="section" id="flowmanager">
-<span id="ref-flowmanager-overview"></span><h3>2.4.1. FlowManager<a class="headerlink" href="#flowmanager" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span>Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<span id="ref-flowmanager-overview"></span><h4>2.4.2.1. FlowManager<a class="headerlink" href="#flowmanager" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Dependes of : <a class="reference internal" href="#ref-controller-overview"><span class="std std-ref">Controller</span></a>, <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
 <p><strong>ИМЯ</strong> : flow-manager.</p>
 <p><strong>REST ИМЯ</strong> : flow.</p>
 <p>Исследует и удаляет потоки.</p>
@@ -452,8 +487,8 @@
 <p><em>FlowManager</em> поддерживает Модель событий.</p>
 </div>
 <div class="section" id="hostmanager">
-<span id="ref-hostmanager-overview"></span><h3>2.4.2. HostManager<a class="headerlink" href="#hostmanager" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<span id="ref-hostmanager-overview"></span><h4>2.4.2.2. HostManager<a class="headerlink" href="#hostmanager" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Dependes of : <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
 <p><strong>ИМЯ</strong> : <em>host-manager</em></p>
 <p>Исследует хосты.</p>
 <blockquote>
@@ -461,9 +496,10 @@
 <p>Работает в pipeline под именем <em>host-manager</em>, читает необходимые поля, и передает управление дальше.</p>
 </div>
 <div class="section" id="webuimanager">
-<span id="ref-webuimanager-overview"></span><h3>2.4.3. WebUIManager<a class="headerlink" href="#webuimanager" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Dependes of : <a class="reference internal" href="#ref-switchmanager-overview"><span>SwitchManager</span></a>, <a class="reference internal" href="#ref-hostmanager-overview"><span>HostManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span>RestListener</span></a>.</p>
+<span id="ref-webuimanager-overview"></span><h4>2.4.2.3. WebUIManager<a class="headerlink" href="#webuimanager" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Dependes of : <a class="reference internal" href="#ref-switchmanager-overview"><span class="std std-ref">SwitchManager</span></a>, <a class="reference internal" href="#ref-hostmanager-overview"><span class="std std-ref">HostManager</span></a>, <a class="reference internal" href="#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>.</p>
 <p>Обеспечивает Web интерфейс контроллера.</p>
+</div>
 </div>
 </div>
 </div>

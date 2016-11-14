@@ -246,11 +246,14 @@ Dependes of : :ref:`ref-controller-overview`, :ref:`ref-topology-overview`.
 
 Реализация усовершествованного L2Switch, который знает топологию сети и отправляет пакет по кратчайшему пути, он обеспечивает доставку пактов до адресатов.
 
+.. note::
+    Саму тополгию строит приложение :ref:`ref-topology-overview`, а ``LearningSwitch`` пользуется ею.
+
 *LearningSwitch* работает в controller pipeline под именем *forwarding* и должен выполняться последним.
 
 .. note::
 
-    SimpleLearningSwitch и LearningSwitch реализуют одну и ту же функциональность и не могут быть запущены одновременно на контроллере, поэтому их pipeline именя одинаковы.
+    SimpleLearningSwitch и LearningSwitch реализуют одну и ту же функциональность и не могут быть запущены одновременно на контроллере, поэтому их pipeline имена одинаковы.
 
 .. _ref-switchstats-overview:
 
@@ -360,10 +363,39 @@ REST интерфейс :
 REST
 ----
 
+REST 2.0
+~~~~~~~~
+
+.. _ref-restMultipart-overview:
+
+RestMultipart
++++++++++++++
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
+
+Обработка запросов на получение. Сводятся к отправке на switch multipart request’ов.
+
+Подробнее см. в разделе :ref:`ref-rest2.0`
+
+.. _ref-restFlowMod-overview:
+
+RestFlowMod
++++++++++++
+
+Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
+
+Обработка запросов на добавление, изменение, удаление. Сводятся к отправке на switch FlowMod-сообщений.
+Приемник rest-интерфейса :ref:`StaticFlowPusher <ref-staticflowpusher-overview>`.
+
+Подробнее см. в разделе :ref:`ref-rest2.0`
+
+REST 1.0 (deprecated)
+~~~~~~~~~~~~~~~~~~~~~
+
 .. _ref-flowmanager-overview:
 
 FlowManager
-~~~~~~~~~~~
++++++++++++
 
 Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
 
@@ -386,7 +418,7 @@ Dependes of : :ref:`ref-controller-overview`, :ref:`ref-switchmanager-overview`,
 .. _ref-hostmanager-overview:
 
 HostManager
-~~~~~~~~~~~
++++++++++++
 
 Dependes of : :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview`.
 
@@ -401,7 +433,7 @@ Dependes of : :ref:`ref-switchmanager-overview`, :ref:`ref-restlistener-overview
 .. _ref-webuimanager-overview:
 
 WebUIManager
-~~~~~~~~~~~~
+++++++++++++
 
 Dependes of : :ref:`ref-switchmanager-overview`, :ref:`ref-hostmanager-overview`, :ref:`ref-restlistener-overview`.
 

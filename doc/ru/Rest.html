@@ -1,0 +1,541 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>6. REST &mdash; Документация RUNOS 0.6</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Алфавитный указатель"
+              href="genindex.html"/>
+        <link rel="search" title="Поиск" href="search.html"/>
+    <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
+        <link rel="next" title="7. Web interface" href="WebInterface.html"/>
+        <link rel="prev" title="5. Работа с Controller" href="WorkingWithController.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">6. REST</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">6.1. Введение</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-runos-rest">6.2. Внешний API RuNOS. Использование REST-интерфейса.</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rest-2-0-restmultipart-restflowmod">6.2.1. REST 2.0: приложения RestMultipart и RestFlowMod</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id2">6.2.1.1. Введение</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ref-rest2-0-architecture">6.2.1.2. Арихитектура сервиса</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#postman-collection">6.2.1.3. Postman collection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ref-rest2-0-details">6.2.1.4. Особенности использования</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#api-runos-rest-rest">6.3. Внутренний API RuNOS -&gt; поддержка REST. Реализация REST-интерфейса</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rest-runos">6.3.1. Концепция REST-интерфейса в RuNOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ref-existing">6.3.2. Пример rest-запроса к приложению</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ref-add-rest">6.3.3. Добавление поддержки REST в Ваше приложение</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#event-model">6.3.4. Event model</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="WebInterface.html">7. Web interface</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">RUNOS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>6. REST</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/Rest.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="rest">
+<span id="ref-rest"></span><h1>6. REST<a class="headerlink" href="#rest" title="Ссылка на этот заголовок">¶</a></h1>
+<div class="section" id="id1">
+<h2>6.1. Введение<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Для взаимодействия с приложениями в runtime, RuNOS предлагает пользователям воспользоваться REST API. Многие дефолтные приложения уже имеют свой REST API. Так же Вы можете развить его под Ваши нужды, либо с нуля добавить поддрежку rest в Ваше приложение.</p>
+<p>Наш разговор о REST в RuNOS будет состоять из двух частей:</p>
+<ol class="arabic simple">
+<li><a class="reference internal" href="#ref-rest-outer"><span class="std std-ref">внешний</span></a> (а точнее &#8211; north-bound) API RuNOS, <em>состоящий из rest-интерфейсов приложений</em>.</li>
+<li><a class="reference internal" href="#ref-rest-inner"><span class="std std-ref">внутренний</span></a> API RuNOS, используемый <em>при реализации rest-интерфейса приложения</em>,</li>
+</ol>
+</div>
+<div class="section" id="api-runos-rest">
+<span id="ref-rest-outer"></span><h2>6.2. Внешний API RuNOS. Использование REST-интерфейса.<a class="headerlink" href="#api-runos-rest" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Доступ к внешнему API RuNOS расположен по адресу <a class="reference external" href="http://127.0.0.1:8000/api/">http://127.0.0.1:8000/api/</a> и реализован как REST-интрефейс. Он формируется из совокупности REST-интерфейсов отдельных приложений. Таким образом, запросы следует отправлять по адресам вида <a class="reference external" href="http://127.0.0.1:8000/api/my-app/query/">http://127.0.0.1:8000/api/my-app/query/</a>, где</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">127.0.0.1:8000</span></code> &#8211; путь к TCP-серверу контроллера,</li>
+<li><code class="docutils literal"><span class="pre">my-app</span></code> &#8211; rest-name приложения,</li>
+<li><code class="docutils literal"><span class="pre">query</span></code> &#8211; содержательная часть запроса (передается в приложение)</li>
+</ul>
+</div></blockquote>
+<p>Для изуечения конкретных REST-запросов следует перейти документацию по интересующему Вас приложению. Например, <a class="reference internal" href="ApplicationOverView.html#ref-restmultipart-overview"><span class="std std-ref">RestMultipart</span></a>.</p>
+<div class="section" id="rest-2-0-restmultipart-restflowmod">
+<span id="ref-rest2-0"></span><h3>6.2.1. REST 2.0: приложения RestMultipart и RestFlowMod<a class="headerlink" href="#rest-2-0-restmultipart-restflowmod" title="Ссылка на этот заголовок">¶</a></h3>
+<div class="section" id="id2">
+<h4>6.2.1.1. Введение<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h4>
+<p>Новый, написанный с нуля rest-интерфейс &#8211; основное нововведение RuNOS версии 0.6.1.
+Новый rest отвечает следующим требованиям:</p>
+<ul>
+<li><p class="first">масштабируемость: добавление поддрежки новых полей или методов происходит в несколько строк кода и не перекрывает, а лишь дополняет уже реализованный функцианал.</p>
+</li>
+<li><p class="first">семантичность: если Вы хотите создать новый поток (flow entry), то Вам нужно выполнить POST-запрос с добавычным адресом <code class="docutils literal"><span class="pre">flow</span></code>, получить информацию по существующему &#8211; GET по тому же адресу. И так далее.</p>
+</li>
+<li><p class="first">user-friendly</p>
+<blockquote>
+<div><ul class="simple">
+<li>Вам не требуется читать ни одной строчки этого man&#8217;а, чтобы начать пользоваться новым rest-интерфейсом! Мы приготовили для Вас структурированную и прокомментированную <a class="reference internal" href="#ref-rest2-0-postman"><span class="std std-ref">коллекцию</span></a> REST-запросов к контроллеру для приложения <a class="reference external" href="https://www.getpostman.com/">Postman</a>. Надеемся, сторонники GUI оценят!</li>
+<li>Вы уже знакомы с REST-интерфейсом контроллера Ryu? Может, у Ваc уже есть скрипты для работы с ним? Наш rest полностью совместим с ним на уровне Postman-коллекции, а вашим скриптам потребуется лишь незначительная доработка. За подробностями загляните в раздел <a class="reference internal" href="#ref-rest2-0-details"><span class="std std-ref">особенности использования</span></a>.</li>
+<li>В то же время, Вы имеете дело с полноценным rest-интерфейсом: вооружитесь данной документацией и исследуйте его с <code class="docutils literal"><span class="pre">cURL</span></code>! Выбор интерфейса для работы с API всегда остается за Вами!</li>
+</ul>
+</div></blockquote>
+</li>
+<li><dl class="first docutils">
+<dt>локализованность: весть новый REST располанается в 2 модулях Runos: <a class="reference internal" href="ApplicationOverView.html#ref-restmultipart-overview"><span class="std std-ref">RestMultipart</span></a> и <a class="reference internal" href="ApplicationOverView.html#ref-restflowmod-overview"><span class="std std-ref">RestFlowMod</span></a>. Вам больше не нужно искать нужный метод по десятку классов.</dt>
+<dd><div class="first last admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">Rest версии 0.6.1 обратно совместим с Rest&#8217;ом версии 0.6. Большинство deprecated-обработчиков расположено по тем же путям, что и раньше.</p>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="ref-rest2-0-architecture">
+<span id="id3"></span><h4>6.2.1.2. Арихитектура сервиса<a class="headerlink" href="#ref-rest2-0-architecture" title="Ссылка на этот заголовок">¶</a></h4>
+<img alt="_images/rest2.0:ServiceArchitecture.png" src="_images/rest2.0:ServiceArchitecture.png" />
+<p>Пути для обращения к API формируется следующим образом:</p>
+<ul>
+<li><p class="first"><code class="docutils literal"><span class="pre">http://{{host}}/api/&lt;app_name&gt;/&lt;parameters&gt;</span></code></p>
+</li>
+<li><p class="first">Примеры:</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET: <code class="docutils literal"><span class="pre">http://{{host}}/api/rest-multipart/port/{{dpid}}/all</span></code></li>
+<li>GET, POST: <code class="docutils literal"><span class="pre">http://{{host}}/api/rest-multipart/flow/{{dpid}}</span></code></li>
+<li>POST: <code class="docutils literal"><span class="pre">http://{{host}}/api/rest-flowmod/flowentry/</span></code></li>
+<li>DELETE: <code class="docutils literal"><span class="pre">http://{{host}}/api/rest-flowmod/flowentry/clear/{{dpid}}</span></code></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>Записи вида <code class="docutils literal"><span class="pre">{{variable}}</span></code> &#8211; синтаксис обозначения переменных в Postman. Чтобы сформировать html-запрос, подставьте на их места конкретные значения. Примеры этих значений Вы найдете в нашей <a class="reference internal" href="#ref-rest2-0-postman"><span class="std std-ref">коллекции запросов</span></a>.</p>
+</div>
+<div class="section" id="postman-collection">
+<span id="ref-rest2-0-postman"></span><h4>6.2.1.3. Postman collection<a class="headerlink" href="#postman-collection" title="Ссылка на этот заголовок">¶</a></h4>
+<img alt="_images/rest2.0:PostmanCollectionOverview.png" src="_images/rest2.0:PostmanCollectionOverview.png" />
+<p>Postman collection:</p>
+<ul class="simple">
+<li>link: <a class="reference external" href="https://www.getpostman.com/collections/34a4933f146bee7383d9">https://www.getpostman.com/collections/34a4933f146bee7383d9</a></li>
+<li>file: <a class="reference download internal" href="_downloads/RuNOS_REST_2.0.postman_collection.json" download=""><code class="xref download docutils literal"><span class="pre">RuNOS_REST_2.0.postman_collection.json</span></code></a></li>
+</ul>
+<p>Environment: <a class="reference download internal" href="_downloads/RuNOS_REST_2.0.postman_environment.json" download=""><code class="xref download docutils literal"><span class="pre">RuNOS_REST_2.0.postman_environment.json</span></code></a></p>
+</div>
+<div class="section" id="ref-rest2-0-details">
+<span id="id4"></span><h4>6.2.1.4. Особенности использования<a class="headerlink" href="#ref-rest2-0-details" title="Ссылка на этот заголовок">¶</a></h4>
+<ul>
+<li><p class="first">Все без исключения значения в json-описания тела POST-запроса должны быть представлены как строки. Это сделано, чтобы обеспечить (где того требует стандарт OpenFlow1.3) поддержку чисел, превышающих std::numeric_limits&lt;int&gt;::max().:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;dpid&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Ниже приведен список поддерживаемых запросов. За подробностями обращайтеся к Postman-коллекции.</p>
+<blockquote>
+<div><ul>
+<li><p class="first">port</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET: <code class="docutils literal"><span class="pre">/api/rest-multipart/port/{{dpid}}/all</span></code> &#8211; Get ports stats</li>
+<li>GET: <code class="docutils literal"><span class="pre">/api/rest-multipart/port-desc/{{dpid}}</span></code> &#8211; Get ports description</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">REST 1.0 (selected elements)</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET: <code class="docutils literal"><span class="pre">/apps</span></code> &#8211; Get a list of all running REST-enabled apps</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">dpid</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET: <code class="docutils literal"><span class="pre">/api/rest-multipart/switch/all</span></code> &#8211; Get all switches</li>
+<li>GET: <code class="docutils literal"><span class="pre">/rest-multipart/switch/{{dpid}}</span></code> &#8211; Get the desc stats</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">flow</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET: <code class="docutils literal"><span class="pre">/api/rest-multipart/flow/{{dpid}}</span></code> &#8211; Get all flows stats</li>
+<li>POST: <code class="docutils literal"><span class="pre">/api/rest-multipart/flow/{{dpid}}</span></code> &#8211; Get flows stats filtered by fields</li>
+<li>POST: <code class="docutils literal"><span class="pre">/api/rest-flowmod/flowentry/</span></code> &#8211; Add a flow entry</li>
+<li>GET: <code class="docutils literal"><span class="pre">/api/rest-multipart/aggregate-flow/{{dpid}}</span></code> &#8211; Get aggregate flows stats</li>
+<li>POST: <code class="docutils literal"><span class="pre">/api/rest-multipart/aggregate-flow/{{dpid}}</span></code> &#8211; [no OvS?] Get aggregate flows stats filtered by fields</li>
+<li>DELETE: <code class="docutils literal"><span class="pre">api/rest-flowmod/flowentry/clear/{{dpid}}</span></code> &#8211; Delete all flow entries</li>
+<li>POST: <code class="docutils literal"><span class="pre">/api/rest-flowmod/flowentry/delete_strict</span></code> &#8211; Delete flow entry strictly</li>
+<li>POST: <code class="docutils literal"><span class="pre">/api/rest-flowmod/flowentry/delete</span></code> &#8211; Delete all matching flow entries</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">queue</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET: <code class="docutils literal"><span class="pre">/api/rest-multipart/queue/{{dpid}}/{{port_id}}/{{queue_id}}</span></code> &#8211; [no OvS] Get queues stats</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">table</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET: <code class="docutils literal"><span class="pre">/api/rest-multipart/table/{{dpid}}</span></code> &#8211; Get table stats</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="api-runos-rest-rest">
+<span id="ref-rest-inner"></span><h2>6.3. Внутренний API RuNOS -&gt; поддержка REST. Реализация REST-интерфейса<a class="headerlink" href="#api-runos-rest-rest" title="Ссылка на этот заголовок">¶</a></h2>
+<p>В данном разделе мы рассмотрим:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#ref-concept"><span class="std std-ref">концепцию</span></a> REST-интерфейса в RuNOS,</li>
+<li><a class="reference internal" href="#ref-existing"><span class="std std-ref">пример</span></a> rest-запроса к приложению и процесс его обработки,</li>
+<li><a class="reference internal" href="#ref-add-rest"><span class="std std-ref">добавление</span></a>  REST API в Ваше приложение (вгутренний API контроллера по поддержке REST в приложениях),</li>
+<li>реализованную в контроллере <a class="reference internal" href="#ref-event-model"><span class="std std-ref">event-model</span></a>.</li>
+</ul>
+<div class="section" id="rest-runos">
+<span id="ref-concept"></span><h3>6.3.1. Концепция REST-интерфейса в RuNOS<a class="headerlink" href="#rest-runos" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Предположим, Вы хотите написать приложение, которое будет конструировать новые потоки (flow entries) на подключенных к контроллеру switch&#8217;ах. Далее будум называть его <code class="docutils literal"><span class="pre">MyApp</span></code>. В таком случае у Вас 2 пути:</p>
+<ul>
+<li><p class="first">Получать параметры на этапе запуска контроллера (и далее работать автономно). Тогда Вашему приложению нужна лишь своя секция в конфигурационном файле <code class="docutils literal"><span class="pre">network-settings.json</span></code>.</p>
+</li>
+<li><p class="first">Получать параметры в runtime. В этом случает RuNOS предлагает Вам 2 варианта интерфейсов:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><a class="reference internal" href="WebInterface.html#ref-web-interface"><span class="std std-ref">Web UI</span></a></p>
+</li>
+<li><dl class="first docutils">
+<dt>REST API</dt>
+<dd><p class="first last">Пользователь посылает Вам простой html-запрос (GET, POST, PUT, DELETE), а Вам остается лишь среагировать на него.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>Предположим, Вы выбрали rest.</p>
+</div>
+<div class="section" id="ref-existing">
+<span id="id5"></span><h3>6.3.2. Пример rest-запроса к приложению<a class="headerlink" href="#ref-existing" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Рассмотрим последовательность действий, отвечающих использованию rest-интерфейса. Мы начинем с отправки пользователем rest-запроса и закончим отправкой контроллером ответа на него.</p>
+<ul>
+<li><p class="first">Пользователь составляет запрос:</p>
+<blockquote>
+<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="p">:</span><span class="mi">8000</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">my</span><span class="o">-</span><span class="n">app</span><span class="o">/</span><span class="n">flowentry</span><span class="o">/</span> <span class="o">-</span><span class="n">XPOST</span> <span class="o">-</span><span class="n">d</span><span class="s1">&#39;{</span>
+      <span class="s2">&quot;eth_src&quot;</span><span class="p">:</span> <span class="s2">&quot;11:11:11:11:11:12&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;ip_src&quot;</span><span class="p">:</span> <span class="s2">&quot;192.168.0.1&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;modify_eth_src&quot;</span><span class="p">:</span> <span class="s2">&quot;22:22:22:22:22:22&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;out_port&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span><span class="s1">&#39;</span>
+</pre></div>
+</div>
+<p>Здесь:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><code class="docutils literal"><span class="pre">127.0.0.1:8000</span></code> &#8211; путь к TCP-серверу контроллера,</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">api</span></code> &#8211; пользователь обращается к REST API контроллера,</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">my-app</span></code> &#8211; rest-name Вашего приложения (см. <a class="reference internal" href="#ref-add-rest"><span class="std std-ref">Добавление поддержки REST в Ваше приложение</span></a>),</p>
+</li>
+<li><p class="first">следом за <code class="docutils literal"><span class="pre">my-app</span></code> может идти лубой путь, который Вы обозначите как допустимый:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">MyApp</span><span class="p">::</span><span class="n">init</span><span class="p">::</span><span class="n">acceptPath</span><span class="p">(</span><span class="n">Method</span><span class="p">::</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;flowentry&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">На месте <code class="docutils literal"><span class="pre">flowentry</span></code> может стоять любое корректное регулярное выражение. Так же метод <code class="docutils literal"><span class="pre">acceptPath</span></code> может вызываться несколько раз, тем самым задавая множество обрабатываемых путей.</p>
+</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</li>
+<li><p class="first">Сформированный запрос поступает на TCP server, управляемый приложением <a class="reference internal" href="ApplicationOverView.html#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>. RestListener проверяет корректность запроса и, в случае успеха, распарсит запрос на параметры и отправит его в соответствующее приложение.</p>
+<blockquote>
+<div><div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">Для этого Вам нужно <a class="reference internal" href="#ref-register"><span class="std std-ref">зарегистрировать</span></a> Ваше приложение.</p>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Далее поток управления переходит к методу <code class="docutils literal"><span class="pre">handlePost``приложения</span> <span class="pre">``MyApp</span></code>.</p>
+<blockquote>
+<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">json11</span><span class="p">::</span><span class="n">Json</span> <span class="n">MyApp</span><span class="p">::</span><span class="n">handlePOST</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">params</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">body</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ul>
+<p>Здесь:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><code class="docutils literal"><span class="pre">params</span></code> &#8211; это вектор строк, получаемый парсингом пути html-запроса,</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">body</span></code> &#8211; строка, содержащая в себе тело POST-запроса (&#8220;&#8221; для GET, DELETE). Вы можете распарсить ее в json:</p>
+<blockquote>
+<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">json11</span><span class="p">::</span><span class="n">Json</span><span class="p">::</span><span class="nb">object</span> <span class="n">req</span> <span class="o">=</span> <span class="n">json11</span><span class="p">::</span><span class="n">Json</span><span class="p">::</span><span class="n">parse</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">forErr</span><span class="p">)</span><span class="o">.</span><span class="n">object_items</span><span class="p">();</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Ваше приложение выполняет необходимые манипуляции и возвращет ответ в формате json,</p>
+</li>
+<li><p class="first">RestListener,</p>
+</li>
+<li><p class="first">пользователь получает ответ.</p>
+</li>
+</ul>
+</div></blockquote>
+<img alt="_images/postmanRequestResponse.png" src="_images/postmanRequestResponse.png" />
+</div>
+<div class="section" id="ref-add-rest">
+<span id="id6"></span><h3>6.3.3. Добавление поддержки REST в Ваше приложение<a class="headerlink" href="#ref-add-rest" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Если говорить коротко, то в Runos &#8220;добавить в приложение поддержку rest&#8221; значит добавить в список родительских классов Вашего приложения класс RestHandler и реализовать его виртуальные методы. Далее мы рассмотрим этот процесс подробно.</p>
+<ul>
+<li><p class="first">Добавьте REST в ваше приложение:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Rest.hh&quot;</span>
+<span class="c1">#include &quot;AppObject.hh&quot;</span>
+<span class="c1">#include &lt;string&gt;</span>
+
+<span class="k">class</span> <span class="nc">MyApp</span> <span class="p">:</span> <span class="n">public</span> <span class="n">Application</span><span class="p">,</span> <span class="n">RestHandler</span> <span class="p">{</span>
+    <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">restName</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;my-app&quot;</span><span class="p">;</span> <span class="p">}</span>
+    <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">displayedName</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;My beautiful application&quot;</span><span class="p">;</span> <span class="p">}</span>  <span class="o">//</span> <span class="n">web</span> <span class="n">name</span>
+    <span class="nb">bool</span> <span class="n">eventable</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="n">false</span><span class="p">;</span> <span class="p">}</span>
+
+    <span class="n">json11</span><span class="p">::</span><span class="n">Json</span> <span class="n">handleGET</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">params</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">body</span><span class="p">)</span> <span class="n">override</span><span class="p">;</span>
+    <span class="n">json11</span><span class="p">::</span><span class="n">Json</span> <span class="n">handlePOST</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">params</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">body</span><span class="p">)</span> <span class="n">override</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">also</span> <span class="n">handlePUT</span> <span class="ow">and</span> <span class="n">handleDELETE</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<ul id="ref-register">
+<li><p class="first">зарегистрируйте rest-handler в методе <code class="docutils literal"><span class="pre">MyApp::init</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">RestListener</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">registerRestHandler</span><span class="p">(</span><span class="n">this</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">определите множество URL, обрабатываемых Вашим приложением в методе <code class="docutils literal"><span class="pre">MyApp::init</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">acceptPath</span><span class="p">(</span><span class="n">Method</span><span class="p">::</span><span class="n">GET</span><span class="p">,</span> <span class="s2">&quot;switches/[0-9]+&quot;</span><span class="p">);</span>  <span class="o">//</span> <span class="n">handle</span> <span class="n">GET</span> <span class="n">request</span> <span class="k">with</span> <span class="n">path</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">my</span><span class="o">-</span><span class="n">app</span><span class="o">/</span><span class="n">switches</span><span class="o">/</span>
+<span class="n">acceptPath</span><span class="p">(</span><span class="n">Method</span><span class="p">::</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;[A-Fa-f0-9:-]&quot;</span><span class="p">);</span>  <span class="o">//</span> <span class="n">handle</span> <span class="n">POST</span> <span class="n">request</span> <span class="k">with</span> <span class="n">path</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">my</span><span class="o">-</span><span class="n">app</span><span class="o">/</span><span class="n">mac</span><span class="o">/</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">в методе <code class="docutils literal"><span class="pre">MyApp::handleGET</span></code> происходит вся существенная обраьотка входящих HTTP-GET запросов. Логику работы Вашего приложения с rest-запросам (GET) Вы определяете именно в нем.</p>
+</li>
+<li><p class="first">Готовый пример реализации rest-интерфейса Вы можете посмотреть, например, в классе <code class="docutils literal"><span class="pre">StaticFlowPusher</span></code> или в <code class="docutils literal"><span class="pre">RestMultipart</span></code> / <code class="docutils literal"><span class="pre">RestFlowMod</span></code>.</p>
+</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Примечание</p>
+<p class="last">Помочь в реализации Вам могут фукции и макросы из модуля <a class="reference internal" href="Components.html#ref-reststringprocessing-class"><span class="std std-ref">RestStringProcessing</span></a>.</p>
+</div>
+</div>
+<div class="section" id="event-model">
+<span id="ref-event-model"></span><h3>6.3.4. Event model<a class="headerlink" href="#event-model" title="Ссылка на этот заголовок">¶</a></h3>
+<p>В RuNOS реализована т.н. <code class="docutils literal"><span class="pre">event</span> <span class="pre">model</span></code>. Она позволяет получить отчет о действиях приложений за определенный период времени.
+Например, <code class="docutils literal"><span class="pre">curl</span> <span class="pre">{{host}}/timeout/switch-manager/0/</span></code> выдаст лог эвентов, произошедших в приложении <a class="reference internal" href="ApplicationOverView.html#ref-switchmanager-overview"><span class="std std-ref">Switch Manager</span></a> с момента запуска (0).</p>
+<p>Вы можете добавить поддержку event model в свое приложение, назначив метод <code class="docutils literal"><span class="pre">eventable</span></code> возвращать <code class="docutils literal"><span class="pre">true</span></code> (как не сложно догадаться, <code class="docutils literal"><span class="pre">false</span></code> будет означать отсутствие поддержки event-model):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">bool</span> <span class="n">eventable</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="n">true</span><span class="p">;</span> <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="WebInterface.html" class="btn btn-neutral float-right" title="7. Web interface" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="WorkingWithController.html" class="btn btn-neutral" title="5. Работа с Controller" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, ARCCN.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/translations.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

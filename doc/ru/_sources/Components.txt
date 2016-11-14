@@ -42,7 +42,7 @@
      Разбор пакетов протоколов семейтсва TCP/IP.
 
 Приложения
-------------
+----------
 
 * ArpHandler.hh
       :ref:`ref-arphandler-overview`.
@@ -83,6 +83,50 @@
 * WebUIManager.hh
       :ref:`ref-webuimanager-overview`.
 
+.. _ref-restMultipart-class:
+
+* RestMultipart.hh
+    :ref:`ref-restMultipart-overview`.
+
+    That module allows REST users to get switch statistics that can be delivered by MultipleRequest messages.
+    Modify actions are implemented in :ref:`RestFlowMod<ref-restFlowMod-class>` and :ref:`StaticFlowPusher<ref-staticflowpusher-overview>` modules.
+
+    Handling of each GET consists of the following steps:
+
+    * switching in handleGET method
+    * calling ``sendGetRequest(corresponding type, <params>)`` and turning in event loop
+    * waiting for the response from a switch and it's handling
+
+        * handler (``onResponse``) updated variable that corresponds to the reply type(of13::MultipartReplyFlow replyFlow, for example)
+        * handler wakes up ``handleGET`` method
+    * responding to the user
+
+.. _ref-restFlowMod-class:
+
+* RestFlowMod.hh
+    :ref:`ref-restFlowMod-overview`.
+
+    REST interface for flow enties construction and deletion of existing ones.
+
+    Allows to add new flow entries to a switch (to any already existing table excluding Maple's one): You can use table numbers in range of [0, ctrl->handler_table() - 1].
+    POST request:
+    ::
+
+        POST /api/rest-flowmod/flow/<switch_id>
+        body of the request: JSON description of a new flow
+
+    Imlemantation logic is the same as in RestMultipart.
+
+    If you want to add new handler, you need to go trouth the following steps:
+
+    * add new path to be handeled: `init`: `acceptPath(Method::POST, "flowentry");`
+    * implement your logic in a "case" of handlePOST (GET, DELETE, etc)
+
+.. _ref-restStringProcessing-class:
+
+* RestStringProcessing.hh
+
+    В данном модуле содержатся функции и макросы, призванные автоматизировать рутинные действия при работе с json11::Json и строками. Используется в :ref:`ref-restMultipart-class` и :ref:`ref-restFlowMod-class`.
 
 Инструменты
 -----------

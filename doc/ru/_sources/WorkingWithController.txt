@@ -145,31 +145,44 @@ OFTransaction
 
 .. cpp:function:: uint8_t Controller::reserveTable()
 
-    Контроллер выделит вам таблицу потоков, в которую вы можете добавлять свои правила
+    Контроллер выделит вам таблицу потоков, в которую вы можете добавлять свои правила. Таблицы выделяются в стадии иниуиализации контроллера, и их число не может быть изменено далее в runtime.
 
-.. TODO описать невозможность выбрать номер таблицы
-
-.. Danger::
+    .. Danger::
 
     **RUNOS** не ограничивает вас в добавлении правил в другие таблицы потоков.
     Однако это не гарантирует корректную работу вашего и других сервисов.
 
-Пример::
+    .. note::
+        Отдельно стоит упомянуть собственную таблицу Maple: для Вас она read-only. А если Вам все-таки удастся ее модифицировать(DELETE OFPTT_ALL, например), Maple восстанет состояние своей таблицы по первому же PacketIn. Так что не советуем ее модифицировать.
 
-  void ExampleFireWall::init(Loader* loader, const Config&)
-  {
-    Controller* ctrl = Controller::get(loader);
-    uint8_t table_no = ctrl->reservTable();
-    QObject::connect(ctrl, Controller::SwitchUp,
-        [table_no](SwitchConnectionPtr conn, of13::FeatireReply)
-        {
-          of13::FlowMod fm;
-          fm.table_id(table_no);
-          fm.match(new EthSrc("ff:ff:ff:ff:ff:ff"));
-          conn->send(fm);
-        });
-  }
+    В дефолтном запуске RuNOS 0.6.1 инстанциирует на switch'е следующую конфигурацию таблиц:
+    ::
 
+        $ sudo ovs-ofctl -O OpenFlow13 dump-flows s1
+        OFPST_FLOW reply (OF1.3) (xid=0x2):
+         cookie=0x0, duration=394.247s, table=0, n_packets=0, n_bytes=0, send_flow_rem check_overlap priority=0 actions=goto_table:1
+         cookie=0x0, duration=394.247s, table=1, n_packets=0, n_bytes=0, send_flow_rem check_overlap priority=0 actions=goto_table:2
+         cookie=0x0, duration=394.247s, table=2, n_packets=0, n_bytes=0, send_flow_rem check_overlap priority=0 actions=CONTROLLER:0
+
+    .. note::
+
+        Для работы контроллера в минимальной конфигурации достаточно одной таблицы. Она будет управляться :ref:`ядром (`Maple`) <refMaple>` контроллера и все ассинхронно созданные в ней правила будут вскоре удаляться. Если создано более одной таблицы, Maple будет управлять таблицей с наибольшим номером.
+
+    Пример::
+
+      void ExampleFireWall::init(Loader* loader, const Config&)
+      {
+        Controller* ctrl = Controller::get(loader);
+        uint8_t table_no = ctrl->reservTable();
+        QObject::connect(ctrl, Controller::SwitchUp,
+            [table_no](SwitchConnectionPtr conn, of13::FeatireReply)
+            {
+              of13::FlowMod fm;
+              fm.table_id(table_no);
+              fm.match(new EthSrc("ff:ff:ff:ff:ff:ff"));
+              conn->send(fm);
+            });
+      }
 .. _ref-packetmisshandler:
 
 PacketMissHandler

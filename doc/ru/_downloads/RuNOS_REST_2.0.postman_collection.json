@@ -1,0 +1,287 @@
+{
+	"variables": [],
+	"info": {
+		"name": "RuNOS REST 2.0 (relese)",
+		"_postman_id": "45afb17a-fb72-d018-df11-f885819607f4",
+		"description": "A collection of queries for RuNOS (github version) REST API\n\n*** get ***\nThese REST requests allow you to GET stats and other information about\n - switch\n - flows\n - tables\n - ports\n - queues\nGroup and meter support will be added in the next release. \nIn some cases you can get summarized statistics.\n\n*** add, modify, delete ***\nYou can add new flows to a selected switch or delete existing ones. And more!\n\nStructure of a typical request: \nhttp://{{host}}/api/<app name>/<parameters>",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Port",
+			"description": "",
+			"item": [
+				{
+					"name": "Get ports stats",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/port/{{dpid}}/all",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": "/all or {{port_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Get ports description",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/port-desc/{{dpid}}",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "REST 1.0 (selected elements)",
+			"description": "",
+			"item": [
+				{
+					"name": "Get a list of all running REST-enabled apps",
+					"request": {
+						"url": "http://{{host}}/apps",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "dpid",
+			"description": "",
+			"item": [
+				{
+					"name": "Get all switches",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/switch/all",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get the desc stats",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/switch/{{dpid}}",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "flow",
+			"description": "",
+			"item": [
+				{
+					"name": "Get all flows stats",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/flow/{{dpid}}",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get flows stats filtered by fields",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/flow/{{dpid}}",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"table_id\": \"1\",\n    \"match\":{\n        \"eth_src\": \"00:00:00:00:00:01\"\n    }\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Add a flow entry",
+					"request": {
+						"url": "http://{{host}}/api/rest-flowmod/flowentry/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dpid\": \"1\",\n    \"cookie\": \"1\",\n    \"cookie_mask\": \"0\",\n    \"table_id\": \"   0\",\n    \"idle_timeout\": \"10\",\n    \"hard_timeout\": \"10\",\n    \"priority\": \"1\",\n    \"flags\": \"0\",\n    \"buffer_id\": \"0xffffffff\",\n    \"match\":{\n        \"eth_src\": \"00:00:00:00:11:11\",\n        \"eth_type\": \"0x0800\",\n        \"ip_proto\": \"0x06\"\n    },\n    \"actions\":[\n        {\n            \"type\": \"SET_FIELD\",\n            \"field\": \"ipv4_src\",\n            \"value\": \"192.168.0.1\"\n        }\n    ]\n}"
+						},
+						"description": "body of request: JSON description of a new flow"
+					},
+					"response": []
+				},
+				{
+					"name": "Get aggregate flows stats",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/aggregate-flow/{{dpid}}",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "[no OvS?] Get aggregate flows stats filtered by fields",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/aggregate-flow/{{dpid}}",
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"table_id\": \"100500\"\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete all flow entries",
+					"request": {
+						"url": "http://{{host}}/api/rest-flowmod/flowentry/clear/{{dpid}}",
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "Initialize switch's flow table"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete flow entry strictly",
+					"request": {
+						"url": "http://{{host}}/api/rest-flowmod/flowentry/delete_strict",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dpid\": \"1\",\n    \"cookie\": \"1\",\n    \"cookie_mask\": \"0\",\n    \"table_id\": \"   0\",\n    \"idle_timeout\": \"10\",\n    \"hard_timeout\": \"10\",\n    \"priority\": \"1\",\n    \"flags\": \"0\",\n    \"buffer_id\": \"0xffffffff\",\n    \"match\":{\n        \"eth_src\": \"00:00:00:00:11:11\"\n    }\n}"
+						},
+						"description": "Delete all matching flows (strictly)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete all matching flow entries",
+					"request": {
+						"url": "http://{{host}}/api/rest-flowmod/flowentry/delete",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dpid\": \"1\",\n    \"cookie\": \"1\",\n    \"cookie_mask\": \"0\",\n    \"table_id\": \"   0\",\n    \"idle_timeout\": \"10\",\n    \"hard_timeout\": \"10\",\n    \"priority\": \"1\",\n    \"flags\": \"0\",\n    \"buffer_id\": \"0xffffffff\",\n    \"match\":{\n        \"eth_src\": \"00:00:00:00:11:11\",\n        \"eth_type\": \"0x0800\"\n    }\n}"
+						},
+						"description": "Delete all matching flow entries"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "queue",
+			"description": "",
+			"item": [
+				{
+					"name": "[no OvS] Get queues stats",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/queue/{{dpid}}/{{port_id}}/{{queue_id}}",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "table",
+			"description": "Get a set of stats or features for all tables on the selected datapath.",
+			"item": [
+				{
+					"name": "Get table stats",
+					"request": {
+						"url": "http://{{host}}/api/rest-multipart/table/{{dpid}}",
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

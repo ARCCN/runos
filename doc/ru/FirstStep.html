@@ -30,6 +30,9 @@
   
 
   
+        <link rel="index" title="Алфавитный указатель"
+              href="genindex.html"/>
+        <link rel="search" title="Поиск" href="search.html"/>
     <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
         <link rel="next" title="5. Работа с Controller" href="WorkingWithController.html"/>
         <link rel="prev" title="3. Компоненты RUNOS" href="Components.html"/> 
@@ -85,7 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">1. Введение</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">4. Первые шаги в написании собственного приложения</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">4. Первые шаги в написании собственного приложения</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id2">4.1. Введиение</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#application">4.2. класс Application</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id3">4.3. Инициализация</a></li>
@@ -96,6 +99,8 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Rest.html">6. REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WebInterface.html">7. Web interface</a></li>
 </ul>
 
             
@@ -118,7 +123,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -155,7 +160,7 @@
 <p>Приложение в RUNOS это класс, который наследован от абстрактного класса Application, который объявлен в файле Application.hh:</p>
 <dl class="class">
 <dt id="_CPPv211Application">
-<span id="Application"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Application</code> : <em class="property">public</em> <code class="descclassname"></code><code class="descname">QObject</code><a class="headerlink" href="#_CPPv211Application" title="Ссылка на это определение">¶</a></dt>
+<span id="Application"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Application</code> : <em class="property">public</em> QObject<a class="headerlink" href="#_CPPv211Application" title="Ссылка на это определение">¶</a></dt>
 <dd></dd></dl>
 
 <p>Вам необходимо вставить макрос внутрь вашего класса
@@ -170,15 +175,15 @@
 </dd></dl>
 
 <p>Например:</p>
-<div class="highlight-python"><div class="highlight"><pre>#include &quot;Application.hh&quot;
-#include &quot;Loader.hh&quot;
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Application.hh&quot;</span>
+<span class="c1">#include &quot;Loader.hh&quot;</span>
 
-class YourApp : public Application
-{
-SIMPLE_APPLICATION(YourApp, &quot;your-application-name&quot;)
-public:
-   void init(Loader*, const Config&amp;) override;
-};
+<span class="k">class</span> <span class="nc">YourApp</span> <span class="p">:</span> <span class="n">public</span> <span class="n">Application</span>
+<span class="p">{</span>
+<span class="n">SIMPLE_APPLICATION</span><span class="p">(</span><span class="n">YourApp</span><span class="p">,</span> <span class="s2">&quot;your-application-name&quot;</span><span class="p">)</span>
+<span class="n">public</span><span class="p">:</span>
+   <span class="n">void</span> <span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span><span class="p">)</span> <span class="n">override</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 </div>
 </div>
@@ -193,12 +198,12 @@ public:
 <p>Данный метод должен реализовывать все связи вашего приложения с
 остальными приложением (Например <a class="reference external" href="http://doc.qt.io/qt-4.8/signalsandslots.html">connect сигналов</a> или регистрации обработчиков)</p>
 <p>Пример:</p>
-<div class="highlight-python"><div class="highlight"><pre>#include &quot;Common.hh&quot;
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Common.hh&quot;</span>
 
-void YourApp::init(Loader *, const Config&amp; )
-{
-     LOG(INFO) &lt;&lt; &quot;Hello World&quot;;
-}
+<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
+<span class="p">{</span>
+     <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Hello World&quot;</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -212,12 +217,12 @@ void YourApp::init(Loader *, const Config&amp; )
 </dd></dl>
 
 <p>Пример:</p>
-<div class="highlight-python"><div class="highlight"><pre>#include &quot;Common.hh&quot; // For log
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Common.hh&quot; // For log</span>
 
-void YourApp::startUp(Loader *)
-{
-  LOG(INFO) &lt;&lt; &quot;All services inited&quot;;
-}
+<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">startUp</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;All services inited&quot;</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -261,24 +266,24 @@ void YourApp::startUp(Loader *)
 <p><a class="reference internal" href="#_CPPv26Loader" title="Loader"><code class="xref cpp cpp-class docutils literal"><span class="pre">Loader</span></code></a> это загрузчик приложений, который и инициализирует ваши приложения.</p>
 <p>Вы можете получать объекты других приложений с помощью статического метода <code class="docutils literal"><span class="pre">get</span></code> этих приложений, и передав им <a class="reference internal" href="#_CPPv26Loader" title="Loader"><code class="xref cpp cpp-class docutils literal"><span class="pre">Loader</span></code></a> как аргумент.</p>
 <p>Например:</p>
-<div class="highlight-python"><div class="highlight"><pre>#include &quot;Controller.hh&quot;
-#include &quot;Loader.hh&quot;
-#include &quot;SwitchConnection.hh&quot;
-#include &quot;Common.hh&quot;
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Controller.hh&quot;</span>
+<span class="c1">#include &quot;Loader.hh&quot;</span>
+<span class="c1">#include &quot;SwitchConnection.hh&quot;</span>
+<span class="c1">#include &quot;Common.hh&quot;</span>
 
-REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;&quot;})
+<span class="n">REGISTER_APPLICATION</span><span class="p">(</span><span class="n">YourApp</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;controller&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">})</span>
 
-...
+<span class="o">...</span>
 
-void YourApp::init(Loader *loader, const Config&amp; )
-{
-  Controller *ctrl = Controller::get(loader);
-  QObject::connect(ctrl, &amp;Controller::switchUp,
-      [](SwitchConnectionPtr conn, of13::FeaturesReply fr)
-      {
-          LOG(INFO) &lt;&lt; &quot;This is SWITCH!!!!&quot;;
-      };)
-}
+<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">Controller</span> <span class="o">*</span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
+  <span class="n">QObject</span><span class="p">::</span><span class="n">connect</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Controller</span><span class="p">::</span><span class="n">switchUp</span><span class="p">,</span>
+      <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">,</span> <span class="n">of13</span><span class="p">::</span><span class="n">FeaturesReply</span> <span class="n">fr</span><span class="p">)</span>
+      <span class="p">{</span>
+          <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;This is SWITCH!!!!&quot;</span><span class="p">;</span>
+      <span class="p">};)</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <div class="admonition attention">

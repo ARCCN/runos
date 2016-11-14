@@ -17,6 +17,8 @@ Contents:
    Components
    FirstStep
    WorkingWithController
+   Rest
+   WebInterface
 
 Indices and tables
 ==================

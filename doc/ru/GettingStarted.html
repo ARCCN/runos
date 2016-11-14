@@ -30,6 +30,9 @@
   
 
   
+        <link rel="index" title="Алфавитный указатель"
+              href="genindex.html"/>
+        <link rel="search" title="Поиск" href="search.html"/>
     <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
         <link rel="next" title="2. Обзор приложений" href="ApplicationOverView.html"/>
         <link rel="prev" title="Welcome to RUNOS’s documentation!" href="index.html"/> 
@@ -82,7 +85,7 @@
             
             
                 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="">1. Введение</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">1. Введение</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#runos">1.1. Что из себя представляет RUNOS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id2">1.2. Быстрый старт</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#id3">1.2.1. Зависимости</a></li>
@@ -96,9 +99,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Components.html">3. компоненты RUNOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
 <li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Rest.html">6. REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WebInterface.html">7. Web interface</a></li>
 </ul>
 
             
@@ -121,7 +126,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -161,7 +166,7 @@
 <div class="section" id="id3">
 <h3>1.2.1. Зависимости<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h3>
 <p>Сначала необходимо установить все зависимости</p>
-<div class="highlight-python"><div class="highlight"><pre>$ sudo apt-get install build-essential cmake autoconf libtool \
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo apt-get install build-essential cmake autoconf libtool \
     pkg-config libgoogle-glog-dev libevent-dev \
     libssl-dev qtbase5-dev libboost-graph-dev libboost-system-dev \
     libboost-thread-dev libboost-coroutine-dev libboost-context-dev \
@@ -169,7 +174,7 @@
 </pre></div>
 </div>
 <p>Также необходимо установить javascript пакеты</p>
-<div class="highlight-python"><div class="highlight"><pre># If you have old versions of Node.js or UglifyJS,
+<div class="highlight-default"><div class="highlight"><pre><span></span># If you have old versions of Node.js or UglifyJS,
 # you should remove them
 $ sudo npm un uglify-js -g
 $ sudo apt-get remove node nodejs npm
@@ -181,7 +186,7 @@ $ sudo npm install uglify-js -g
 </pre></div>
 </div>
 <p><strong>RUNOS</strong> трубует библеотеку <em>libevent2.1.5</em> которая еще в бета версии на данный момент. Ее надо установить вручную</p>
-<div class="highlight-python"><div class="highlight"><pre># Get source code
+<div class="highlight-default"><div class="highlight"><pre><span></span># Get source code
 $ wget https://github.com/libevent/libevent/releases/download/release-2.1.5-beta/libevent-2.1.5-beta.tar.gz
 $ tar -xvf libevent-2.1.5-beta.tar.gz
 $ cd libevent-2.1.5-beta
@@ -195,7 +200,7 @@ $ sudo make install
 <div class="section" id="id4">
 <h3>1.2.2. Сборка RUNOS<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h3>
 <p>Установка <strong>RUNOS</strong> из исходного кода</p>
-<div class="highlight-python"><div class="highlight"><pre># Initialize third-party libraries
+<div class="highlight-default"><div class="highlight"><pre><span></span># Initialize third-party libraries
 $ third_party/bootstrap.sh
 
 # Create out of source build directory
@@ -215,22 +220,22 @@ $ make -j2
 <div class="section" id="id5">
 <h3>1.2.3. Запуск RUNOS<a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h3>
 <p>Setup environment variables (run once per shell session):</p>
-<div class="highlight-python"><div class="highlight"><pre># Run it INSIDE build directory
+<div class="highlight-default"><div class="highlight"><pre><span></span># Run it INSIDE build directory
 $ source ../debug_run_env.sh
 </pre></div>
 </div>
 <p>Run the controller:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ cd .. # Go out of build dir
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd .. # Go out of build dir
 $ build/runos
 </pre></div>
 </div>
 <p>You can use this arguments for <a class="reference external" href="http://mininet.org/">MiniNet</a>:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ sudo mn --topo $YOUR_TOPO --switch ovsk,protocols=OpenFlow13 \
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo mn --topo $YOUR_TOPO --switch ovsk,protocols=OpenFlow13 \
             --controller remote,ip=$CONTROLLER_IP,port=6653
 </pre></div>
 </div>
 <p>To run web UI, open the following link in your browser:</p>
-<div class="highlight-python"><div class="highlight"><pre>http://$CONTROLLER_IP:8000/topology.html
+<div class="highlight-default"><div class="highlight"><pre><span></span>http://$CONTROLLER_IP:8000/topology.html
 </pre></div>
 </div>
 <p>Be sure your <a class="reference external" href="http://mininet.org/">MiniNet</a> installation supports OpenFlow 1.3.
