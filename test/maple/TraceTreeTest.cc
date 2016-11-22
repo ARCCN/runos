@@ -43,10 +43,7 @@ public:
     MockFlow& operator=(const MockFlow& other)
     { m_decision = other.m_decision; return *this; }
 
-    Flow& operator=(const Flow& other) override
-    { return *this = dynamic_cast<const MockFlow&>(other); }
-
-    friend std::ostream& operator<<(std::ostream& out, MockFlow flow)
+     friend std::ostream& operator<<(std::ostream& out, MockFlow flow)
     { return out << "Flow{ id=" << flow.id << ", decision = " << flow.m_decision; }
 };
 
@@ -177,7 +174,7 @@ BOOST_AUTO_TEST_CASE( static_policy_test ) {
     }
 
     runtime.commit();
-    
+
     BOOST_TEST_MESSAGE("Checking compiled flow table");
     for (unsigned f1 = 0; f1 <= 101; ++f1) {
         for (unsigned f2 : {0, 2, 10, 0xa, 0x2a, 0xaad}) {

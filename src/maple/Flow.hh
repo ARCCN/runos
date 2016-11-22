@@ -7,7 +7,7 @@ namespace maple {
 
 class Flow {
 public:
-    virtual Flow& operator=(const Flow&) { return *this; }
+    virtual ~Flow(){ }
 };
 
 typedef std::shared_ptr<Flow> FlowPtr;

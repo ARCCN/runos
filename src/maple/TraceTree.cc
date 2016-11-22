@@ -176,7 +176,7 @@ public:
                 pred, unexplored(), unexplored{}
             };
 
-            node_push( ret ? 
+            node_push( ret ?
                 &boost::get<test_node>(node_ptr())->positive :
                 &boost::get<test_node>(node_ptr())->negative );
 
@@ -194,10 +194,7 @@ public:
         if (boost::get<unexplored>(node_ptr())) {
             *node_ptr() = flow_node{ new_flow };
         } else if (flow_node* leaf = boost::get<flow_node>(node_ptr())) {
-            if (auto flow = leaf->flow.lock())
-                *flow = *new_flow;
-            else
-                leaf->flow = new_flow;
+            leaf->flow = new_flow;
         } else {
             RUNOS_THROW(inconsistent_trace());
         }

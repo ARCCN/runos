@@ -115,9 +115,17 @@ class FlowImpl final : public Flow
     uint32_t m_xid {0};
     uint32_t m_buffer_id {OFP_NO_BUFFER};
     std::function<Action *()>m_flood;
-    class DecisionCompiler : public boost::static_visitor<void> {
+
+    void setState(State new_state)
+    {
+        m_state = new_state;
+        emit changeState(new_state, cookie());
+    }
+
+   class DecisionCompiler : public boost::static_visitor<void> {
         ActionList& ret;
         std::function<Action *()> flood;
+
     public:
         explicit DecisionCompiler(ActionList& ret, std::function<Action*()> flood)
             : ret(ret), flood(flood)
@@ -232,7 +240,8 @@ class FlowImpl final : public Flow
         m_packet_in = false;
         m_xid = 0;
         m_buffer_id = OFP_NO_BUFFER;
-        m_state = State::Active;
+        if (state() != State::Active)
+            setState(State::Active);
         m_in_port = of13::OFPP_CONTROLLER;
     }
 
@@ -252,12 +261,6 @@ public:
     {
         //BOOST_ASSERT(state() != State::Active);
         m_decision = std::move(d);
-    }
-
-    maple::Flow& operator=(const maple::Flow& other_) override
-    {
-        const FlowImpl& other = dynamic_cast<const FlowImpl&>(other_);
-        return *this = other;
     }
 
     // Transitions
@@ -286,15 +289,15 @@ public:
             }
             expect_remowed = -1;
         case of13::OFPRR_METER_DELETE:
-            m_state = State::Evicted;
+            setState(State::Evicted);
             VLOG(30) << "Evicted Flow";
             break;
         case of13::OFPRR_IDLE_TIMEOUT:
-            m_state = State::Idle;
+            setState(State::Idle);
             VLOG(30) << "Deleted flow by idle timeout";
             break;
         case of13::OFPRR_HARD_TIMEOUT:
-            m_state = State::Expired;
+            setState(State::Expired);
             VLOG(30) << "Deted flow by hard timeout";
             break;
         }
@@ -608,6 +611,7 @@ public:
                 break;
             case of13::OFPT_FLOW_REMOVED:
                 ctx->processFlowRemoved(msg.flowRemoved);
+                emit app.flowRemoved(ctx->connection, msg.flowRemoved);
                 break;
             default: {
                 uint32_t xid = msg.base()->xid();
