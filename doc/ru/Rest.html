@@ -30,9 +30,6 @@
   
 
   
-        <link rel="index" title="Алфавитный указатель"
-              href="genindex.html"/>
-        <link rel="search" title="Поиск" href="search.html"/>
     <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
         <link rel="next" title="7. Web interface" href="WebInterface.html"/>
         <link rel="prev" title="5. Работа с Controller" href="WorkingWithController.html"/> 
@@ -90,12 +87,12 @@
 <li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
 <li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">6. REST</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="">6. REST</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id1">6.1. Введение</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#api-runos-rest">6.2. Внешний API RuNOS. Использование REST-интерфейса.</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#rest-2-0-restmultipart-restflowmod">6.2.1. REST 2.0: приложения RestMultipart и RestFlowMod</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#id2">6.2.1.1. Введение</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ref-rest2-0-architecture">6.2.1.2. Арихитектура сервиса</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ref-rest2-0-architecture">6.2.1.2. Архитектура сервиса</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#postman-collection">6.2.1.3. Postman collection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#ref-rest2-0-details">6.2.1.4. Особенности использования</a></li>
 </ul>
@@ -134,7 +131,7 @@
         <div class="rst-content">
           
 
- 
+
 
 
 
@@ -160,11 +157,11 @@
 <span id="ref-rest"></span><h1>6. REST<a class="headerlink" href="#rest" title="Ссылка на этот заголовок">¶</a></h1>
 <div class="section" id="id1">
 <h2>6.1. Введение<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">¶</a></h2>
-<p>Для взаимодействия с приложениями в runtime, RuNOS предлагает пользователям воспользоваться REST API. Многие дефолтные приложения уже имеют свой REST API. Так же Вы можете развить его под Ваши нужды, либо с нуля добавить поддрежку rest в Ваше приложение.</p>
+<p>Для взаимодействия с приложениями в runtime, RuNOS предлагает пользователям воспользоваться REST API. Многие встроенные приложения уже имеют свой REST API. Так же Вы можете развить его под Ваши нужды, либо с нуля добавить поддержку rest в Ваше приложение.</p>
 <p>Наш разговор о REST в RuNOS будет состоять из двух частей:</p>
 <ol class="arabic simple">
-<li><a class="reference internal" href="#ref-rest-outer"><span class="std std-ref">внешний</span></a> (а точнее &#8211; north-bound) API RuNOS, <em>состоящий из rest-интерфейсов приложений</em>.</li>
-<li><a class="reference internal" href="#ref-rest-inner"><span class="std std-ref">внутренний</span></a> API RuNOS, используемый <em>при реализации rest-интерфейса приложения</em>,</li>
+<li><a class="reference internal" href="#ref-rest-outer"><span>внешний</span></a> (а точнее &#8211; north-bound) API RuNOS, <em>состоящий из rest-интерфейсов приложений</em>.</li>
+<li><a class="reference internal" href="#ref-rest-inner"><span>внутренний</span></a> API RuNOS, используемый <em>при реализации rest-интерфейса приложения</em>,</li>
 </ol>
 </div>
 <div class="section" id="api-runos-rest">
@@ -177,7 +174,7 @@
 <li><code class="docutils literal"><span class="pre">query</span></code> &#8211; содержательная часть запроса (передается в приложение)</li>
 </ul>
 </div></blockquote>
-<p>Для изуечения конкретных REST-запросов следует перейти документацию по интересующему Вас приложению. Например, <a class="reference internal" href="ApplicationOverView.html#ref-restmultipart-overview"><span class="std std-ref">RestMultipart</span></a>.</p>
+<p>Для изучения конкретных REST-запросов следует перейти к документации по интересующему Вас приложению. Например, <a class="reference internal" href="ApplicationOverView.html#ref-restmultipart-overview"><span>RestMultipart</span></a>.</p>
 <div class="section" id="rest-2-0-restmultipart-restflowmod">
 <span id="ref-rest2-0"></span><h3>6.2.1. REST 2.0: приложения RestMultipart и RestFlowMod<a class="headerlink" href="#rest-2-0-restmultipart-restflowmod" title="Ссылка на этот заголовок">¶</a></h3>
 <div class="section" id="id2">
@@ -185,24 +182,24 @@
 <p>Новый, написанный с нуля rest-интерфейс &#8211; основное нововведение RuNOS версии 0.6.1.
 Новый rest отвечает следующим требованиям:</p>
 <ul>
-<li><p class="first">масштабируемость: добавление поддрежки новых полей или методов происходит в несколько строк кода и не перекрывает, а лишь дополняет уже реализованный функцианал.</p>
+<li><p class="first">масштабируемость: добавление поддержки новых полей или методов происходит в несколько строк кода и не перекрывает, а лишь дополняет уже реализованный функционал.</p>
 </li>
-<li><p class="first">семантичность: если Вы хотите создать новый поток (flow entry), то Вам нужно выполнить POST-запрос с добавычным адресом <code class="docutils literal"><span class="pre">flow</span></code>, получить информацию по существующему &#8211; GET по тому же адресу. И так далее.</p>
+<li><p class="first">семантичность: если Вы хотите создать новый поток (flow entry), то Вам нужно выполнить POST-запрос с добавочным адресом <code class="docutils literal"><span class="pre">flow</span></code>, получить информацию по существующему &#8211; GET по тому же адресу. И так далее.</p>
 </li>
 <li><p class="first">user-friendly</p>
 <blockquote>
 <div><ul class="simple">
-<li>Вам не требуется читать ни одной строчки этого man&#8217;а, чтобы начать пользоваться новым rest-интерфейсом! Мы приготовили для Вас структурированную и прокомментированную <a class="reference internal" href="#ref-rest2-0-postman"><span class="std std-ref">коллекцию</span></a> REST-запросов к контроллеру для приложения <a class="reference external" href="https://www.getpostman.com/">Postman</a>. Надеемся, сторонники GUI оценят!</li>
-<li>Вы уже знакомы с REST-интерфейсом контроллера Ryu? Может, у Ваc уже есть скрипты для работы с ним? Наш rest полностью совместим с ним на уровне Postman-коллекции, а вашим скриптам потребуется лишь незначительная доработка. За подробностями загляните в раздел <a class="reference internal" href="#ref-rest2-0-details"><span class="std std-ref">особенности использования</span></a>.</li>
+<li>Вам не требуется читать ни одной строчки этого man&#8217;а, чтобы начать пользоваться новым rest-интерфейсом! Мы приготовили для Вас структурированную и прокомментированную <a class="reference internal" href="#ref-rest2-0-postman"><span>коллекцию</span></a> REST-запросов к контроллеру для приложения <a class="reference external" href="https://www.getpostman.com/">Postman</a>. Надеемся, сторонники GUI оценят!</li>
+<li>Вы уже знакомы с REST-интерфейсом контроллера Ryu? Может, у Ваc уже есть скрипты для работы с ним? Наш rest полностью совместим с ним на уровне Postman-коллекции, а вашим скриптам потребуется лишь незначительная доработка. За подробностями загляните в раздел <a class="reference internal" href="#ref-rest2-0-details"><span>особенности использования</span></a>.</li>
 <li>В то же время, Вы имеете дело с полноценным rest-интерфейсом: вооружитесь данной документацией и исследуйте его с <code class="docutils literal"><span class="pre">cURL</span></code>! Выбор интерфейса для работы с API всегда остается за Вами!</li>
 </ul>
 </div></blockquote>
 </li>
 <li><dl class="first docutils">
-<dt>локализованность: весть новый REST располанается в 2 модулях Runos: <a class="reference internal" href="ApplicationOverView.html#ref-restmultipart-overview"><span class="std std-ref">RestMultipart</span></a> и <a class="reference internal" href="ApplicationOverView.html#ref-restflowmod-overview"><span class="std std-ref">RestFlowMod</span></a>. Вам больше не нужно искать нужный метод по десятку классов.</dt>
+<dt>локализованность: весть новый REST располагается в 2 модулях Runos: <a class="reference internal" href="ApplicationOverView.html#ref-restmultipart-overview"><span>RestMultipart</span></a> и <a class="reference internal" href="ApplicationOverView.html#ref-restflowmod-overview"><span>RestFlowMod</span></a>. Вам больше не нужно искать нужный метод по десятку классов.</dt>
 <dd><div class="first last admonition note">
 <p class="first admonition-title">Примечание</p>
-<p class="last">Rest версии 0.6.1 обратно совместим с Rest&#8217;ом версии 0.6. Большинство deprecated-обработчиков расположено по тем же путям, что и раньше.</p>
+<p class="last">Rest данной версии полностью совместим с Rest&#8217;ом версии 0.6. Deprecated-обработчики расположены по тем же путям, что и раньше.</p>
 </div>
 </dd>
 </dl>
@@ -210,7 +207,7 @@
 </ul>
 </div>
 <div class="section" id="ref-rest2-0-architecture">
-<span id="id3"></span><h4>6.2.1.2. Арихитектура сервиса<a class="headerlink" href="#ref-rest2-0-architecture" title="Ссылка на этот заголовок">¶</a></h4>
+<span id="id3"></span><h4>6.2.1.2. Архитектура сервиса<a class="headerlink" href="#ref-rest2-0-architecture" title="Ссылка на этот заголовок">¶</a></h4>
 <img alt="_images/rest2.0:ServiceArchitecture.png" src="_images/rest2.0:ServiceArchitecture.png" />
 <p>Пути для обращения к API формируется следующим образом:</p>
 <ul>
@@ -227,7 +224,7 @@
 </div></blockquote>
 </li>
 </ul>
-<p>Записи вида <code class="docutils literal"><span class="pre">{{variable}}</span></code> &#8211; синтаксис обозначения переменных в Postman. Чтобы сформировать html-запрос, подставьте на их места конкретные значения. Примеры этих значений Вы найдете в нашей <a class="reference internal" href="#ref-rest2-0-postman"><span class="std std-ref">коллекции запросов</span></a>.</p>
+<p>Записи вида <code class="docutils literal"><span class="pre">{{variable}}</span></code> &#8211; синтаксис обозначения переменных в Postman. Чтобы сформировать html-запрос, подставьте на их места конкретные значения. Примеры этих значений Вы найдете в нашей <a class="reference internal" href="#ref-rest2-0-postman"><span>коллекции запросов</span></a>.</p>
 </div>
 <div class="section" id="postman-collection">
 <span id="ref-rest2-0-postman"></span><h4>6.2.1.3. Postman collection<a class="headerlink" href="#postman-collection" title="Ссылка на этот заголовок">¶</a></h4>
@@ -235,21 +232,21 @@
 <p>Postman collection:</p>
 <ul class="simple">
 <li>link: <a class="reference external" href="https://www.getpostman.com/collections/34a4933f146bee7383d9">https://www.getpostman.com/collections/34a4933f146bee7383d9</a></li>
-<li>file: <a class="reference download internal" href="_downloads/RuNOS_REST_2.0.postman_collection.json" download=""><code class="xref download docutils literal"><span class="pre">RuNOS_REST_2.0.postman_collection.json</span></code></a></li>
+<li>file: <a class="reference download internal" href="_downloads/RuNOS_REST_2.0.postman_collection.json"><code class="xref download docutils literal"><span class="pre">RuNOS_REST_2.0.postman_collection.json</span></code></a></li>
 </ul>
-<p>Environment: <a class="reference download internal" href="_downloads/RuNOS_REST_2.0.postman_environment.json" download=""><code class="xref download docutils literal"><span class="pre">RuNOS_REST_2.0.postman_environment.json</span></code></a></p>
+<p>Environment: <a class="reference download internal" href="_downloads/RuNOS_REST_2.0.postman_environment.json"><code class="xref download docutils literal"><span class="pre">RuNOS_REST_2.0.postman_environment.json</span></code></a></p>
 </div>
 <div class="section" id="ref-rest2-0-details">
 <span id="id4"></span><h4>6.2.1.4. Особенности использования<a class="headerlink" href="#ref-rest2-0-details" title="Ссылка на этот заголовок">¶</a></h4>
 <ul>
 <li><p class="first">Все без исключения значения в json-описания тела POST-запроса должны быть представлены как строки. Это сделано, чтобы обеспечить (где того требует стандарт OpenFlow1.3) поддержку чисел, превышающих std::numeric_limits&lt;int&gt;::max().:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
     <span class="s2">&quot;dpid&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Ниже приведен список поддерживаемых запросов. За подробностями обращайтеся к Postman-коллекции.</p>
+<li><p class="first">Ниже приведен список поддерживаемых запросов. За подробностями обращайтесь к Postman-коллекции.</p>
 <blockquote>
 <div><ul>
 <li><p class="first">port</p>
@@ -314,21 +311,21 @@
 <span id="ref-rest-inner"></span><h2>6.3. Внутренний API RuNOS -&gt; поддержка REST. Реализация REST-интерфейса<a class="headerlink" href="#api-runos-rest-rest" title="Ссылка на этот заголовок">¶</a></h2>
 <p>В данном разделе мы рассмотрим:</p>
 <ul class="simple">
-<li><a class="reference internal" href="#ref-concept"><span class="std std-ref">концепцию</span></a> REST-интерфейса в RuNOS,</li>
-<li><a class="reference internal" href="#ref-existing"><span class="std std-ref">пример</span></a> rest-запроса к приложению и процесс его обработки,</li>
-<li><a class="reference internal" href="#ref-add-rest"><span class="std std-ref">добавление</span></a>  REST API в Ваше приложение (вгутренний API контроллера по поддержке REST в приложениях),</li>
-<li>реализованную в контроллере <a class="reference internal" href="#ref-event-model"><span class="std std-ref">event-model</span></a>.</li>
+<li><a class="reference internal" href="#ref-concept"><span>концепцию</span></a> REST-интерфейса в RuNOS,</li>
+<li><a class="reference internal" href="#ref-existing"><span>пример</span></a> rest-запроса к приложению и процесс его обработки,</li>
+<li><a class="reference internal" href="#ref-add-rest"><span>добавление</span></a>  REST API в Ваше приложение (внутренний API контроллера по поддержке REST в приложениях),</li>
+<li>реализованную в контроллере <a class="reference internal" href="#ref-event-model"><span>event-model</span></a>.</li>
 </ul>
 <div class="section" id="rest-runos">
 <span id="ref-concept"></span><h3>6.3.1. Концепция REST-интерфейса в RuNOS<a class="headerlink" href="#rest-runos" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Предположим, Вы хотите написать приложение, которое будет конструировать новые потоки (flow entries) на подключенных к контроллеру switch&#8217;ах. Далее будум называть его <code class="docutils literal"><span class="pre">MyApp</span></code>. В таком случае у Вас 2 пути:</p>
+<p>Предположим, Вы хотите написать приложение, которое будет конструировать новые потоки (flow entries) на подключенных к контроллеру switch&#8217;ах. Далее будем называть его <code class="docutils literal"><span class="pre">MyApp</span></code>. В таком случае у Вас 2 пути:</p>
 <ul>
 <li><p class="first">Получать параметры на этапе запуска контроллера (и далее работать автономно). Тогда Вашему приложению нужна лишь своя секция в конфигурационном файле <code class="docutils literal"><span class="pre">network-settings.json</span></code>.</p>
 </li>
 <li><p class="first">Получать параметры в runtime. В этом случает RuNOS предлагает Вам 2 варианта интерфейсов:</p>
 <blockquote>
 <div><ul>
-<li><p class="first"><a class="reference internal" href="WebInterface.html#ref-web-interface"><span class="std std-ref">Web UI</span></a></p>
+<li><p class="first"><a class="reference internal" href="WebInterface.html#ref-web-interface"><span>Web UI</span></a></p>
 </li>
 <li><dl class="first docutils">
 <dt>REST API</dt>
@@ -344,15 +341,15 @@
 </div>
 <div class="section" id="ref-existing">
 <span id="id5"></span><h3>6.3.2. Пример rest-запроса к приложению<a class="headerlink" href="#ref-existing" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Рассмотрим последовательность действий, отвечающих использованию rest-интерфейса. Мы начинем с отправки пользователем rest-запроса и закончим отправкой контроллером ответа на него.</p>
+<p>Рассмотрим последовательность действий, отвечающих использованию rest-интерфейса. Мы начнем с отправки пользователем rest-запроса и закончим отправкой контроллером ответа на него.</p>
 <ul>
 <li><p class="first">Пользователь составляет запрос:</p>
 <blockquote>
-<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="p">:</span><span class="mi">8000</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">my</span><span class="o">-</span><span class="n">app</span><span class="o">/</span><span class="n">flowentry</span><span class="o">/</span> <span class="o">-</span><span class="n">XPOST</span> <span class="o">-</span><span class="n">d</span><span class="s1">&#39;{</span>
-      <span class="s2">&quot;eth_src&quot;</span><span class="p">:</span> <span class="s2">&quot;11:11:11:11:11:12&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;ip_src&quot;</span><span class="p">:</span> <span class="s2">&quot;192.168.0.1&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;modify_eth_src&quot;</span><span class="p">:</span> <span class="s2">&quot;22:22:22:22:22:22&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;out_port&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span><span class="s1">&#39;</span>
+<div><div class="highlight-python"><div class="highlight"><pre>curl http://127.0.0.1:8000/api/my-app/flowentry/ -XPOST -d&#39;{
+      &quot;eth_src&quot;: &quot;11:11:11:11:11:12&quot;,
+      &quot;ip_src&quot;: &quot;192.168.0.1&quot;,
+      &quot;modify_eth_src&quot;: &quot;22:22:22:22:22:22&quot;,
+      &quot;out_port&quot;: 1}&#39;
 </pre></div>
 </div>
 <p>Здесь:</p>
@@ -362,10 +359,10 @@
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">api</span></code> &#8211; пользователь обращается к REST API контроллера,</p>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">my-app</span></code> &#8211; rest-name Вашего приложения (см. <a class="reference internal" href="#ref-add-rest"><span class="std std-ref">Добавление поддержки REST в Ваше приложение</span></a>),</p>
+<li><p class="first"><code class="docutils literal"><span class="pre">my-app</span></code> &#8211; rest-name Вашего приложения (см. <a class="reference internal" href="#ref-add-rest"><span>Добавление поддержки REST в Ваше приложение</span></a>),</p>
 </li>
-<li><p class="first">следом за <code class="docutils literal"><span class="pre">my-app</span></code> может идти лубой путь, который Вы обозначите как допустимый:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">MyApp</span><span class="p">::</span><span class="n">init</span><span class="p">::</span><span class="n">acceptPath</span><span class="p">(</span><span class="n">Method</span><span class="p">::</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;flowentry&quot;</span><span class="p">);</span>
+<li><p class="first">следом за <code class="docutils literal"><span class="pre">my-app</span></code> может идти любой путь, который Вы обозначите как допустимый:</p>
+<div class="highlight-python"><div class="highlight"><pre>MyApp::init::acceptPath(Method::POST, &quot;flowentry&quot;);
 </pre></div>
 </div>
 </li>
@@ -375,17 +372,17 @@
 </div></blockquote>
 </div></blockquote>
 </li>
-<li><p class="first">Сформированный запрос поступает на TCP server, управляемый приложением <a class="reference internal" href="ApplicationOverView.html#ref-restlistener-overview"><span class="std std-ref">RestListener</span></a>. RestListener проверяет корректность запроса и, в случае успеха, распарсит запрос на параметры и отправит его в соответствующее приложение.</p>
+<li><p class="first">Сформированный запрос поступает на TCP server, управляемый приложением <a class="reference internal" href="ApplicationOverView.html#ref-restlistener-overview"><span>RestListener</span></a>. RestListener проверяет корректность запроса и, в случае успеха, распарсит запрос на параметры и отправит его в соответствующее приложение.</p>
 <blockquote>
 <div><div class="admonition note">
 <p class="first admonition-title">Примечание</p>
-<p class="last">Для этого Вам нужно <a class="reference internal" href="#ref-register"><span class="std std-ref">зарегистрировать</span></a> Ваше приложение.</p>
+<p class="last">Для этого Вам нужно <a class="reference internal" href="#ref-register"><span>зарегистрировать</span></a> Ваше приложение.</p>
 </div>
 </div></blockquote>
 </li>
 <li><p class="first">Далее поток управления переходит к методу <code class="docutils literal"><span class="pre">handlePost``приложения</span> <span class="pre">``MyApp</span></code>.</p>
 <blockquote>
-<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">json11</span><span class="p">::</span><span class="n">Json</span> <span class="n">MyApp</span><span class="p">::</span><span class="n">handlePOST</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">params</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">body</span><span class="p">);</span>
+<div><div class="highlight-python"><div class="highlight"><pre>json11::Json MyApp::handlePOST(std::vector&lt;std::string&gt; params, std::string body);
 </pre></div>
 </div>
 </div></blockquote>
@@ -398,12 +395,12 @@
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">body</span></code> &#8211; строка, содержащая в себе тело POST-запроса (&#8220;&#8221; для GET, DELETE). Вы можете распарсить ее в json:</p>
 <blockquote>
-<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">json11</span><span class="p">::</span><span class="n">Json</span><span class="p">::</span><span class="nb">object</span> <span class="n">req</span> <span class="o">=</span> <span class="n">json11</span><span class="p">::</span><span class="n">Json</span><span class="p">::</span><span class="n">parse</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">forErr</span><span class="p">)</span><span class="o">.</span><span class="n">object_items</span><span class="p">();</span>
+<div><div class="highlight-python"><div class="highlight"><pre>json11::Json::object req = json11::Json::parse(body, forErr).object_items();
 </pre></div>
 </div>
 </div></blockquote>
 </li>
-<li><p class="first">Ваше приложение выполняет необходимые манипуляции и возвращет ответ в формате json,</p>
+<li><p class="first">Ваше приложение выполняет необходимые манипуляции и возвращает ответ в формате json,</p>
 </li>
 <li><p class="first">RestListener,</p>
 </li>
@@ -418,51 +415,51 @@
 <p>Если говорить коротко, то в Runos &#8220;добавить в приложение поддержку rest&#8221; значит добавить в список родительских классов Вашего приложения класс RestHandler и реализовать его виртуальные методы. Далее мы рассмотрим этот процесс подробно.</p>
 <ul>
 <li><p class="first">Добавьте REST в ваше приложение:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Rest.hh&quot;</span>
-<span class="c1">#include &quot;AppObject.hh&quot;</span>
-<span class="c1">#include &lt;string&gt;</span>
+<div class="highlight-python"><div class="highlight"><pre>#include &quot;Rest.hh&quot;
+#include &quot;AppObject.hh&quot;
+#include &lt;string&gt;
 
-<span class="k">class</span> <span class="nc">MyApp</span> <span class="p">:</span> <span class="n">public</span> <span class="n">Application</span><span class="p">,</span> <span class="n">RestHandler</span> <span class="p">{</span>
-    <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">restName</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;my-app&quot;</span><span class="p">;</span> <span class="p">}</span>
-    <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">displayedName</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;My beautiful application&quot;</span><span class="p">;</span> <span class="p">}</span>  <span class="o">//</span> <span class="n">web</span> <span class="n">name</span>
-    <span class="nb">bool</span> <span class="n">eventable</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="n">false</span><span class="p">;</span> <span class="p">}</span>
+class MyApp : public Application, RestHandler {
+    std::string restName() override { return &quot;my-app&quot;; }
+    std::string displayedName() override { return &quot;My beautiful application&quot;; }  // web name
+    bool eventable() override { return false; }
 
-    <span class="n">json11</span><span class="p">::</span><span class="n">Json</span> <span class="n">handleGET</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">params</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">body</span><span class="p">)</span> <span class="n">override</span><span class="p">;</span>
-    <span class="n">json11</span><span class="p">::</span><span class="n">Json</span> <span class="n">handlePOST</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">params</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">body</span><span class="p">)</span> <span class="n">override</span><span class="p">;</span>
-    <span class="o">//</span> <span class="n">also</span> <span class="n">handlePUT</span> <span class="ow">and</span> <span class="n">handleDELETE</span>
-<span class="p">}</span>
+    json11::Json handleGET(std::vector&lt;std::string&gt; params, std::string body) override;
+    json11::Json handlePOST(std::vector&lt;std::string&gt; params, std::string body) override;
+    // also handlePUT and handleDELETE
+}
 </pre></div>
 </div>
 </li>
 </ul>
 <ul id="ref-register">
 <li><p class="first">зарегистрируйте rest-handler в методе <code class="docutils literal"><span class="pre">MyApp::init</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">RestListener</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">registerRestHandler</span><span class="p">(</span><span class="n">this</span><span class="p">);</span>
+<div class="highlight-python"><div class="highlight"><pre>RestListener::get(loader)-&gt;registerRestHandler(this);
 </pre></div>
 </div>
 </li>
 <li><p class="first">определите множество URL, обрабатываемых Вашим приложением в методе <code class="docutils literal"><span class="pre">MyApp::init</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">acceptPath</span><span class="p">(</span><span class="n">Method</span><span class="p">::</span><span class="n">GET</span><span class="p">,</span> <span class="s2">&quot;switches/[0-9]+&quot;</span><span class="p">);</span>  <span class="o">//</span> <span class="n">handle</span> <span class="n">GET</span> <span class="n">request</span> <span class="k">with</span> <span class="n">path</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">my</span><span class="o">-</span><span class="n">app</span><span class="o">/</span><span class="n">switches</span><span class="o">/</span>
-<span class="n">acceptPath</span><span class="p">(</span><span class="n">Method</span><span class="p">::</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;[A-Fa-f0-9:-]&quot;</span><span class="p">);</span>  <span class="o">//</span> <span class="n">handle</span> <span class="n">POST</span> <span class="n">request</span> <span class="k">with</span> <span class="n">path</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">my</span><span class="o">-</span><span class="n">app</span><span class="o">/</span><span class="n">mac</span><span class="o">/</span>
+<div class="highlight-python"><div class="highlight"><pre>acceptPath(Method::GET, &quot;switches/[0-9]+&quot;);  // handle GET request with path /api/my-app/switches/
+acceptPath(Method::POST, &quot;[A-Fa-f0-9:-]&quot;);  // handle POST request with path /api/my-app/mac/
 </pre></div>
 </div>
 </li>
-<li><p class="first">в методе <code class="docutils literal"><span class="pre">MyApp::handleGET</span></code> происходит вся существенная обраьотка входящих HTTP-GET запросов. Логику работы Вашего приложения с rest-запросам (GET) Вы определяете именно в нем.</p>
+<li><p class="first">в методе <code class="docutils literal"><span class="pre">MyApp::handleGET</span></code> происходит вся существенная обработка входящих HTTP-GET запросов. Логику работы Вашего приложения с rest-запросам (GET) Вы определяете именно в нем.</p>
 </li>
 <li><p class="first">Готовый пример реализации rest-интерфейса Вы можете посмотреть, например, в классе <code class="docutils literal"><span class="pre">StaticFlowPusher</span></code> или в <code class="docutils literal"><span class="pre">RestMultipart</span></code> / <code class="docutils literal"><span class="pre">RestFlowMod</span></code>.</p>
 </li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
-<p class="last">Помочь в реализации Вам могут фукции и макросы из модуля <a class="reference internal" href="Components.html#ref-reststringprocessing-class"><span class="std std-ref">RestStringProcessing</span></a>.</p>
+<p class="last">Помочь в реализации Вам могут функции и макросы из модуля <a class="reference internal" href="Components.html#ref-reststringprocessing-class"><span>RestStringProcessing</span></a>.</p>
 </div>
 </div>
 <div class="section" id="event-model">
 <span id="ref-event-model"></span><h3>6.3.4. Event model<a class="headerlink" href="#event-model" title="Ссылка на этот заголовок">¶</a></h3>
 <p>В RuNOS реализована т.н. <code class="docutils literal"><span class="pre">event</span> <span class="pre">model</span></code>. Она позволяет получить отчет о действиях приложений за определенный период времени.
-Например, <code class="docutils literal"><span class="pre">curl</span> <span class="pre">{{host}}/timeout/switch-manager/0/</span></code> выдаст лог эвентов, произошедших в приложении <a class="reference internal" href="ApplicationOverView.html#ref-switchmanager-overview"><span class="std std-ref">Switch Manager</span></a> с момента запуска (0).</p>
+Например, <code class="docutils literal"><span class="pre">curl</span> <span class="pre">{{host}}/timeout/switch-manager/0/</span></code> выдаст лог событий, произошедших в приложении <a class="reference internal" href="ApplicationOverView.html#ref-switchmanager-overview"><span>Switch Manager</span></a> с момента запуска (0).</p>
 <p>Вы можете добавить поддержку event model в свое приложение, назначив метод <code class="docutils literal"><span class="pre">eventable</span></code> возвращать <code class="docutils literal"><span class="pre">true</span></code> (как не сложно догадаться, <code class="docutils literal"><span class="pre">false</span></code> будет означать отсутствие поддержки event-model):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">bool</span> <span class="n">eventable</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="n">true</span><span class="p">;</span> <span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>bool eventable() override { return true; }
 </pre></div>
 </div>
 </div>

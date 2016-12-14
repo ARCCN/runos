@@ -30,9 +30,6 @@
   
 
   
-        <link rel="index" title="Алфавитный указатель"
-              href="genindex.html"/>
-        <link rel="search" title="Поиск" href="search.html"/>
     <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
         <link rel="prev" title="6. REST" href="Rest.html"/> 
 
@@ -90,7 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
 <li class="toctree-l1"><a class="reference internal" href="WorkingWithController.html">5. Работа с Controller</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Rest.html">6. REST</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">7. Web interface</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">7. Web interface</a></li>
 </ul>
 
             
@@ -113,7 +110,7 @@
         <div class="rst-content">
           
 
- 
+
 
 
 
@@ -138,15 +135,15 @@
   <div class="section" id="web-interface">
 <span id="ref-web-interface"></span><h1>7. Web interface<a class="headerlink" href="#web-interface" title="Ссылка на этот заголовок">¶</a></h1>
 <p>У Вашего приложения может быть своя html-страница. Для того чтобы добавить ее, реализуйте в классе Вашего приложения метод</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">page</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;my_page.html&quot;</span><span class="p">;</span> <span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>std::string page() override { return &quot;my_page.html&quot;; }
 </pre></div>
 </div>
-<p>Файл <code class="docutils literal"><span class="pre">&quot;my_page.html</span></code> должен быть расположен в дирректории <code class="docutils literal"><span class="pre">web/html</span></code>.
+<p>Файл <code class="docutils literal"><span class="pre">&quot;my_page.html</span></code> должен быть расположен в директории <code class="docutils literal"><span class="pre">web/html</span></code>.
 Ваше приложение будет отображаться в списке приложений под именем:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="n">displayedName</span><span class="p">()</span> <span class="n">override</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;My beautiful application&quot;</span><span class="p">;</span> <span class="p">}</span>  <span class="o">//</span> <span class="n">web</span> <span class="n">name</span>
+<div class="highlight-python"><div class="highlight"><pre>std::string displayedName() override { return &quot;My beautiful application&quot;; }  // web name
 </pre></div>
 </div>
-<p>Чтобы обратиться к уже существующеу web-интрефейсу, откройте <a class="reference external" href="http://127.1.1.0:8000/topology.html">http://127.1.1.0:8000/topology.html</a></p>
+<p>Чтобы обратиться к уже существующему web-интрефейсу, откройте <a class="reference external" href="http://127.1.1.0:8000/topology.html">http://127.1.1.0:8000/topology.html</a></p>
 <hr class="docutils" />
 <p>Веб-интерфейс в RuNOS можно понимать как стороннее приложение, опирающееся на rest-интерфейс контроллера</p>
 </div>

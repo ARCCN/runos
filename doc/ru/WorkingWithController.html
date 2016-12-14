@@ -30,9 +30,6 @@
   
 
   
-        <link rel="index" title="Алфавитный указатель"
-              href="genindex.html"/>
-        <link rel="search" title="Поиск" href="search.html"/>
     <link rel="top" title="Документация RUNOS 0.6" href="index.html"/>
         <link rel="next" title="6. REST" href="Rest.html"/>
         <link rel="prev" title="4. Первые шаги в написании собственного приложения" href="FirstStep.html"/> 
@@ -89,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="ApplicationOverView.html">2. Обзор приложений</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Components.html">3. Компоненты RUNOS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FirstStep.html">4. Первые шаги в написании собственного приложения</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">5. Работа с Controller</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="">5. Работа с Controller</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#ref-controller-signals">5.1. Сигналы</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#statictransaction">5.2. StaticTransaction</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#registering-static-transaction">5.2.1. Registering static transaction</a></li>
@@ -108,9 +105,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#id8">5.4.5.3. Остановка конвеера</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#id9">5.4.6. Состояния потока</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id9">5.5. Реализация рассылки широковещательного сообщения</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id10">5.5. Реализация рассылки широковещательного сообщения</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Rest.html">6. REST</a></li>
@@ -137,7 +135,7 @@
         <div class="rst-content">
           
 
- 
+
 
 
 
@@ -165,10 +163,10 @@
 <dt id="_CPPv210Controller">
 <span id="Controller"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Controller</code><a class="headerlink" href="#_CPPv210Controller" title="Ссылка на это определение">¶</a></dt>
 <dd><p>Объявлен в файле <code class="docutils literal"><span class="pre">Controller.hh</span></code></p>
-<p><a class="reference internal" href="ApplicationOverView.html#ref-controller-overview"><span class="std std-ref">Controller</span></a> принимает на себя низкоуровневые обязанности по устанвке, поддержке и обмене сообщениеми с коммутаторами.</p>
+<p><a class="reference internal" href="ApplicationOverView.html#ref-controller-overview"><span>Controller</span></a> принимает на себя низкоуровневые обязанности по установке и поддержке соединения с коммутаторами а так же обмене OpenFlow сообщениями.</p>
 </dd></dl>
 
-<p>Так как контроллер это основное приложение, то для полезной работы вам придется прямо или косвенно взаимодейстовавать с контроллером.</p>
+<p>Так как контроллер это основное приложение, то для полезной работы вам придется прямо или косвенно взаимодействовать с контроллером.</p>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
 <p class="last"><a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> активно использует библиотеку <a class="reference external" href="http://opennetworkingfoundation.github.io/libfluid/">LibFluid</a>.</p>
@@ -195,39 +193,63 @@
 <li><dl class="function">
 <dt id="_CPPv2N10Controller10switchDownE19SwitchConnectionPtr">
 <span id="Controller::switchDown__SwitchConnectionPtr"></span>void <code class="descclassname">Controller::</code><code class="descname">switchDown</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>ofconn</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller10switchDownE19SwitchConnectionPtr" title="Ссылка на это определение">¶</a></dt>
-<dd><p>Соедение с коммутатором прервалось.</p>
+<dd><p>Соединение с коммутатором прервалось.</p>
+</dd></dl>
+
+</li>
+<li><dl class="function">
+<dt id="_CPPv2N10Controller11flowRemovedE19SwitchConnectionPtrRN4of1311FlowRemovedE">
+<span id="Controller::flowRemoved__SwitchConnectionPtr.of13::FlowRemovedR"></span>void <code class="descclassname">Controller::</code><code class="descname">flowRemoved</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>ofconn</em>, of13::FlowRemoved &amp;<em>fr</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller11flowRemovedE19SwitchConnectionPtrRN4of1311FlowRemovedE" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Коммутатор сообщил об удалении потока.</p>
 </dd></dl>
 
 </li>
 </ul>
 </div></blockquote>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#include &quot;YourApp.hh&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre>#include &quot;YourApp.hh&quot;
 
-<span class="c1">#include &quot;Controller.hh&quot;</span>
-<span class="c1">#include &quot;Common.hh&quot;</span>
+#include &quot;Controller.hh&quot;
+#include &quot;Common.hh&quot;
 
-<span class="n">REGISTER_APPLICATION</span><span class="p">(</span><span class="n">YourApp</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;controller&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">})</span>
+REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;&quot;})
 
 
-<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span><span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span> <span class="o">*</span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
+void YourApp::init(Loader* loader, const Config&amp;)
+{
+  Controller *ctrl = Controller::get(loader);
 
-  <span class="n">QObject</span><span class="p">::</span><span class="n">connect</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">Controller</span><span class="p">::</span><span class="n">switchUp</span><span class="p">,</span>
-                   <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">,</span> <span class="n">of13</span><span class="p">::</span><span class="n">FeatireReply</span> <span class="n">fr</span><span class="p">){</span>
-      <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Connected switch : &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">dpid</span><span class="p">();</span>
-      <span class="p">});</span>
+  QObject::connect(ctrl, Controller::switchUp,
+                   [](SwitchConnectionPtr conn, of13::FeatireReply fr){
+      LOG(INFO) &lt;&lt; &quot;Connected switch : &quot; &lt;&lt; conn-&gt;dpid();
+      });
 
-  <span class="n">QObject</span><span class="p">::</span><span class="n">connect</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">Controller</span><span class="p">::</span><span class="n">portStatus</span><span class="p">,</span>
-                   <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">,</span> <span class="n">of13</span><span class="p">::</span><span class="n">PortStatus</span> <span class="n">ps</span><span class="p">){</span>
-      <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;port states chages on switch : &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">dpid</span><span class="p">();</span>
-      <span class="p">});</span>
+  QObject::connect(ctrl, Controller::portStatus,
+                   [](SwitchConnectionPtr conn, of13::PortStatus ps){
+      LOG(INFO) &lt;&lt; &quot;port states chages on switch : &quot; &lt;&lt; conn-&gt;dpid();
+      });
 
-  <span class="n">QObject</span><span class="p">::</span><span class="n">connect</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">Controller</span><span class="p">::</span><span class="n">switchDown</span><span class="p">,</span> <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">){</span>
-      <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;swith disconnected : &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">dpid</span><span class="p">();</span>
-      <span class="p">});</span>
-<span class="p">}</span>
+  QObject::connect(ctrl, Controller::switchDown, [](SwitchConnectionPtr conn){
+      LOG(INFO) &lt;&lt; &quot;swith disconnected : &quot; &lt;&lt; conn-&gt;dpid();
+      });
+  QObject::connect(ctrl Controller::flowRemoved,
+                  [](SwitchConnectionPtr conn, of13::FlowRemoved&amp; fr){
+      std::string reason;
+      switch (fr.reason){
+          case of13::OFPRR_DELETE:
+              reason = &quot;controller message&quot;;
+              break;
+          case of13::OFPRR_IDLE_TIMEOUT:
+              reason = &quot;idle timeout&quot;;
+              break;
+          case of13::OFPRR_HARD_TIMEOUT:
+              reason = &quot;hard timeout&quot;;
+              break;
+       }
+      LOG(INFO) &lt;&lt; &quot;from switch &quot; &lt;&lt; conn-&gt;dpid() &lt;&lt; &quot; was deleted by &quot; &lt;&lt; reason
+              &lt;&lt; &quot;flow with cookie &quot; &lt;&lt; fr.cookie();
+      });
+}
 </pre></div>
 </div>
 </div>
@@ -262,7 +284,7 @@
 <dt id="_CPPv2N13OFTransaction7requestE19SwitchConnectionPtrR5OFMsg">
 <span id="OFTransaction::request__SwitchConnectionPtr.OFMsgR"></span>void <code class="descclassname">OFTransaction::</code><code class="descname">request</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>conn</em>, OFMsg &amp;<em>msg</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N13OFTransaction7requestE19SwitchConnectionPtrR5OFMsg" title="Ссылка на это определение">¶</a></dt>
 <dd><p>Отправить OpenFlow сообщение на коммутатор.</p>
-<p>SwitchConnectionPtr conn &#8211; соедениение с коммутатором, на который надо отправить сообщение.</p>
+<p>SwitchConnectionPtr conn &#8211; соединение с коммутатором, на который надо отправить сообщение.</p>
 <p>OFMsg&amp; msg &#8211; OpenFlow сообщение.</p>
 </dd></dl>
 
@@ -270,33 +292,33 @@
 <dt id="_CPPv2N13OFTransaction8responseE19SwitchConnectionPtrNSt10shared_ptrI10OFMsgUnionEE">
 <span id="OFTransaction::response__SwitchConnectionPtr.std::shared_ptr:OFMsgUnion:"></span>void <code class="descclassname">OFTransaction::</code><code class="descname">response</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>conn</em>, std::shared_ptr&lt;OFMsgUnion&gt; <em>reply</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N13OFTransaction8responseE19SwitchConnectionPtrNSt10shared_ptrI10OFMsgUnionEE" title="Ссылка на это определение">¶</a></dt>
 <dd><p><a class="reference external" href="http://doc.qt.io/qt-4.8/signalsandslots.html">Qt сигнал</a> с ответом на OpenFlow запрос.</p>
-<p>SwitchConnectionPtr conn &#8211; соединеие с коммутаторм, от которого пришло сообщение.</p>
+<p>SwitchConnectionPtr conn &#8211; соединение с коммутатором, от которого пришло сообщение.</p>
 <p>std::shared_ptr&lt;OFMsgUnion&gt; reply &#8211; сообщение.</p>
 </dd></dl>
 
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span><span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-  <span class="n">OFTransaction</span> <span class="n">oftran</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">registerStaticTransaction</span><span class="p">(</span><span class="n">this</span><span class="p">);</span>
-  <span class="n">QObject</span><span class="p">::</span><span class="n">connect</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">Controller</span><span class="p">::</span><span class="n">switchUp</span><span class="p">,</span>
-      <span class="p">[</span><span class="n">oftran</span><span class="p">](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">,</span> <span class="n">of13</span><span class="p">::</span><span class="n">FeatireReply</span><span class="p">)</span>
-      <span class="p">{</span>
-        <span class="n">of13</span><span class="p">::</span><span class="n">MultipartRequestFlow</span> <span class="n">mprf</span><span class="p">;</span>
-        <span class="n">mprf</span><span class="o">.</span><span class="n">table_id</span><span class="p">(</span><span class="n">of13</span><span class="p">::</span><span class="n">OFPTT_ALL</span><span class="p">);</span>
-        <span class="n">mprf</span><span class="o">.</span><span class="n">out_port</span><span class="p">(</span><span class="n">of13</span><span class="p">::</span><span class="n">OFPP_ANY</span><span class="p">);</span>
-        <span class="n">mprf</span><span class="o">.</span><span class="n">out_group</span><span class="p">(</span><span class="n">of13</span><span class="p">::</span><span class="n">OFPG_ANY</span><span class="p">);</span>
-        <span class="n">mprf</span><span class="o">.</span><span class="n">cookie</span><span class="p">(</span><span class="mh">0x0</span><span class="p">);</span>
-        <span class="n">mprf</span><span class="o">.</span><span class="n">cookie_mask</span><span class="p">(</span><span class="mh">0x0</span><span class="p">);</span>
-        <span class="n">mprf</span><span class="o">.</span><span class="n">flags</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-        <span class="n">oftran</span><span class="o">-&gt;</span><span class="n">request</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span>  <span class="n">mprf</span><span class="p">);</span>
-      <span class="p">});</span>
-  <span class="n">QObject</span><span class="p">::</span><span class="n">connect</span><span class="p">(</span><span class="n">oftran</span><span class="p">,</span> <span class="n">OFTransaction</span><span class="p">::</span><span class="n">response</span><span class="p">,</span>
-      <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">OFMsgUnion</span><span class="o">&gt;</span> <span class="n">reply</span><span class="p">)</span>
-      <span class="p">{</span>
-        <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Switch responsed ! &quot;</span><span class="p">;</span>
-      <span class="p">});</span>
-<span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void YourApp::init(Loader* loader, const Config&amp;)
+{
+  Controller* ctrl = Controller::get(loader);
+  OFTransaction oftran = ctrl.registerStaticTransaction(this);
+  QObject::connect(ctrl, Controller::switchUp,
+      [oftran](SwitchConnectionPtr conn, of13::FeatireReply)
+      {
+        of13::MultipartRequestFlow mprf;
+        mprf.table_id(of13::OFPTT_ALL);
+        mprf.out_port(of13::OFPP_ANY);
+        mprf.out_group(of13::OFPG_ANY);
+        mprf.cookie(0x0);
+        mprf.cookie_mask(0x0);
+        mprf.flags(0);
+        oftran-&gt;request(conn,  mprf);
+      });
+  QObject::connect(oftran, OFTransaction::response,
+      [](SwitchConnectionPtr conn, std::shared_ptr&lt;OFMsgUnion&gt; reply)
+      {
+        LOG(INFO) &lt;&lt; &quot;Switch responsed ! &quot;;
+      });
+}
 </pre></div>
 </div>
 </div>
@@ -307,15 +329,18 @@
 <dl class="function">
 <dt id="_CPPv2N10Controller12reserveTableEv">
 <span id="Controller::reserveTable"></span>uint8_t <code class="descclassname">Controller::</code><code class="descname">reserveTable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller12reserveTableEv" title="Ссылка на это определение">¶</a></dt>
-<dd><p>Контроллер выделит вам таблицу потоков, в которую вы можете добавлять свои правила. Таблицы выделяются в стадии иниуиализации контроллера, и их число не может быть изменено далее в runtime.</p>
-<p><strong>RUNOS</strong> не ограничивает вас в добавлении правил в другие таблицы потоков.
+<dd><p>Контроллер выделит вам таблицу потоков, в которую вы можете добавлять свои правила. Таблицы выделяются в стадии инициализации контроллера, и их число не может быть изменено далее в runtime.</p>
+<div class="admonition danger">
+<p class="first admonition-title">Опасно</p>
+<p class="last"><strong>RUNOS</strong> не ограничивает вас в добавлении правил в другие таблицы потоков.
 Однако это не гарантирует корректную работу вашего и других сервисов.</p>
+</div>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
 <p class="last">Отдельно стоит упомянуть собственную таблицу Maple: для Вас она read-only. А если Вам все-таки удастся ее модифицировать(DELETE OFPTT_ALL, например), Maple восстанет состояние своей таблицы по первому же PacketIn. Так что не советуем ее модифицировать.</p>
 </div>
-<p>В дефолтном запуске RuNOS 0.6.1 инстанциирует на switch&#8217;е следующую конфигурацию таблиц:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo ovs-ofctl -O OpenFlow13 dump-flows s1
+<p>По умолчанию в запуске RuNOS 0.6.1 инстанциирует на switch&#8217;е следующую конфигурацию таблиц:</p>
+<div class="highlight-python"><div class="highlight"><pre> $sudo ovs-ofctl -O OpenFlow13 dump-flows s1
 OFPST_FLOW reply (OF1.3) (xid=0x2):
  cookie=0x0, duration=394.247s, table=0, n_packets=0, n_bytes=0, send_flow_rem check_overlap priority=0 actions=goto_table:1
  cookie=0x0, duration=394.247s, table=1, n_packets=0, n_bytes=0, send_flow_rem check_overlap priority=0 actions=goto_table:2
@@ -324,22 +349,22 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
-<p class="last">Для работы контроллера в минимальной конфигурации достаточно одной таблицы. Она будет управляться <span class="xref std std-ref">ядром (`Maple</span>) &lt;refMaple&gt;` контроллера и все ассинхронно созданные в ней правила будут вскоре удаляться. Если создано более одной таблицы, Maple будет управлять таблицей с наибольшим номером.</p>
+<p class="last">Для работы контроллера в минимальной конфигурации достаточно одной таблицы. Она будет управляться <span class="xref std std-ref">ядром (`Maple</span>) &lt;refMaple&gt;` контроллера и все асинхронно созданные в ней правила будут вскоре удаляться. Если создано более одной таблицы, Maple будет управлять таблицей с наибольшим номером.</p>
 </div>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">ExampleFireWall</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span><span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-  <span class="n">uint8_t</span> <span class="n">table_no</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">reservTable</span><span class="p">();</span>
-  <span class="n">QObject</span><span class="p">::</span><span class="n">connect</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">Controller</span><span class="p">::</span><span class="n">SwitchUp</span><span class="p">,</span>
-      <span class="p">[</span><span class="n">table_no</span><span class="p">](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">,</span> <span class="n">of13</span><span class="p">::</span><span class="n">FeatireReply</span><span class="p">)</span>
-      <span class="p">{</span>
-        <span class="n">of13</span><span class="p">::</span><span class="n">FlowMod</span> <span class="n">fm</span><span class="p">;</span>
-        <span class="n">fm</span><span class="o">.</span><span class="n">table_id</span><span class="p">(</span><span class="n">table_no</span><span class="p">);</span>
-        <span class="n">fm</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">new</span> <span class="n">EthSrc</span><span class="p">(</span><span class="s2">&quot;ff:ff:ff:ff:ff:ff&quot;</span><span class="p">));</span>
-        <span class="n">conn</span><span class="o">-&gt;</span><span class="n">send</span><span class="p">(</span><span class="n">fm</span><span class="p">);</span>
-      <span class="p">});</span>
-<span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void ExampleFireWall::init(Loader* loader, const Config&amp;)
+{
+  Controller* ctrl = Controller::get(loader);
+  uint8_t table_no = ctrl-&gt;reservTable();
+  QObject::connect(ctrl, Controller::SwitchUp,
+      [table_no](SwitchConnectionPtr conn, of13::FeatireReply)
+      {
+        of13::FlowMod fm;
+        fm.table_id(table_no);
+        fm.match(new EthSrc(&quot;ff:ff:ff:ff:ff:ff&quot;));
+        conn-&gt;send(fm);
+      });
+}
 </pre></div>
 </div>
 </dd></dl>
@@ -352,7 +377,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <p>Задача модуля обработчика PacketIn&#8217;ов абстрагировать вас от низкоуровневых OpenFlow команд и пакетов и тем самым повысить удобство программирования.</p>
 <p>Программист приложений для контроллера может писать данный обработчик пакетов сосредоточившись только на основной логике своей программы.
 Ему не надо будет самому формировать FlowMod, за него это сделает ядро <strong>RUNOS</strong>,
-Все что нужно программисту, это программисту это прочитать необходимые ему поля пакета,
+Все что нужно программисту, это прочитать необходимые ему поля пакета,
 и на основании этого выбрать действие с пакетом.</p>
 </div>
 <div class="section" id="id5">
@@ -360,9 +385,9 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <p>Функция обработчик : функция которая определяет действие с пакетом для коммутатора, она вызывается на каждый PacketIn.</p>
 <p>Для каждого коммутатора описывается отдельная функция обработчик. Поэтому программисту необходимо описать не одну функцию обработчик, а <em>фабрику</em>, которая будет создавать для каждого коммутатора свою функцию обработчик.</p>
 <img alt="_images/PacketMissFactory.png" src="_images/PacketMissFactory.png" />
-<p>В контроллере могут обыть одновременно зарегистировано множество обработчиков, они все выстраиваются в конвеер и выполняются один за другим.
+<p>В контроллере могут быть одновременно зарегистрировано множество обработчиков, они все выстраиваются в конвеер и выполняются один за другим.
 Порядок определяется файлом настроек <code class="docutils literal"><span class="pre">network-settings.json</span></code>.</p>
-<p>Обработчик <em>PacketMissHandler</em> &#8211; это callable объект, который  имеет следующию сигнатуру :</p>
+<p>Обработчик <em>PacketMissHandler</em> &#8211; это callable объект, который  имеет следующую сигнатуру :</p>
 <blockquote>
 <div><dl class="function">
 <dt id="_CPPv217PacketMissHandlerR6Packet7FlowPtr8Decision">
@@ -370,7 +395,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <dd></dd></dl>
 
 <p>На вход подается пакет, который пришел как PacketIn.</p>
-<p>Парметр  decision  это решение обработчиков, которые выполнялись до вашего обработчика.</p>
+<p>Параметр  decision  это решение обработчиков, которые выполнялись до вашего обработчика.</p>
 <p>Возвращается действие над пакетом.</p>
 </div></blockquote>
 <p>Фабрика <em>PacketMissHandlerFactory</em> &#8211; это callable объект, который имеет следующую сигнатуру :</p>
@@ -378,7 +403,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <div><dl class="function">
 <dt id="_CPPv224PacketMissHandlerFactory19SwitchConnectionPtr">
 <span id="PacketMissHandlerFactory__SwitchConnectionPtr"></span><a class="reference internal" href="#_CPPv217PacketMissHandlerR6Packet7FlowPtr8Decision" title="PacketMissHandler">PacketMissHandler</a> <code class="descclassname"></code><code class="descname">PacketMissHandlerFactory</code><span class="sig-paren">(</span>SwitchConnectionPtr <em>conn</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv224PacketMissHandlerFactory19SwitchConnectionPtr" title="Ссылка на это определение">¶</a></dt>
-<dd><p>На вход ей подается соедение с коммутатором, а она генерирует функцию обработчик.</p>
+<dd><p>На вход ей подается соединение с коммутатором, а она генерирует функцию обработчик.</p>
 </dd></dl>
 
 </div></blockquote>
@@ -389,26 +414,26 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <dl class="function">
 <dt id="_CPPv2N10Controller15registerHandlerEPKc24PacketMissHandlerFactory">
 <span id="Controller::registerHandler__cCP.PacketMissHandlerFactory"></span>void <code class="descclassname">Controller::</code><code class="descname">registerHandler</code><span class="sig-paren">(</span><em class="property">const</em> char *<em>name</em>, <a class="reference internal" href="#_CPPv224PacketMissHandlerFactory19SwitchConnectionPtr" title="PacketMissHandlerFactory">PacketMissHandlerFactory</a> <em>factory</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller15registerHandlerEPKc24PacketMissHandlerFactory" title="Ссылка на это определение">¶</a></dt>
-<dd><p>Вам необходимо зарегистрировать фабрику оброботчиков, и имя обработчика.</p>
-<p>Имя обработчика надо указываеть в файле <code class="docutils literal"><span class="pre">network-settings.json</span></code>, чтобы <a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> запускал ее в pipeline.</p>
+<dd><p>Вам необходимо зарегистрировать фабрику обработчиков, и имя обработчика.</p>
+<p>Имя обработчика надо указывать в файле <code class="docutils literal"><span class="pre">network-settings.json</span></code>, чтобы <a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> запускал ее в pipeline.</p>
 </dd></dl>
 
 <p>Вам необходимо указать ваш обработчик в списке обработчиков в <code class="docutils literal"><span class="pre">network-settings.json</span></code> в <code class="docutils literal"><span class="pre">&quot;controller&quot;</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">&quot;pipeline&quot;</span> <span class="pre">:</span> <span class="pre">[</span> <span class="pre">...</span> <span class="pre">,</span> <span class="pre">&quot;example&quot;,</span> <span class="pre">...</span> <span class="pre">]</span> <span class="pre">}</span></code>.
 Обработчики выполняются в порядке, указанном в данном списке.</p>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">Exmaple</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
-<span class="p">{</span>
-    <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-    <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerHandler</span><span class="p">(</span> <span class="s2">&quot;exmaple&quot;</span><span class="p">,</span>
-        <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">)</span>
-        <span class="p">{</span>
-          <span class="k">return</span> <span class="p">[](</span><span class="n">Packet</span><span class="o">&amp;</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">FlowPtr</span> <span class="p">,</span> <span class="n">Decision</span> <span class="n">decision</span><span class="p">)</span>
-          <span class="p">{</span>
-            <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Packet In !&quot;</span><span class="p">;</span>
-            <span class="k">return</span> <span class="n">decision</span><span class="p">;</span>
-          <span class="p">};</span>
-        <span class="p">});</span>
- <span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void Exmaple::init(Loader* loader, const Config&amp; )
+{
+    Controller* ctrl = Controller::get(loader);
+    ctrl-&gt;registerHandler( &quot;exmaple&quot;,
+        [](SwitchConnectionPtr conn)
+        {
+          return [](Packet&amp; pkt, FlowPtr , Decision decision)
+          {
+            LOG(INFO) &lt;&lt; &quot;Packet In !&quot;;
+            return decision;
+          };
+        });
+ }
 </pre></div>
 </div>
 </div>
@@ -431,57 +456,57 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 
 </li>
 </ul>
-<p>Для представляния полей используется библиотека RUNOS::oxm.</p>
+<p>Для представления полей используется библиотека RUNOS::oxm.</p>
 <blockquote>
 <div><p>Данная библиотека кодирует в себе значения поля.
 Существуют три вида кодирования :</p>
 <blockquote>
 <div><ul class="simple">
-<li><code class="docutils literal"><span class="pre">oxm::value</span></code> &#8211; значание в поле.</li>
+<li><code class="docutils literal"><span class="pre">oxm::value</span></code> &#8211; значение в поле.</li>
 <li><code class="docutils literal"><span class="pre">oxm::mask</span></code> &#8211; маска поля.</li>
-<li><code class="docutils literal"><span class="pre">oxm::field</span></code> &#8211; значание и маска.</li>
+<li><code class="docutils literal"><span class="pre">oxm::field</span></code> &#8211; значение и маска.</li>
 </ul>
 </div></blockquote>
 </div></blockquote>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">Example</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-  <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerHandler</span><span class="p">(</span><span class="s2">&quot;exmaple&quot;</span><span class="p">,</span>
-      <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">)</span>
-      <span class="p">{</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_eth_type</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">eth_type</span><span class="p">();</span> <span class="o">//</span> <span class="k">for</span> <span class="n">optimization</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_ipv4_dst</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">ipv4_dst</span><span class="p">();</span>
-        <span class="k">return</span> <span class="p">[](</span><span class="n">Packet</span><span class="o">&amp;</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">FlowPtr</span><span class="p">,</span> <span class="n">Decision</span> <span class="n">decision</span><span class="p">)</span>
-        <span class="p">{</span>
-          <span class="k">if</span> <span class="p">(</span><span class="n">pkt</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">ofb_eth_type</span> <span class="o">==</span> <span class="mh">0x0800</span><span class="p">))</span> <span class="o">//</span> <span class="n">ip</span>
-          <span class="p">{</span>
-             <span class="n">uint32_t</span>  <span class="n">dst_ip</span>  <span class="o">=</span> <span class="n">pkt</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ofb_ipv4_dst</span><span class="p">);</span>
-             <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">dst_ip</span><span class="p">;</span> <span class="o">//</span> <span class="n">TODO</span> <span class="p">:</span> <span class="n">pretty</span> <span class="nb">print</span>
-          <span class="p">}</span>
-          <span class="k">return</span> <span class="n">decision</span><span class="p">;</span>
-        <span class="p">};</span>
-      <span class="p">});</span>
-  <span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void Example::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;exmaple&quot;,
+      [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_type = oxm::eth_type(); // for optimization
+        const auto ofb_ipv4_dst = oxm::ipv4_dst();
+        return [](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          if (pkt.test(ofb_eth_type == 0x0800)) // ip
+          {
+             uint32_t  dst_ip  = pkt.load(ofb_ipv4_dst);
+             LOG(INFO) &lt;&lt; dst_ip; // TODO : pretty print
+          }
+          return decision;
+        };
+      });
+  }
 </pre></div>
 </div>
 <p>Поддерживается маскирование с помощью оператора <code class="docutils literal"><span class="pre">&amp;</span></code> для некоторых полей.</p>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">Example</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-  <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerHandler</span><span class="p">(</span><span class="s2">&quot;exmaple&quot;</span><span class="p">,</span>
-      <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">)</span>
-      <span class="p">{</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_eth_src</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">eth_src</span><span class="p">();</span>
-        <span class="k">return</span> <span class="p">[</span><span class="o">=</span><span class="p">](</span><span class="n">Packet</span><span class="o">&amp;</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">FlowPtr</span><span class="p">,</span> <span class="n">Decision</span> <span class="n">decision</span><span class="p">)</span>
-        <span class="p">{</span>
-          <span class="n">ethaddr</span> <span class="n">src_mac</span> <span class="o">=</span> <span class="n">pkt</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ofb_eth_src</span> <span class="o">&amp;</span> <span class="s2">&quot;ff:ff:ff:00:00:00&quot;</span><span class="p">);</span>
-          <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">src_mac</span><span class="p">;</span>
-          <span class="k">return</span> <span class="n">decision</span><span class="p">;</span>
-        <span class="p">};</span>
-      <span class="p">});</span>
-  <span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void Example::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;exmaple&quot;,
+      [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_src = oxm::eth_src();
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          ethaddr src_mac = pkt.load(ofb_eth_src &amp; &quot;ff:ff:ff:00:00:00&quot;);
+          LOG(INFO) &lt;&lt; src_mac;
+          return decision;
+        };
+      });
+  }
 </pre></div>
 </div>
 <p>Вы так же можете изменять поля пакета :</p>
@@ -493,20 +518,20 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 
 </div></blockquote>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">Exmaple</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-  <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerHandler</span><span class="p">(</span><span class="s2">&quot;exmaple&quot;</span><span class="p">,</span>
-      <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">)</span>
-      <span class="p">{</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_eth_dst</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">eth_dst</span><span class="p">();</span>
-        <span class="k">return</span> <span class="p">[</span><span class="o">=</span><span class="p">](</span><span class="n">Packet</span><span class="o">&amp;</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">FlowPtr</span><span class="p">,</span> <span class="n">Decision</span> <span class="n">decision</span><span class="p">)</span>
-        <span class="p">{</span>
-          <span class="n">pkt</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">ofb_eth_dst</span> <span class="o">==</span> <span class="s2">&quot;11:22:33:44:55:66&quot;</span><span class="p">);</span>
-          <span class="k">return</span> <span class="n">decision</span><span class="p">;</span>
-        <span class="p">};</span>
-      <span class="p">});</span>
-<span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void Exmaple::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;exmaple&quot;,
+      [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_dst = oxm::eth_dst();
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          pkt.modify(ofb_eth_dst == &quot;11:22:33:44:55:66&quot;);
+          return decision;
+        };
+      });
+}
 </pre></div>
 </div>
 <p>RUNOS::OXM поддерживает следующие типы :</p>
@@ -647,7 +672,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <div class="admonition warning">
 <p class="first admonition-title">Предупреждение</p>
 <p class="last">Вызов функций Packet::load и Packet::test должен определятся <em>только</em> входящим пакетом
-и не зависить от внешних состояний.</p>
+и не зависеть от внешних состояний.</p>
 </div>
 </div>
 <div class="section" id="decision">
@@ -681,14 +706,14 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 
 </div></blockquote>
 </li>
-<li><p class="first"><strong>Unicast</strong> &#8211; отправить пакет на определленный порт.</p>
+<li><p class="first"><strong>Unicast</strong> &#8211; отправить пакет на определенный порт.</p>
 <blockquote>
 <div><dl class="function">
 <dt id="_CPPv2NK8Decision7unicastE8uint32_t">
 <span id="Decision::unicast__uint32_tC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">unicast</code><span class="sig-paren">(</span>uint32_t <em>port</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision7unicastE8uint32_t" title="Ссылка на это определение">¶</a></dt>
 <dd></dd></dl>
 
-<p>Парметр : port &#8211; номер порта, на который отправить данный пакет.</p>
+<p>Параметр : port &#8211; номер порта, на который отправить данный пакет.</p>
 </div></blockquote>
 </li>
 <li><p class="first"><strong>Multicast</strong> &#8211; отправить пакет на множество портов.</p>
@@ -696,7 +721,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <div><dl class="function">
 <dt id="_CPPv2NK8Decision9multicastEN9Multicast7PortSetE">
 <span id="Decision::multicast__Multicast::PortSetC"></span><a class="reference internal" href="#_CPPv28Decision" title="Decision">Decision</a> <code class="descclassname">Decision::</code><code class="descname">multicast</code><span class="sig-paren">(</span>Multicast::PortSet <em>ports</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK8Decision9multicastEN9Multicast7PortSetE" title="Ссылка на это определение">¶</a></dt>
-<dd><p>парметр : ports &#8211; список портов</p>
+<dd><p>параметр : ports &#8211; список портов</p>
 </dd></dl>
 
 </div></blockquote>
@@ -718,31 +743,31 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <p class="last">методы <a class="reference internal" href="#_CPPv28Decision" title="Decision"><code class="xref cpp cpp-class docutils literal"><span class="pre">Decision</span></code></a> возвращают новый экземпляр класса, но не меняют старый.</p>
 </div>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">Example</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-  <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerHandler</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="p">[](</span><span class="n">SwitchConnectionPtr</span> <span class="n">conn</span><span class="p">)</span>
-      <span class="p">{</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_eth_dst</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">eth_dst</span><span class="p">();</span>
-        <span class="k">return</span> <span class="p">[](</span><span class="n">Packet</span><span class="o">&amp;</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">FlowPtr</span><span class="p">,</span> <span class="n">Decision</span> <span class="n">decision</span><span class="p">)</span>
-        <span class="p">{</span>
-          <span class="k">if</span> <span class="p">(</span><span class="n">pkt</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">ofb_eth_dst</span> <span class="o">==</span> <span class="s2">&quot;ff:ff:ff:ff:ff:ff&quot;</span><span class="p">))</span>
-              <span class="k">return</span> <span class="n">decision</span><span class="o">.</span><span class="n">broadcast</span><span class="p">();</span>
-          <span class="k">else</span>
-              <span class="k">return</span> <span class="n">decision</span><span class="p">;</span>
-        <span class="p">};</span>
-       <span class="p">});</span>
-<span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void Example::init(Loader* loader, const Config&amp; )
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerHandler(&quot;example&quot;, [](SwitchConnectionPtr conn)
+      {
+        const auto ofb_eth_dst = oxm::eth_dst();
+        return [](Packet&amp; pkt, FlowPtr, Decision decision)
+        {
+          if (pkt.test(ofb_eth_dst == &quot;ff:ff:ff:ff:ff:ff&quot;))
+              return decision.broadcast();
+          else
+              return decision;
+        };
+       });
+}
 </pre></div>
 </div>
 </div>
 <div class="section" id="time">
 <h4>5.4.5.2. Time<a class="headerlink" href="#time" title="Ссылка на этот заголовок">¶</a></h4>
-<p>Decision позволяет настраивать время устанавленного правила:</p>
+<p>Decision позволяет настраивать время установленного правила:</p>
 <blockquote>
 <div><dl class="type">
 <dt id="_CPPv2N8Decision8durationE">
-<span id="Decision::duration"></span><em class="property">typedef </em>std::chrono::duration&lt;uint32_t&gt; <code class="descclassname">Decision::</code><code class="descname">duration</code><a class="headerlink" href="#_CPPv2N8Decision8durationE" title="Ссылка на это определение">¶</a></dt>
+<span id="Decision::duration"></span><em class="property">type </em>std::chrono::duration&lt;uint32_t&gt; <code class="descclassname">Decision::</code><code class="descname">duration</code><a class="headerlink" href="#_CPPv2N8Decision8durationE" title="Ссылка на это определение">¶</a></dt>
 <dd><p>Время жизни правила.
 По умолчанию бесконечное время жизни.</p>
 <p><code class="docutils literal"><span class="pre">std::chrono::seconds::zero()</span></code> &#8211; Применить правило только к данному пакету.</p>
@@ -775,42 +800,42 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <p class="last">Каждое приложение может выбирать свое время тайм-аута. В этом случае выбирается меньший из всех.</p>
 </div>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">ExampleLearningSwitch</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span> <span class="o">&amp;</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-    <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerHandler</span><span class="p">(</span><span class="s2">&quot;exmaple-forwarding&quot;</span><span class="p">,</span> <span class="p">[](</span><span class="n">SwitchConnectionPtr</span><span class="p">)</span> <span class="p">{</span>
-        <span class="o">//</span> <span class="n">MAC</span> <span class="o">-&gt;</span> <span class="n">port</span> <span class="n">mapping</span> <span class="k">for</span> <span class="n">EVERY</span> <span class="n">switch</span>
-        <span class="n">std</span><span class="p">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">ethaddr</span><span class="p">,</span> <span class="n">uint32_t</span><span class="o">&gt;</span> <span class="n">seen_port</span><span class="p">;</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_in_port</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">in_port</span><span class="p">();</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_eth_src</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">eth_src</span><span class="p">();</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_eth_dst</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">eth_dst</span><span class="p">();</span>
+<div class="highlight-python"><div class="highlight"><pre>void ExampleLearningSwitch::init(Loader *loader, const Config &amp;)
+{
+    Controller* ctrl = Controller::get(loader);
+    ctrl-&gt;registerHandler(&quot;exmaple-forwarding&quot;, [](SwitchConnectionPtr) {
+        // MAC -&gt; port mapping for EVERY switch
+        std::unordered_map&lt;ethaddr, uint32_t&gt; seen_port;
+        const auto ofb_in_port = oxm::in_port();
+        const auto ofb_eth_src = oxm::eth_src();
+        const auto ofb_eth_dst = oxm::eth_dst();
 
-        <span class="k">return</span> <span class="p">[</span><span class="o">=</span><span class="p">](</span><span class="n">Packet</span><span class="o">&amp;</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">FlowPtr</span><span class="p">,</span> <span class="n">Decision</span> <span class="n">decision</span><span class="p">)</span> <span class="n">mutable</span> <span class="p">{</span>
-            <span class="o">//</span> <span class="n">Learn</span> <span class="n">on</span> <span class="n">packet</span> <span class="n">data</span>
-            <span class="n">ethaddr</span> <span class="n">src_mac</span> <span class="o">=</span> <span class="n">pkt</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ofb_eth_src</span><span class="p">);</span>
-            <span class="o">//</span> <span class="n">Forward</span> <span class="n">by</span> <span class="n">packet</span> <span class="n">destination</span>
-            <span class="n">ethaddr</span> <span class="n">dst_mac</span> <span class="o">=</span> <span class="n">pkt</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ofb_eth_dst</span><span class="p">);</span>
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision) mutable {
+            // Learn on packet data
+            ethaddr src_mac = pkt.load(ofb_eth_src);
+            // Forward by packet destination
+            ethaddr dst_mac = pkt.load(ofb_eth_dst);
 
-            <span class="n">seen_port</span><span class="p">[</span><span class="n">src_mac</span><span class="p">]</span> <span class="o">=</span> <span class="n">pkt</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ofb_in_port</span><span class="p">);</span>
+            seen_port[src_mac] = pkt.load(ofb_in_port);
 
-            <span class="o">//</span> <span class="n">forward</span>
-            <span class="n">auto</span> <span class="n">it</span> <span class="o">=</span> <span class="n">seen_port</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">dst_mac</span><span class="p">);</span>
+            // forward
+            auto it = seen_port.find(dst_mac);
 
-            <span class="k">if</span> <span class="p">(</span><span class="n">it</span> <span class="o">!=</span> <span class="n">seen_port</span><span class="o">.</span><span class="n">end</span><span class="p">())</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="n">decision</span><span class="o">.</span><span class="n">unicast</span><span class="p">(</span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">)</span>
-                               <span class="o">.</span><span class="n">idle_timeout</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">chrono</span><span class="p">::</span><span class="n">seconds</span><span class="p">(</span><span class="mi">60</span><span class="p">))</span>
-                               <span class="o">.</span><span class="n">hard_timeout</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">chrono</span><span class="p">::</span><span class="n">minutes</span><span class="p">(</span><span class="mi">30</span><span class="p">));</span>
-            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-                <span class="n">auto</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">broadcast</span><span class="p">();</span>
-                <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_broadcast</span><span class="p">(</span><span class="n">dst_mac</span><span class="p">))</span> <span class="p">{</span>
-                    <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Flooding for unknown address &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">dst_mac</span><span class="p">;</span>
-                    <span class="n">ret</span><span class="o">.</span><span class="n">hard_timeout</span><span class="p">(</span><span class="n">std</span><span class="p">::</span><span class="n">chrono</span><span class="p">::</span><span class="n">seconds</span><span class="p">::</span><span class="n">zero</span><span class="p">());</span>
-                <span class="p">}</span>
-                <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
-            <span class="p">}</span>
-        <span class="p">};</span>
-    <span class="p">});</span>
-<span class="p">}</span>
+            if (it != seen_port.end()) {
+                return decision.unicast(it-&gt;second)
+                               .idle_timeout(std::chrono::seconds(60))
+                               .hard_timeout(std::chrono::minutes(30));
+            } else {
+                auto ret = decision.broadcast();
+                if (not is_broadcast(dst_mac)) {
+                    LOG(INFO) &lt;&lt; &quot;Flooding for unknown address &quot; &lt;&lt; dst_mac;
+                    ret.hard_timeout(std::chrono::seconds::zero());
+                }
+                return ret;
+            }
+        };
+    });
+}
 </pre></div>
 </div>
 </div>
@@ -826,55 +851,98 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 
 </div></blockquote>
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">ExmapleFireWall</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span> <span class="o">&amp;</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-    <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerHandler</span><span class="p">(</span><span class="s2">&quot;firewall&quot;&quot;, [](SwitchConnectionPtr) {</span>
-        <span class="n">const</span> <span class="n">auto</span> <span class="n">ofb_eth_src</span> <span class="o">=</span> <span class="n">oxm</span><span class="p">::</span><span class="n">eth_src</span><span class="p">();</span>
+<div class="highlight-python"><div class="highlight"><pre>void ExmapleFireWall::init(Loader *loader, const Config &amp;)
+{
+    Controller* ctrl = Controller::get(loader);
+    ctrl-&gt;registerHandler(&quot;firewall&quot;&quot;, [](SwitchConnectionPtr) {
+        const auto ofb_eth_src = oxm::eth_src();
 
-        <span class="k">return</span> <span class="p">[</span><span class="o">=</span><span class="p">](</span><span class="n">Packet</span><span class="o">&amp;</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">FlowPtr</span><span class="p">,</span> <span class="n">Decision</span> <span class="n">decision</span><span class="p">)</span> <span class="n">mutable</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">pkt</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">ofb_eth_src</span> <span class="o">==</span> <span class="s2">&quot;ff:ff:ff:ff:ff:ff&quot;</span><span class="p">)){</span>
-                <span class="k">return</span> <span class="n">decision</span><span class="o">.</span><span class="n">drop</span><span class="p">()</span><span class="o">.</span><span class="n">return_</span><span class="p">();</span>
-            <span class="p">}</span>
-            <span class="k">return</span> <span class="n">decision</span><span class="p">;</span>
-        <span class="p">};</span>
-    <span class="p">});</span>
-<span class="p">}</span>
+        return [=](Packet&amp; pkt, FlowPtr, Decision decision) mutable {
+            if (pkt.test(ofb_eth_src == &quot;ff:ff:ff:ff:ff:ff&quot;)){
+                return decision.drop().return_();
+            }
+            return decision;
+        };
+    });
+}
 </pre></div>
 </div>
 </div>
 </div>
-</div>
 <div class="section" id="id9">
-<h2>5.5. Реализация рассылки широковещательного сообщения<a class="headerlink" href="#id9" title="Ссылка на этот заголовок">¶</a></h2>
-<p>RUNOS предоставляет вам возможность реализовать свою низкоуровневую реализацию <em>Bradcast-правила</em>.</p>
+<h3>5.4.6. Состояния потока<a class="headerlink" href="#id9" title="Ссылка на этот заголовок">¶</a></h3>
+<p>Поток, который установится в результате работы обработчиков может находиться в некоторых состояниях:</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">Flow::State::Egg</span></code> &#8211; поток только создается и еще не был установлен на коммутатор.</li>
+<li><code class="docutils literal"><span class="pre">Flow::State::Active</span></code> &#8211; поток установлен на коммутатор.</li>
+<li><code class="docutils literal"><span class="pre">Flow::State::Evicted</span></code> &#8211; поток удален с коммутатора по некоторым причинам.</li>
+</ul>
+<p>Например не хватает места в таблице потоков.</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">Flow::State::Idle</span></code> &#8211; поток удален по idle timeout.</li>
+<li><code class="docutils literal"><span class="pre">Flow::State::Expired</span></code> &#8211; поток удален по hard timeout.</li>
+</ul>
+</div></blockquote>
+<p>Вы можете следить за состояниям потока с помощью сигнала:</p>
+<blockquote>
+<div><dl class="function">
+<dt id="_CPPv2N4Flow12stateChangedEN4Flow5StateE8uint64_t">
+<span id="Flow::stateChanged__Flow::State.uint64_t"></span>void <code class="descclassname">Flow::</code><code class="descname">stateChanged</code><span class="sig-paren">(</span>Flow::State <em>new_state</em>, uint64_t <em>cookie</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N4Flow12stateChangedEN4Flow5StateE8uint64_t" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+</div></blockquote>
+<p>Пример:</p>
+<div class="highlight-python"><div class="highlight"><pre>void Example::init(Loader *loader, const Config &amp;)
+{
+    Controller* ctrl = Controller::get(loader);
+    ctrl-&gt;registerHandler(&quot;firewall&quot;&quot;, [](SwitchConnectionPtr) {
+        const auto ofb_eth_src = oxm::eth_src();
+
+        return [=](Packet&amp; pkt, FlowPtr fptr, Decision decision) mutable {
+            connect(fptr.get(), &amp;Flow::stateChanged,
+                    [](Flow::State new_state, uint64_t)
+                    {
+                        LOG(INFO) &lt;&lt; &quot;New state of flow&quot;;
+                    });
+             return decision;
+        };
+    });
+}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="id10">
+<h2>5.5. Реализация рассылки широковещательного сообщения<a class="headerlink" href="#id10" title="Ссылка на этот заголовок">¶</a></h2>
+<p>RUNOS предоставляет вам возможность реализовать свою низкоуровневую реализацию <em>Broadcast-правила</em>.</p>
 <dl class="type">
 <dt id="_CPPv219FloodImplementation">
-<span id="FloodImplementation"></span><em class="property">typedef </em>std::function&lt;Action *<span class="sig-paren">(</span>uint64_t dpid<span class="sig-paren">)</span>&gt; <code class="descclassname"></code><code class="descname">FloodImplementation</code><a class="headerlink" href="#_CPPv219FloodImplementation" title="Ссылка на это определение">¶</a></dt>
+<span id="FloodImplementation"></span><em class="property">type </em>std::function&lt;Action*(uint64_t dpid)&gt; <code class="descclassname"></code><code class="descname">FloodImplementation</code><a class="headerlink" href="#_CPPv219FloodImplementation" title="Ссылка на это определение">¶</a></dt>
 <dd><p>Функция, которая реализует рассылку широковещательных сообщений.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="_CPPv2N10Controller13registerFloodE19FloodImplementation">
 <span id="Controller::registerFlood__FloodImplementation"></span>void <code class="descclassname">Controller::</code><code class="descname">registerFlood</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv219FloodImplementation" title="FloodImplementation">FloodImplementation</a> <em>flood</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller13registerFloodE19FloodImplementation" title="Ссылка на это определение">¶</a></dt>
-<dd><p>Функция, которая регестрирует реализацию рассылки широковещательных сообщений.</p>
+<dd><p>Функция, которая регистрирует реализацию рассылки широковещательных сообщений.</p>
 <p>По-умолчанию, сообщения рассылаются на все порты.</p>
 <p>Вызывать необходимо в методе <code class="docutils literal"><span class="pre">init</span></code> вашего приложения.</p>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
-<p class="last">одновременно в контроллере не может быть зарегестрировано больше одной реализации рассылки широковещательных сообщений.</p>
+<p class="last">одновременно в контроллере не может быть зарегистрировано больше одной реализации рассылки широковещательных сообщений.</p>
 </div>
 </dd></dl>
 
 <p>Пример:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">ExmapleSTP</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span><span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">Controller</span><span class="o">*</span> <span class="n">ctrl</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="n">loader</span><span class="p">);</span>
-  <span class="n">ctrl</span><span class="o">-&gt;</span><span class="n">registerFlood</span><span class="p">(</span><span class="s2">&quot;exmaple-stp&quot;</span><span class="p">,</span> <span class="p">[](</span><span class="n">uint64_t</span> <span class="n">dpid</span><span class="p">)</span>
-      <span class="p">{</span>
-          <span class="k">return</span> <span class="n">new</span> <span class="n">of13</span><span class="p">::</span><span class="n">GroupAction</span><span class="p">(</span><span class="n">FLOOD_GROUP</span><span class="p">);</span> <span class="o">//</span> <span class="n">Указать</span> <span class="n">Group</span> <span class="n">table</span><span class="p">,</span> <span class="n">с</span> <span class="n">реализаций</span> <span class="n">широковещания</span>
-      <span class="p">});</span>
-<span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre>void ExmapleSTP::init(Loader* loader, const Config&amp;)
+{
+  Controller* ctrl = Controller::get(loader);
+  ctrl-&gt;registerFlood(&quot;exmaple-stp&quot;, [](uint64_t dpid)
+      {
+          return new of13::GroupAction(FLOOD_GROUP); // Указать Group table, с реализаций широковещания
+      });
+}
 </pre></div>
 </div>
 </div>
