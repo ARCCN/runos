@@ -98,7 +98,7 @@ signals:
     /**
       * flow removed message, that recieved Controller.
       */
-    void flowRemoved(SwitchConnectionPtr ofconnl, of13::FlowRemoved& fr);
+    void flowRemoved(SwitchConnectionPtr ofconnl, of13::FlowRemoved fr);
 
 private:
     std::unique_ptr<class ControllerImpl> impl;

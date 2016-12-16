@@ -119,7 +119,7 @@ class FlowImpl final : public Flow
     void setState(State new_state)
     {
         m_state = new_state;
-        emit changeState(new_state, cookie());
+        emit stateChanged(new_state, cookie());
     }
 
    class DecisionCompiler : public boost::static_visitor<void> {
@@ -181,6 +181,9 @@ class FlowImpl final : public Flow
         using std::chrono::seconds;
 
         if (state() == State::Evicted && not m_packet_in)
+            return;
+
+        if (state() != State::Active && not m_packet_in)
             return;
 
         if (state() != State::Egg ){

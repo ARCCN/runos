@@ -28,6 +28,7 @@ using namespace fluid_msg;
 Q_DECLARE_METATYPE(uint32_t)
 Q_DECLARE_METATYPE(uint64_t)
 Q_DECLARE_METATYPE(of13::FeaturesReply)
+Q_DECLARE_METATYPE(of13::FlowRemoved)
 Q_DECLARE_METATYPE(of13::PortStatus)
 Q_DECLARE_METATYPE(of13::Port)
 Q_DECLARE_METATYPE(of13::Match)

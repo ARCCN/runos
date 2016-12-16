@@ -50,10 +50,12 @@ int main(int argc, char* argv[]) {
     qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<of13::PortStatus>();
     qRegisterMetaType<of13::FeaturesReply>();
+    qRegisterMetaType<of13::FlowRemoved>();
     qRegisterMetaType< std::shared_ptr<of13::Error> >();
     qRegisterMetaType<of13::Port>();
     qRegisterMetaType<of13::Match>();
     qRegisterMetaType<runos::SwitchConnectionPtr>("SwitchConnectionPtr");
+    qRegisterMetaType<runos::Flow::State>("State");
 
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
