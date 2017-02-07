@@ -27,6 +27,30 @@
 using runos::SwitchConnectionPtr;
 using runos::PacketMissHandlerFactory;
 using runos::FloodImplementation;
+using runos::OfMessageHandler;
+
+struct CommonHandlers{
+    virtual void apply(uint8_t type,void *data, size_t len) = 0;
+    virtual ~CommonHandlers(){}
+};
+
+template <class ofMessage>
+class Handlers : public CommonHandlers{
+    class OFMsgParseError : std::exception { }
+    std::vector<OfMessageHandler<ofMessage>> handlers;
+public:
+    void apply(void *data, SwitchConnectionPtr connection) override{
+        ofMessage msg;
+        if( msg.unpack(static_cast<uint8_t *>(data)) != 0 ){
+            throw OFMsgParseError();
+        }
+        for (auto h : handlers){
+            h(msg, connection);
+        }
+    }
+    friend class Controller;
+};
+
 
 /**
 * Implements OpenFlow 1.3 controller.
@@ -45,6 +69,17 @@ public:
     * Used for performance-critical message processing, such as packet-in's.
     */
     void registerHandler(const char* name, PacketMissHandlerFactory factory);
+
+    /**
+    * Register handler of openflow message
+    */
+    template<class ofMessage>
+    void registerHandler(OfMessageHandler<ofMessage> handler){
+        static Handlers<ofMessage> handlers;
+        ofMessage tmp;
+        __register_handler__(tmp.type(), &handlers);
+        handlers.handlers.push_back(handler);
+    }
 
     /**
      *  Get number of Maple's table
@@ -102,4 +137,5 @@ signals:
 
 private:
     std::unique_ptr<class ControllerImpl> impl;
+    void __register_handler__(uint8_t t, CommonHandlers *h);
 };

@@ -552,6 +552,7 @@ public:
 
     std::unordered_map<std::string, PacketMissHandlerFactory>
         handlers;
+    std::unordered_map<uint8_t, CommonHandlers*> custom_handlers;
     PacketMissPipelineFactory pipeline_factory;
     bool isFloodImplementation{false};
     FloodImplementation flood;
@@ -588,7 +589,14 @@ public:
             return;
         }
 
+
         SwitchScope *ctx = reinterpret_cast<SwitchScope *>(ofconn->get_application_data());
+
+        auto it = custom_handlers.find(type);
+        if( it != custom_handlers.end()){
+            it->second->apply(data, ctx->connection);
+        }
+
 
         if (ctx == nullptr && type != of13::OFPT_FEATURES_REPLY) {
             LOG(WARNING) << "Switch send message before feature reply";
@@ -874,6 +882,14 @@ void Controller::registerHandler(const char* name,
 
     VLOG(10) << "Registring flow processor " << name;
     impl->handlers[std::string(name)] = factory;
+}
+
+void Controller::__register_handler__(uint8_t t, CommonHandlers* h)
+{
+    if (impl->started) {
+        LOG(ERROR) << "Register handler after startup";
+    }
+    impl->custom_handlers[t] = h;
 }
 
 void Controller::registerFlood(FloodImplementation _flood)

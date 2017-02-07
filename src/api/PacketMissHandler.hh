@@ -51,4 +51,8 @@ using PacketMissHandlerFactory =
 using FloodImplementation =
 	std::function< Action*(uint64_t dpid) >;
 
+template <class ofMessage>
+using OfMessageHandler =
+    std::function< void(const ofMessage& msg) >;
+
 }
