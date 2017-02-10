@@ -105,9 +105,10 @@ class FlowImpl final : public Flow
     uint32_t m_buffer_id {OFP_NO_BUFFER};
     class DecisionCompiler : public boost::static_visitor<void> {
         ActionList& ret;
+        uint64_t dpid;
     public:
-        explicit DecisionCompiler(ActionList& ret)
-            : ret(ret)
+        explicit DecisionCompiler(ActionList& ret, uint64_t dpid)
+            : ret(ret), dpid(dpid)
         { }
 
         void operator()(const Decision::Undefined&) const
@@ -140,9 +141,14 @@ class FlowImpl final : public Flow
             ret.add_action(new of13::OutputAction(of13::OFPP_CONTROLLER,
                                                   i.send_bytes_len));
         }
+
+        void operator()(const Decision::Custom& c) const
+        {
+            c.body->apply(ret, dpid);
+        }
    };
 
-    ActionList actions() const
+    ActionList actions(uint64_t dpid) const
     {
         ActionList ret;
 
@@ -150,7 +156,7 @@ class FlowImpl final : public Flow
             ret.add_action(new of13::SetFieldAction(new FluidOXMAdapter(f)));
         }
 
-        boost::apply_visitor(DecisionCompiler(ret), m_decision.data());
+        boost::apply_visitor(DecisionCompiler(ret, dpid), m_decision.data());
         return ret;
     }
 
@@ -167,7 +173,7 @@ class FlowImpl final : public Flow
                 of13::PacketOut po;
                 po.xid(m_xid);
                 po.buffer_id(m_buffer_id);
-                po.actions(actions());
+                po.actions(actions(conn->dpid()));
                 po.in_port(m_in_port);
 
                 conn->send(po);
@@ -203,7 +209,7 @@ class FlowImpl final : public Flow
                       of13::OFPFF_SEND_FLOW_REM );
 
             of13::ApplyActions applyActions;
-            applyActions.actions(actions());
+            applyActions.actions(actions(conn->dpid()));
             fm.add_instruction(applyActions);
 
             conn->send(fm);

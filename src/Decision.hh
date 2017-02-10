@@ -7,6 +7,7 @@
 #include <boost/variant/variant.hpp>
 
 #include "types/exception.hh"
+#include "Common.hh"
 
 namespace runos {
 
@@ -15,6 +16,12 @@ struct decision_conflict : virtual logic_error { };
 class Decision {
 public:
     typedef std::chrono::duration<uint32_t> duration;
+
+    struct CustomDecision {
+        virtual void apply(ActionList& ret, uint64_t dpid) = 0;
+    };
+
+    typedef std::shared_ptr<CustomDecision> CustomDecisionPtr;
 
     struct Base {
         bool return_ { false };
@@ -75,6 +82,16 @@ public:
         { }
     };
 
+    struct Custom : Base {
+        CustomDecisionPtr body;
+    protected:
+        friend class Decision;
+        explicit Custom(Base base, CustomDecisionPtr body)
+            : Base(base), body(body)
+        { }
+    };
+
+
     using DecisionData =
         boost::variant<
             Undefined,
@@ -82,7 +99,8 @@ public:
             Unicast,
             Multicast,
             Broadcast,
-            Inspect
+            Inspect,
+            Custom
         >;
 
     const DecisionData& data() const
@@ -110,6 +128,8 @@ public:
     Decision drop() const;
     //
     Decision clear() const;
+    //
+    Decision custom(CustomDecisionPtr body) const;
 
 protected:
     Decision() = default;

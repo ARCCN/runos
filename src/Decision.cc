@@ -95,6 +95,15 @@ Decision Decision::drop() const
     return Decision{Drop{base()}};
 }
 
+Decision Decision::custom(CustomDecisionPtr body) const
+{
+    if (boost::get<Undefined>(&m_data) == nullptr) {
+        if (not boost::get<Custom>(&m_data))
+            RUNOS_THROW(decision_conflict());
+    }
+    return Decision{Custom{base(), body}};
+}
+
 Decision Decision::clear() const
 {
     return Decision{Undefined{}};
