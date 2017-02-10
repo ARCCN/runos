@@ -477,8 +477,8 @@ void validateRequest(const json11::Json::object &req,
         auto dpid = json_cast<uint64_t>(req.at("dpid"));
         if (mode == "full") {
             auto table_id = json_cast<uint8_t>(req.at("table_id"));
-            if (table_id >= ctrl->handler_table()) {
-                errMsg << " RestFlowMod can work only with tables in range of 0.." << ctrl->handler_table() <<
+            if (table_id >= ctrl->maxTable()) {
+                errMsg << " RestFlowMod can work only with tables in range of 0.." << ctrl->maxTable() <<
                        ". Look at RestFlowMod class definition for more details.";
                 throw errMsg.str();
             }

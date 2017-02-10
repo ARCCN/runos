@@ -68,12 +68,6 @@ public:
     void startUp(Loader* loader) override;
 
     /**
-    * Registers new message handler for each worker thread.
-    * Used for performance-critical message processing, such as packet-in's.
-    */
-    void registerHandler(const char* name, PacketMissHandlerFactory factory);
-
-    /**
     * Register handler of openflow message
     */
     template<class ofMessage>
@@ -85,20 +79,9 @@ public:
     }
 
     /**
-     *  Get number of Maple's table
-     */
-    uint8_t handler_table() const;
-
-    /**
-     * If your application needed in own table, use this method
-     */
-    uint8_t reserveTable();
-
-    /**
-      * Deleting all TraceTrees
+      * get number of reserved table
       */
-
-    void invalidateTraceTree();
+    uint8_t getTable(const char* name) const;
 
     /**
      * Allocate unique OFMsg::xid and return's a wrapper class
@@ -109,11 +92,10 @@ public:
      */
     OFTransaction* registerStaticTransaction(Application* caller);
 
-
     /**
-    * register handler broadcast packets
-    */
-    void registerFlood(FloodImplementation flood);
+      * get the max number of using table
+      */
+    uint8_t maxTable() const;
 
 signals:
 
