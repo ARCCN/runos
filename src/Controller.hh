@@ -20,9 +20,12 @@
 #include "Application.hh"
 #include "Loader.hh"
 #include "OFTransaction.hh"
+#include "SwitchConnection.hh"
 
 #include "api/PacketMissHandler.hh"
 #include "SwitchConnectionFwd.hh"
+
+#include <vector>
 
 using runos::SwitchConnectionPtr;
 using runos::PacketMissHandlerFactory;
@@ -30,13 +33,13 @@ using runos::FloodImplementation;
 using runos::OfMessageHandler;
 
 struct CommonHandlers{
-    virtual void apply(uint8_t type,void *data, size_t len) = 0;
+    virtual void apply(void *data, SwitchConnectionPtr connection) = 0;
     virtual ~CommonHandlers(){}
 };
 
 template <class ofMessage>
 class Handlers : public CommonHandlers{
-    class OFMsgParseError : std::exception { }
+    class OFMsgParseError : std::exception { };
     std::vector<OfMessageHandler<ofMessage>> handlers;
 public:
     void apply(void *data, SwitchConnectionPtr connection) override{

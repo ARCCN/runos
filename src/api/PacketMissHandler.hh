@@ -53,6 +53,6 @@ using FloodImplementation =
 
 template <class ofMessage>
 using OfMessageHandler =
-    std::function< void(const ofMessage& msg) >;
+    std::function< void(const ofMessage& msg, SwitchConnectionPtr) >;
 
 }
