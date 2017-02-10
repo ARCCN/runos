@@ -16,6 +16,7 @@
 
 #include "LearningSwitch.hh"
 
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <boost/optional.hpp>
@@ -32,8 +33,10 @@
 #include "SwitchConnection.hh"
 #include "Flow.hh"
 #include "Maple.hh"
+#include "STP.hh"
 
-REGISTER_APPLICATION(LearningSwitch, {"controller", "maple", "topology", ""})
+REGISTER_APPLICATION(LearningSwitch,
+        {"controller", "maple", "topology", "stp", ""})
 
 using namespace runos;
 
@@ -127,10 +130,12 @@ void LearningSwitch::init(Loader *loader, const Config &)
             } else {
                 if (not is_broadcast(dst_mac)) {
                     VLOG(5) << "Flooding for unknown address " << dst_mac;
-                    return decision.broadcast()
+                    return decision.custom(
+                            Decision::CustomDecisionPtr(new STP::Decision()))
                                    .idle_timeout(std::chrono::seconds::zero());
                 }
-                return decision.broadcast();
+                return decision.custom(
+                        Decision::CustomDecisionPtr(new STP::Decision()));
             }
         };
     });
