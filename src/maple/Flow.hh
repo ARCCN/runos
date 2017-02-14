@@ -7,6 +7,7 @@ namespace maple {
 
 class Flow {
 public:
+    virtual const Flow& operator=(const Flow&) {return *this; }
     virtual ~Flow(){ }
 };
 

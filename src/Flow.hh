@@ -29,8 +29,7 @@
 
 namespace runos {
 
-class Flow : public QObject {
-    Q_OBJECT
+class Flow {
 public:
     enum class State {
         Egg,
@@ -56,18 +55,6 @@ public:
 
     virtual void evict() { } // = 0; //TODO
     virtual void kill() { } // = 0; //TODO
-
-signals:
-    /**
-      * Signals about change state of flow.
-      * State of packet may be :
-      *   - Egg     - new flow, that not be installed yet.
-      *   - Active  - flow installed on switch.
-      *   - Evicted - flow was removed from switch.
-      *   - Idle    - flow was removed by idle timeout.
-      *   - Expired - flow was removed by hard timeout.
-      */
-    void stateChanged(State new_state, uint64_t this_cookie);
 
 protected:
     State m_state {State::Egg};
