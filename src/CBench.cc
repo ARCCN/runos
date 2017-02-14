@@ -22,6 +22,7 @@
 #include "types/ethaddr.hh"
 #include "oxm/openflow_basic.hh"
 #include "Flow.hh"
+#include "Maple.hh"
 
 using namespace runos;
 
@@ -29,7 +30,7 @@ REGISTER_APPLICATION(CBench, {"controller", ""})
 
 void CBench::init(Loader* loader, const Config&)
 {
-    Controller::get(loader)->registerHandler("cbench",
+    Maple::get(loader)->registerHandler("cbench",
     [=](SwitchConnectionPtr) {
         const auto ofb_eth_dst = oxm::eth_dst();
 

@@ -26,15 +26,16 @@
 
 #include "Flow.hh"
 #include "Controller.hh"
+#include "Maple.hh"
 
 using namespace runos;
 
-REGISTER_APPLICATION(SimpleLearningSwitch, {"controller", ""})
+REGISTER_APPLICATION(SimpleLearningSwitch, {"controller","maple", ""})
 
 void SimpleLearningSwitch::init(Loader *loader, const Config &)
 {
-    Controller* ctrl = Controller::get(loader);
-    ctrl->registerHandler("forwarding", [](SwitchConnectionPtr) {
+    auto maple = Maple::get(loader);
+    maple->registerHandler("forwarding", [](SwitchConnectionPtr) {
         // MAC -> port mapping for EVERY switch
         std::unordered_map<ethaddr, uint32_t> seen_port;
         const auto ofb_in_port = oxm::in_port();

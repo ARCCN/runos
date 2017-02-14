@@ -19,11 +19,11 @@ set(SOURCES
     STP.cc
     Maple.cc
     # Apps
-#SimpleLearningSwitch.cc
+    SimpleLearningSwitch.cc
     LearningSwitch.cc
-#CBench.cc
+    CBench.cc
     Stats.cc
-#ArpHandler.cc
+    ArpHandler.cc
     StaticFlowPusher.cc
     RestMultipart.cc
     RestFlowMod.cc
