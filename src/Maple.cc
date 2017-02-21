@@ -138,6 +138,7 @@ class FlowImpl final : public Flow
 
         void operator()(const Decision::Inspect& i) const
         {
+            DVLOG(30) << "Added rule inpecting. Len : " << int(i.send_bytes_len);
             ret.add_action(new of13::OutputAction(of13::OFPP_CONTROLLER,
                                                   i.send_bytes_len));
         }
@@ -297,6 +298,16 @@ public:
     bool disposable(){
         return m_decision.idle_timeout() <= Decision::duration::zero();
     }
+    bool preprocess(Packet& pkt, FlowPtr flow){
+        auto data = m_decision.data();
+        DVLOG(20) << "preprocessing packet";
+        Decision::Inspect *i = boost::get<Decision::Inspect>(&data);
+        if (i != nullptr){
+            VLOG(20) << "static handle packet";
+            return i->handler(pkt, flow);
+        }
+        return false;
+    }
 };
 
 typedef std::shared_ptr<FlowImpl> FlowImplPtr;
@@ -320,7 +331,8 @@ public:
     explicit MapleBackend(SwitchConnectionPtr conn, uint8_t table)
         : conn(conn), table(table), miss{new FlowImpl(conn, table) }
     {
-        miss->decision( DecisionImpl{}.inspect(128) ); // TODO: unhardcode
+        miss->decision( DecisionImpl{}.inspect(128,
+                    [](Packet&, FlowPtr){return false;} )); // TODO: unhardcode
     }
 
     uint64_t miss_cookie() const { return miss->cookie(); }
@@ -489,6 +501,9 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
     if (flow == nullptr || flow->state() == Flow::State::Expired) {
         flow = std::make_shared<FlowImpl>(connection, handler_table);
         flows[flow->cookie()] = flow;
+    }
+    if (flow->preprocess(pkt, flow)){
+        return;
     }
     flow->packet_in(pi);
 

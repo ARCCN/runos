@@ -8,6 +8,8 @@
 
 #include "types/exception.hh"
 #include "Common.hh"
+#include "Flow.hh"
+#include "api/Packet.hh"
 
 namespace runos {
 
@@ -72,13 +74,18 @@ public:
         { }
     };
 
+    //Handler return true, if is not needed continue handle
     struct Inspect : Base {
         uint16_t send_bytes_len;
+        typedef std::function<bool(Packet&, FlowPtr)> Handler;
+        Handler handler;
     protected:
         friend class Decision;
 
-        explicit Inspect(Base base, uint16_t send_bytes_len)
-            : Base(base), send_bytes_len(send_bytes_len)
+        explicit Inspect(Base base,
+                uint16_t send_bytes_len,
+                Handler handler)
+            : Base(base), send_bytes_len(send_bytes_len), handler(handler)
         { }
     };
 
@@ -123,7 +130,7 @@ public:
     //
     Decision broadcast() const;
     //
-    Decision inspect(uint16_t bytes /* = MAX */) const;
+    Decision inspect(uint16_t bytes /* = MAX */, Inspect::Handler h) const;
     //
     Decision drop() const;
     //
