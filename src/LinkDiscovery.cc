@@ -110,20 +110,14 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
             const auto ofb_in_port = oxm::in_port();
             const auto ofb_eth_type = oxm::eth_type();
 
-            return [=](Packet& pkt, FlowPtr, Decision decision) {
-                if (not pkt.test(ofb_eth_type == LLDP_ETH_TYPE))
-                    return decision;
-
+            auto handler = [=](Packet& pkt, FlowPtr){
                 lldp_packet lldp;
                 auto written = packet_cast<SerializablePacket&>(pkt)
                               //.ethernet()
                               .serialize_to(sizeof lldp, &lldp);
                 if (written < sizeof lldp) {
                     LOG(ERROR) << "LLDP packet is too small";
-                    return decision.idle_timeout(std::chrono::seconds::zero())
-                        .drop()// TODO : inspect(sizeof(lldp_packet))
-                                   .return_();
-                }
+               }
 
                 switch_and_port source
                     = { lldp.dpid_data, lldp.port_id_sub_component };
@@ -141,10 +135,20 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
                                           Qt::QueuedConnection,
                                           Q_ARG(switch_and_port, source),
                                           Q_ARG(switch_and_port, target));
-                return decision.idle_timeout(std::chrono::seconds::zero())
-                    .drop()// TODO : inspect(sizeof(lldp_packet))
-                                   .return_();
-            };
+
+                return true;
+                };
+
+
+            return [=](Packet& pkt, FlowPtr, Decision decision) {
+                if (not pkt.test(ofb_eth_type == LLDP_ETH_TYPE))
+                    return decision;
+
+                VLOG(30) << "installing lldp rule";
+                return decision
+                    .inspect(sizeof(lldp_packet), handler)
+                    .return_();
+           };
         });
 }
 
