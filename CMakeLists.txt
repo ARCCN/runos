@@ -30,4 +30,4 @@ link_directories(
 
 add_subdirectory(src)
 add_subdirectory(web)
-add_subdirectory(test)
+#add_subdirectory(test)
