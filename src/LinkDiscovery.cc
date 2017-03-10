@@ -32,11 +32,12 @@
 #include "oxm/openflow_basic.hh"
 #include "SwitchConnection.hh"
 #include "Flow.hh"
+#include "Maple.hh"
 
 using namespace boost::endian;
 using namespace runos;
 
-REGISTER_APPLICATION(LinkDiscovery, {"switch-manager", "controller", ""})
+REGISTER_APPLICATION(LinkDiscovery, {"switch-manager", "controller", "maple", ""})
 
 big_uint16_t lldp_tlv_header(big_uint16_t type, big_uint16_t length)
 {
@@ -103,7 +104,8 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
         });
 
     /* Connect with other applications */
-    ctrl->registerHandler("link-discovery",
+    auto maple = Maple::get(loader);
+    maple->registerHandler("link-discovery",
         [this](SwitchConnectionPtr connection) {
             const auto ofb_in_port = oxm::in_port();
             const auto ofb_eth_type = oxm::eth_type();
@@ -264,7 +266,7 @@ void LinkDiscovery::clearLinkAt(const switch_and_port &source)
         emit linkBroken(source, target);
     else
         emit linkBroken(target, source);
-    ctrl->invalidateTraceTree(); // TODO : smart invalidation
+    //ctrl->invalidateTraceTree(); // TODO : smart invalidation
 }
 
 void LinkDiscovery::timerEvent(QTimerEvent*)

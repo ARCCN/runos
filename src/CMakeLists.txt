@@ -3,7 +3,7 @@ add_subdirectory(maple)
 
 set(SOURCES
     # Core
-    Application.cc 
+    Application.cc
     Loader.cc
     Decision.cc
     Flow.cc
@@ -17,12 +17,13 @@ set(SOURCES
     LinkDiscovery.cc
     Topology.cc
     STP.cc
+    Maple.cc
     # Apps
-    SimpleLearningSwitch.cc
+#SimpleLearningSwitch.cc
     LearningSwitch.cc
-    CBench.cc
+#CBench.cc
     Stats.cc
-    ArpHandler.cc
+#ArpHandler.cc
     StaticFlowPusher.cc
     RestMultipart.cc
     RestFlowMod.cc
@@ -51,7 +52,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/third_party/webserver
 )
 
-add_executable(runos ${SOURCES}) 
+add_executable(runos ${SOURCES})
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 target_link_libraries(runos
@@ -67,6 +68,6 @@ target_link_libraries(runos
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_THREAD_LIBRARY}
     ${Boost_LIBRARIES}
-    pthread 
+    pthread
 
 )

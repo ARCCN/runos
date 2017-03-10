@@ -27,8 +27,9 @@
 #include "oxm/openflow_basic.hh"
 #include "SwitchConnection.hh"
 #include "Flow.hh"
+#include "Maple.hh"
 
-REGISTER_APPLICATION(HostManager, {"switch-manager", "rest-listener", ""})
+REGISTER_APPLICATION(HostManager, {"maple","switch-manager", "rest-listener", ""})
 
 struct HostImpl {
     uint64_t id;
@@ -117,9 +118,9 @@ HostManager::~HostManager()
 void HostManager::init(Loader *loader, const Config &config)
 {
     m_switch_manager = SwitchManager::get(loader);
-    auto ctrl = Controller::get(loader);
+    auto maple = Maple::get(loader);
 
-    ctrl->registerHandler("host-manager",
+    maple->registerHandler("host-manager",
         [this](SwitchConnectionPtr connection) {
             const auto ofb_in_port = oxm::in_port();
             const auto ofb_eth_type = oxm::eth_type();

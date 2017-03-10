@@ -140,12 +140,7 @@ class FlowImpl final : public Flow
             ret.add_action(new of13::OutputAction(of13::OFPP_CONTROLLER,
                                                   i.send_bytes_len));
         }
-
-        void operator()(const Decision::Custom& c) const
-        {
-            c.body->apply(ret);
-        }
-    };
+   };
 
     ActionList actions() const
     {

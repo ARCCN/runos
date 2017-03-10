@@ -9,7 +9,6 @@
         "static-flow-pusher",
         "switch-stats",
         "stp",
-        "arp-handler",
         "flow-manager",
         "rest-multipart",
         "rest-flowmod"
@@ -25,12 +24,14 @@
     },
 
     "controller": {
-         "nthreads": 4,
-         "cbench": false,
-         "pipeline": [
+         "nthreads": 1,
+         "cbench": false
+   },
+
+    "maple": {
+          "pipeline": [
              "link-discovery",
              "host-manager",
-             "arp-handler",
              "forwarding"
          ]
     },

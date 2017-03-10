@@ -31,8 +31,9 @@
 #include "Topology.hh"
 #include "SwitchConnection.hh"
 #include "Flow.hh"
+#include "Maple.hh"
 
-REGISTER_APPLICATION(LearningSwitch, {"controller", "topology", ""})
+REGISTER_APPLICATION(LearningSwitch, {"controller", "maple", "topology", ""})
 
 using namespace runos;
 
@@ -69,11 +70,11 @@ public:
 
 void LearningSwitch::init(Loader *loader, const Config &)
 {
-    Controller* ctrl = Controller::get(loader);
     auto topology = Topology::get(loader);
     auto db = std::make_shared<HostsDatabase>();
 
-    ctrl->registerHandler("forwarding",
+    auto maple = Maple::get(loader);
+    maple->registerHandler("forwarding",
     [=](SwitchConnectionPtr connection) {
         const auto ofb_in_port = oxm::in_port();
         const auto ofb_eth_src = oxm::eth_src();
