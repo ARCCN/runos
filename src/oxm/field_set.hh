@@ -203,12 +203,16 @@ public:
                 ret.push_back(fs);
                 return;
             }
+            auto tmp_type_it = type_it;
             auto its = elements.equal_range(*type_it);
             for (auto it = its.first; it != its.second; it++){
                 fs.modify(it->second);
-                auto tmp_type_it = type_it;
-                recursive(tmp_type_it++ , fs);
+                recursive(++tmp_type_it , fs);
+                tmp_type_it = type_it;
                 fs.erase(oxm::mask<>(it->second));
+            }
+            if (its.first == its.second){
+                recursive(++tmp_type_it, fs);
             }
         };
 
