@@ -299,6 +299,7 @@ typedef std::weak_ptr<FlowImpl> FlowImplWeakPtr;
 class MapleBackend : public maple::Backend {
     SwitchConnectionPtr conn;
     uint8_t table{0};
+    FlowImplPtr miss;
 
     static FlowImplPtr flow_cast(maple::FlowPtr flow)
     {
@@ -310,8 +311,12 @@ class MapleBackend : public maple::Backend {
 
 public:
     explicit MapleBackend(SwitchConnectionPtr conn, uint8_t table)
-        : conn(conn), table(table)
-    { }
+        : conn(conn), table(table), miss{new FlowImpl(conn, table) }
+    {
+        miss->decision( DecisionImpl{}.inspect(128) ); // TODO: unhardcode
+    }
+
+    uint64_t miss_cookie() const { return miss->cookie(); }
 
     virtual void install(unsigned priority,
                          oxm::expirementer::full_field_set const& matchs,
@@ -324,6 +329,14 @@ public:
                      << " => cookie = " << std::setbase(16) << flow->cookie() << " on switch " << conn->dpid();
             flow->packet_out(priority, match);
         }
+    }
+
+    virtual void barrier_rule(unsigned priority,
+                              oxm::expirementer::full_field_set const& match,
+                              oxm::field<> const& test,
+                              uint64_t)
+    {
+        install(priority, match, miss); // test is repeated in match
     }
 
     void remove(oxm::field_set const& match) override
@@ -394,7 +407,6 @@ typedef boost::error_info< struct tag_pi_handler, std::string >
 
 struct SwitchScope {
     SwitchConnectionPtr connection;
-    FlowImplPtr miss;
     MapleBackend backend;
     maple::Runtime<DecisionImpl, FlowImpl> runtime;
     PacketMissPipeline pipeline;
@@ -407,13 +419,10 @@ struct SwitchScope {
                 uint64_t dpid,
                 uint8_t handler_table)
         : connection{connection}
-        , miss{new FlowImpl(connection, handler_table)}
         , backend{connection, handler_table}
-        , runtime{std::bind(&SwitchScope::process, this, _1, _2), backend, miss}
+        , runtime{std::bind(&SwitchScope::process, this, _1, _2), backend}
         , handler_table{handler_table}
     {
-        miss->decision( DecisionImpl{}.inspect(128) ); // TODO: unhardcode
-
         for (auto &factory : pipeline_factory) {
             pipeline.emplace_back(factory.first,
                                   std::move(factory.second(connection)));
@@ -440,7 +449,8 @@ struct SwitchScope {
     {
         if (pi.reason() == of13::OFPR_NO_MATCH)
             return true;
-        if (pi.reason() == of13::OFPR_ACTION && pi.cookie() == miss->cookie())
+        if (pi.reason() == of13::OFPR_ACTION &&
+            pi.cookie() == backend.miss_cookie())
             return true;
         return false;
     }
@@ -459,10 +469,10 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
     // Find flow in the trace tree
     std::shared_ptr<FlowImpl> flow = runtime(pkt);
 
-    DVLOG(30) << "flow cookie is : " << std::setbase(16) << flow->cookie() << " packet cookie : " << pi.cookie();
+    DVLOG(30) << "flow cookie is : " << std::setbase(16)
+              << flow->cookie() << " packet cookie : " << pi.cookie();
     // Delete flow if it doesn't found or expired
-    if (flow == miss || flow->state() == Flow::State::Expired) {
-        DVLOG(30) << "hit on  mapple-barrier rule. Cookie : " << std::setbase(16) << miss->cookie();
+    if (flow == nullptr || flow->state() == Flow::State::Expired) {
         flow = std::make_shared<FlowImpl>(connection, handler_table);
         flows[flow->cookie()] = flow;
     }

@@ -33,7 +33,7 @@ namespace maple {
 class TraceTree {
 public:
 
-    TraceTree(Backend& backend, FlowPtr barrier);
+    TraceTree(Backend& backend);
     ~TraceTree();
 
     FlowPtr lookup(const Packet& pkt) const;
@@ -57,7 +57,6 @@ protected:
     struct Impl;
 
     Backend& m_backend;
-    FlowPtr m_barrier;
     std::unique_ptr<node> m_root;
 };
 

@@ -23,14 +23,12 @@ class Runtime {
     Backend& backend;
     std::unique_ptr<TraceTree> trace_tree;
     Policy policy;
-    FlowPtr miss;
 
 public:
-    Runtime(Policy policy, Backend& backend, FlowPtr miss)
+    Runtime(Policy policy, Backend& backend)
         : backend(backend)
-        , trace_tree{new TraceTree{backend, miss}}
+        , trace_tree{new TraceTree{backend}}
         , policy{policy}
-        , miss{miss}
     { }
 
     FlowPtr augment(Packet& pkt, FlowPtr flow)
@@ -57,7 +55,7 @@ public:
     FlowPtr operator()(Packet& pkt)
     {
         auto flow = trace_tree->lookup(pkt);
-        return flow ? std::dynamic_pointer_cast<Flow>(flow) : miss;
+        return flow ? std::dynamic_pointer_cast<Flow>(flow) : nullptr;
     }
 
     void commit()
@@ -67,7 +65,7 @@ public:
 
     void invalidate()
     {
-        trace_tree.reset(new TraceTree{backend, miss});
+        trace_tree.reset(new TraceTree{backend});
     }
 };
 

@@ -41,7 +41,14 @@ struct TraceTree::test_node {
     oxm::field<> need;
     node positive;
     node negative;
+    uint64_t id;
 };
+
+static uint64_t id_generator()
+{
+    static uint64_t next_id(1);
+    return next_id++;
+}
 
 struct TraceTree::load_node {
     oxm::mask<> mask;
@@ -58,14 +65,12 @@ struct TraceTree::Impl {
 class TraceTree::Impl::Compiler : public boost::static_visitor<>
 {
     Backend& backend;
-    FlowPtr barrier;
     oxm::expirementer::full_field_set match;
     uint16_t priority{1};
 
 public:
-    Compiler(Backend& backend, FlowPtr barrier)
+    Compiler(Backend& backend)
         : backend(backend)
-        , barrier(barrier)
     { }
 
     void operator()(unexplored&)
@@ -80,7 +85,7 @@ public:
         match.include(oxm::mask<>(test.need));
 
         match.add(test.need);
-        backend.install(priority++, match, barrier);
+        backend.barrier_rule(priority++, match, test.need, test.id);
         boost::apply_visitor(*this, test.positive);
         match.erase(oxm::mask<>(test.need));
     }
@@ -176,7 +181,7 @@ public:
     {
         if (boost::get<unexplored>(node_ptr())) {
             *node_ptr() = test_node{
-                pred, unexplored(), unexplored{}
+                pred, unexplored(), unexplored{}, id_generator()
             };
 
             node_push( ret ?
@@ -220,14 +225,13 @@ void TraceTree::commit()
 {
     m_backend.remove(oxm::field_set{});
     m_backend.barrier();
-    Impl::Compiler compiler {m_backend, m_barrier};
+    Impl::Compiler compiler {m_backend};
     boost::apply_visitor(compiler, *m_root);
     m_backend.barrier();
 }
 
-TraceTree::TraceTree(Backend &backend, FlowPtr barrier)
+TraceTree::TraceTree(Backend &backend)
     : m_backend(backend)
-    , m_barrier(barrier)
     , m_root(new node)
 { }
 
