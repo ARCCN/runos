@@ -300,6 +300,7 @@ class MapleBackend : public maple::Backend {
     SwitchConnectionPtr conn;
     uint8_t table{0};
     FlowImplPtr miss;
+    std::unordered_map<uint64_t, uint16_t> miss_rules; //and their prioritets
 
     static FlowImplPtr flow_cast(maple::FlowPtr flow)
     {
@@ -334,9 +335,16 @@ public:
     virtual void barrier_rule(unsigned priority,
                               oxm::expirementer::full_field_set const& match,
                               oxm::field<> const& test,
-                              uint64_t)
+                              uint64_t id)
     {
-        install(priority, match, miss); // test is repeated in match
+        auto it = miss_rules.find(id);
+        if (it == miss_rules.end()){
+            miss_rules.insert({id, priority});
+            install(priority, match, miss); // test is repeated in match
+        } else if (it->second != priority) {
+            it->second = priority;
+            install(priority, match, miss);
+        }
     }
 
     void remove(oxm::field_set const& match) override
