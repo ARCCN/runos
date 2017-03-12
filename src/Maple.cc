@@ -314,14 +314,16 @@ public:
     { }
 
     virtual void install(unsigned priority,
-                         oxm::field_set const& match,
+                         oxm::expirementer::full_field_set const& matchs,
                          maple::FlowPtr flow_) override
     {
         auto flow = flow_cast(flow_);
-        DVLOG(20) << "Installing prio=" << priority
-                  << ", match={" << match << "}"
-                  << " => cookie = " << std::setbase(16) << flow->cookie() << " on switch " << conn->dpid();
-        flow->packet_out(priority, match);
+        for (auto& match : matchs.included().fields()){
+            DVLOG(20) << "Installing prio=" << priority
+                     << ", match={" << match << "}"
+                     << " => cookie = " << std::setbase(16) << flow->cookie() << " on switch " << conn->dpid();
+            flow->packet_out(priority, match);
+        }
     }
 
     void remove(oxm::field_set const& match) override

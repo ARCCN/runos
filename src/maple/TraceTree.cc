@@ -59,7 +59,7 @@ class TraceTree::Impl::Compiler : public boost::static_visitor<>
 {
     Backend& backend;
     FlowPtr barrier;
-    oxm::field_set match;
+    oxm::expirementer::full_field_set match;
     uint16_t priority{1};
 
 public:
@@ -75,8 +75,11 @@ public:
 
     void operator()(test_node& test)
     {
+        match.exclude(test.need);
         boost::apply_visitor(*this, test.negative);
-        match.modify(test.need);
+        match.include(oxm::mask<>(test.need));
+
+        match.add(test.need);
         backend.install(priority++, match, barrier);
         boost::apply_visitor(*this, test.positive);
         match.erase(oxm::mask<>(test.need));
@@ -87,7 +90,7 @@ public:
         auto type = load.mask.type();
 
         for (auto& record : load.cases) {
-            match.modify((type == record.first) & load.mask);
+            match.add((type == record.first) & load.mask);
             boost::apply_visitor(*this, record.second);
             match.erase(load.mask);
         }
