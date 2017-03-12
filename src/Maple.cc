@@ -484,7 +484,23 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
         {
             ModTrackingPacket mpkt {pkt};
             maple::Installer installer;
-            std::tie(flow, installer) = runtime.augment(mpkt, flow);
+            try{
+                std::tie(flow, installer) = runtime.augment(mpkt, flow);
+            } catch (maple::priority_exceeded& e){
+                LOG(WARNING) << "Exceeded priority, Trying update trace tree"
+                             << "On switch : " << connection->dpid();
+                try {
+                    runtime.update();
+                    std::tie(flow, installer) = runtime.augment(mpkt, flow);
+                } catch (...) {
+                    LOG(ERROR) << "Exceeded priority range."
+                               << "Too many test functions"
+                               << "on switch : " << connection->dpid();
+                    // nothing we can do
+                    throw;
+                }
+                    LOG(INFO) << "Updating trace tree succesful";
+            }
             if (flow->disposable()){
             // Sometimes we don't need to create a new flow on the switch.
             // So, reply to the packet-in using packet-out message.
