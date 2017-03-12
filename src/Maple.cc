@@ -483,7 +483,8 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
         case Flow::State::Idle:
         {
             ModTrackingPacket mpkt {pkt};
-            runtime.augment(mpkt, flow);
+            maple::Installer installer;
+            std::tie(flow, installer) = runtime.augment(mpkt, flow);
             if (flow->disposable()){
             // Sometimes we don't need to create a new flow on the switch.
             // So, reply to the packet-in using packet-out message.
@@ -491,7 +492,7 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
                 flows.erase(flow->cookie());
             } else {
                 flow->mods( std::move(mpkt.mods()) );
-                runtime.commit();
+                installer();
             }
         }
         break;
