@@ -1,6 +1,8 @@
 #pragma once
 
 #include <sstream>
+#include <functional>
+#include <tuple>
 
 #include <boost/exception/exception.hpp>
 
@@ -14,6 +16,8 @@ namespace maple {
 
 typedef boost::error_info< struct tag_trace, std::string >
     errinfo_trace;
+
+typedef std::function<void()>  Installer;
 
 template<class Decision, class Flow>
 class Runtime {
@@ -31,16 +35,17 @@ public:
         , policy{policy}
     { }
 
-    FlowPtr augment(Packet& pkt, FlowPtr flow)
+    std::pair<FlowPtr, Installer> augment(Packet& pkt, FlowPtr flow)
     {
         auto tracer = trace_tree->augment();
         LoggableTracer log_tracer {*tracer};
         TraceablePacketImpl tpkt{pkt, log_tracer};
+        Installer installer;
 
         try {
             flow->decision(policy(tpkt, flow));
             if (not flow->disposable()) {
-                tracer->finish(flow);
+                installer = tracer->finish(flow);
             } // Sometimes we don't need to create a new flow on the switch.
         } catch (boost::exception& e) {
             try {
@@ -49,7 +54,7 @@ public:
             throw;
         }
 
-        return flow;
+        return {flow, installer};
     }
 
     FlowPtr operator()(Packet& pkt)

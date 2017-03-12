@@ -16,10 +16,10 @@ void LoggableTracer::test(oxm::field<> pred, bool ret)
     m_wrapee.test(pred, ret);
 }
 
-void LoggableTracer::finish(FlowPtr flow)
+Installer LoggableTracer::finish(FlowPtr flow)
 {
     m_log << "F";
-    m_wrapee.finish(flow);
+    return m_wrapee.finish(flow);
 }
 
 LoggableTracer::~LoggableTracer() = default;

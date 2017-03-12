@@ -70,9 +70,14 @@ class TraceTree::Impl::Compiler : public boost::static_visitor<>
     oxm::expirementer::full_field_set match;
 
 public:
+    Compiler(Backend& backend,
+            const oxm::expirementer::full_field_set &match)
+        : backend(backend), match(match)
+    { }
     Compiler(Backend& backend)
         : backend(backend)
     { }
+
 
     void operator()(unexplored&)
     {
@@ -151,14 +156,19 @@ public:
 
 class TraceTree::Impl::TracerImpl : public Tracer {
     std::vector<node*> path;
+    Backend& backend;
     uint16_t left_prio, right_prio;
+    oxm::expirementer::full_field_set match;
 
     node* node_ptr() { return path.back(); }
     void node_push(node* n) { path.push_back(n); }
 
 public:
-    explicit TracerImpl(node& root, uint16_t left_prio, uint16_t right_prio)
-        : left_prio(left_prio), right_prio(right_prio)
+    explicit TracerImpl(node& root,
+                        Backend& backend,
+                        uint16_t left_prio,
+                        uint16_t right_prio)
+        : backend(backend), left_prio(left_prio), right_prio(right_prio)
     {
         path.push_back(&root);
     }
@@ -178,39 +188,47 @@ public:
         } else {
             RUNOS_THROW(inconsistent_trace());
         }
+        match.add(data);
     }
 
     void test(oxm::field<> pred, bool ret) override
     {
+
         uint16_t test_prio;
         if (boost::get<unexplored>(node_ptr())) {
             test_prio = (left_prio + right_prio) / 2;
+            uint64_t id = id_generator();
             *node_ptr() = test_node{
-                pred, unexplored(), unexplored{}, id_generator(), test_prio
+                pred, unexplored(), unexplored{}, id, test_prio
             };
 
             node_push( ret ?
                 &boost::get<test_node>(node_ptr())->positive :
                 &boost::get<test_node>(node_ptr())->negative );
+            auto tmp_match = match;
+            tmp_match.add(pred);
+            backend.barrier_rule(test_prio, tmp_match, pred, id);
 
         } else if (test_node* test = boost::get<test_node>(node_ptr())) {
-            test_prio = test->prio;
             if (test->need != pred)
                 RUNOS_THROW(inconsistent_trace());
+            test_prio = test->prio;
             node_push( ret ? &test->positive : &test->negative );
         } else {
             RUNOS_THROW(inconsistent_trace());
         }
 
-        // update priotity range
+        // update priotity range, and match
         if (ret){
             left_prio = test_prio;
+            match.add(pred);
         } else {
             right_prio = test_prio;
+            match.exclude(pred);
         }
     }
 
-    void finish(FlowPtr new_flow) override
+    Installer finish(FlowPtr new_flow) override
     {
         if (boost::get<unexplored>(node_ptr())) {
             uint16_t prio = (left_prio + right_prio) / 2;
@@ -221,7 +239,14 @@ public:
             RUNOS_THROW(inconsistent_trace());
         }
 
+        auto node = node_ptr();
+
         node_push(nullptr);
+
+        return [match=match, node=node, &backend=backend](){
+            Impl::Compiler compiler(backend, match);
+            boost::apply_visitor(compiler, *node);
+        };
     }
 };
 
@@ -233,7 +258,7 @@ FlowPtr TraceTree::lookup(const Packet& pkt) const
 std::unique_ptr<Tracer> TraceTree::augment()
 {
     return std::unique_ptr<Tracer>(
-            new Impl::TracerImpl(*m_root, left_prio, right_prio)
+            new Impl::TracerImpl(*m_root, m_backend, left_prio, right_prio)
         );
 }
 
