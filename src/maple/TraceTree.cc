@@ -62,6 +62,7 @@ struct TraceTree::Impl {
     class Lookup;
     class Compiler;
     class TracerImpl;
+    class PriorityUpdater;
 };
 
 class TraceTree::Impl::Compiler : public boost::static_visitor<>
@@ -250,6 +251,126 @@ public:
     }
 };
 
+class TraceTree::Impl::PriorityUpdater {
+    struct Scope{
+        unsigned positive; // count of test/flow nodes under test
+        unsigned negative;;
+        Scope(unsigned pos, unsigned neg)
+            : positive(pos), negative(neg)
+        { }
+    };
+    using Depth = std::unordered_map<uint64_t, Scope>;
+    Depth depth;
+
+    uint16_t from;
+    uint16_t to;
+
+    class DepthCounter : public boost::static_visitor<unsigned>
+    {
+        Depth &depth;
+    public:
+        DepthCounter(Depth &depth)
+            :depth(depth)
+        { }
+
+        unsigned operator()(const unexplored&) const
+        {
+            return 1;
+        }
+
+        unsigned operator()(const test_node& test) const
+        {
+            unsigned pos = boost::apply_visitor(*this, test.positive);
+            unsigned neg = boost::apply_visitor(*this, test.negative);
+            depth.emplace(std::piecewise_construct,
+                    std::forward_as_tuple(test.id),
+                    std::forward_as_tuple(pos, neg));
+            return pos + neg + 1;
+
+        }
+        unsigned operator()(const load_node& load) const
+        {
+            unsigned max_d = 0;
+            for (auto& record: load.cases) {
+                max_d =
+                    std::max(boost::apply_visitor(*this, record.second), max_d);
+            }
+            return max_d;
+        }
+
+        unsigned operator()(const flow_node& ) const
+        {
+            return 1;
+        }
+    };
+
+    class PriorityAssigner : public boost::static_visitor<>
+    {
+        const Depth& depth;
+        double from, to;
+
+        double average(double from, double to, unsigned k, unsigned m)
+        { return (from * m + to * k) / (m + k); }
+
+    public:
+        PriorityAssigner(const Depth& depth, uint16_t from, uint16_t to)
+            : depth(depth), from(from), to(to)
+        { }
+
+        void operator() (unexplored&)
+        {
+            // do nothing
+        }
+
+        void operator() (load_node& load)
+        {
+            for (auto& record : load.cases) {
+                boost::apply_visitor(*this, record.second);
+            }
+        }
+
+        void operator() (test_node& test)
+        {
+            double old_from = from, old_to = to;
+            auto d = depth.at(test.id);
+            double this_prio = average(from, to, d.negative, d.positive);
+
+            // handle negative branch
+            to = this_prio;
+            boost::apply_visitor(*this, test.negative);
+            to = old_to;
+
+            // handle positive branch
+            from = this_prio;
+            boost::apply_visitor(*this, test.positive);
+            from = old_from;
+
+            test.prio = std::round(this_prio);
+        }
+
+        void operator() (flow_node& node)
+        {
+            node.prio = std::round(average(from, to, 1, 1));
+        }
+    };
+
+public:
+
+    PriorityUpdater(uint16_t from, uint16_t to)
+        : from(from), to(to)
+    { }
+
+    void operator() (node& node)
+    {
+        DepthCounter dc{depth};
+        boost::apply_visitor(dc, node);
+
+        PriorityAssigner pa{depth, from, to};
+        boost::apply_visitor(pa, node);
+    }
+
+};
+
 FlowPtr TraceTree::lookup(const Packet& pkt) const
 {
     return boost::apply_visitor(Impl::Lookup(pkt), *m_root);
@@ -260,6 +381,12 @@ std::unique_ptr<Tracer> TraceTree::augment()
     return std::unique_ptr<Tracer>(
             new Impl::TracerImpl(*m_root, m_backend, left_prio, right_prio)
         );
+}
+
+void TraceTree::update()
+{
+    Impl::PriorityUpdater pu(left_prio, right_prio);
+    pu(*m_root);
 }
 
 void TraceTree::commit()

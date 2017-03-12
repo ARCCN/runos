@@ -68,6 +68,11 @@ public:
         trace_tree->commit();
     }
 
+    void update()
+    {
+        trace_tree->update();
+    }
+
     void invalidate()
     {
         trace_tree.reset(new TraceTree{backend});

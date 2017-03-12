@@ -45,6 +45,7 @@ public:
     std::unique_ptr<Tracer> augment();
 
     void commit();
+    void update();
     void gc();
 
 protected:
