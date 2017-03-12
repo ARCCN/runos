@@ -35,6 +35,7 @@ struct TraceTree::unexplored {
 
 struct TraceTree::flow_node {
     std::weak_ptr<Flow> flow;
+    uint16_t prio;
 };
 
 struct TraceTree::test_node {
@@ -42,6 +43,7 @@ struct TraceTree::test_node {
     node positive;
     node negative;
     uint64_t id;
+    uint16_t prio;
 };
 
 static uint64_t id_generator()
@@ -66,7 +68,6 @@ class TraceTree::Impl::Compiler : public boost::static_visitor<>
 {
     Backend& backend;
     oxm::expirementer::full_field_set match;
-    uint16_t priority{1};
 
 public:
     Compiler(Backend& backend)
@@ -85,7 +86,7 @@ public:
         match.include(oxm::mask<>(test.need));
 
         match.add(test.need);
-        backend.barrier_rule(priority++, match, test.need, test.id);
+        backend.barrier_rule(test.prio, match, test.need, test.id);
         boost::apply_visitor(*this, test.positive);
         match.erase(oxm::mask<>(test.need));
     }
@@ -104,7 +105,7 @@ public:
     void operator()(flow_node& node)
     {
         if (auto flow = node.flow.lock())
-            backend.install(priority++, match, flow);
+            backend.install(node.prio, match, flow);
     }
 
 };
@@ -150,12 +151,14 @@ public:
 
 class TraceTree::Impl::TracerImpl : public Tracer {
     std::vector<node*> path;
+    uint16_t left_prio, right_prio;
 
     node* node_ptr() { return path.back(); }
     void node_push(node* n) { path.push_back(n); }
 
 public:
-    explicit TracerImpl(node& root)
+    explicit TracerImpl(node& root, uint16_t left_prio, uint16_t right_prio)
+        : left_prio(left_prio), right_prio(right_prio)
     {
         path.push_back(&root);
     }
@@ -179,9 +182,11 @@ public:
 
     void test(oxm::field<> pred, bool ret) override
     {
+        uint16_t test_prio;
         if (boost::get<unexplored>(node_ptr())) {
+            test_prio = (left_prio + right_prio) / 2;
             *node_ptr() = test_node{
-                pred, unexplored(), unexplored{}, id_generator()
+                pred, unexplored(), unexplored{}, id_generator(), test_prio
             };
 
             node_push( ret ?
@@ -189,18 +194,27 @@ public:
                 &boost::get<test_node>(node_ptr())->negative );
 
         } else if (test_node* test = boost::get<test_node>(node_ptr())) {
+            test_prio = test->prio;
             if (test->need != pred)
                 RUNOS_THROW(inconsistent_trace());
             node_push( ret ? &test->positive : &test->negative );
         } else {
             RUNOS_THROW(inconsistent_trace());
         }
+
+        // update priotity range
+        if (ret){
+            left_prio = test_prio;
+        } else {
+            right_prio = test_prio;
+        }
     }
 
     void finish(FlowPtr new_flow) override
     {
         if (boost::get<unexplored>(node_ptr())) {
-            *node_ptr() = flow_node{ new_flow };
+            uint16_t prio = (left_prio + right_prio) / 2;
+            *node_ptr() = flow_node{ new_flow, prio };
         } else if (flow_node* leaf = boost::get<flow_node>(node_ptr())) {
             leaf->flow = new_flow;
         } else {
@@ -218,7 +232,9 @@ FlowPtr TraceTree::lookup(const Packet& pkt) const
 
 std::unique_ptr<Tracer> TraceTree::augment()
 {
-    return std::unique_ptr<Tracer>(new Impl::TracerImpl(*m_root));
+    return std::unique_ptr<Tracer>(
+            new Impl::TracerImpl(*m_root, left_prio, right_prio)
+        );
 }
 
 void TraceTree::commit()
@@ -230,9 +246,18 @@ void TraceTree::commit()
     m_backend.barrier();
 }
 
-TraceTree::TraceTree(Backend &backend)
+TraceTree::TraceTree(Backend &backend,
+                     uint16_t left_prio,
+                     uint16_t right_prio)
     : m_backend(backend)
     , m_root(new node)
+    , left_prio(left_prio)
+    , right_prio(right_prio)
+{ }
+
+TraceTree::TraceTree(Backend &backend,
+                     std::pair<uint16_t, uint16_t> prio_space)
+    : TraceTree(backend, prio_space.first, prio_space.second)
 { }
 
 TraceTree::~TraceTree() = default;

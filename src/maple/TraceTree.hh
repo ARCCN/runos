@@ -33,7 +33,12 @@ namespace maple {
 class TraceTree {
 public:
 
-    TraceTree(Backend& backend);
+    // left border can reached, right cannot
+    TraceTree(Backend& backend,
+              uint16_t left_prio=1,
+              uint16_t right_prio=65535);
+    TraceTree(Backend& backend,
+              std::pair<uint16_t, uint16_t> priority_space);
     ~TraceTree();
 
     FlowPtr lookup(const Packet& pkt) const;
@@ -58,6 +63,7 @@ protected:
 
     Backend& m_backend;
     std::unique_ptr<node> m_root;
+    uint16_t left_prio, right_prio;
 };
 
 } // namespace maple
