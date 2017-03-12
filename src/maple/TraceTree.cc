@@ -194,10 +194,11 @@ public:
 
     void test(oxm::field<> pred, bool ret) override
     {
-
         uint16_t test_prio;
         if (boost::get<unexplored>(node_ptr())) {
             test_prio = (left_prio + right_prio) / 2;
+            if (test_prio <= left_prio or test_prio >= right_prio)
+                RUNOS_THROW(priority_exceeded());
             uint64_t id = id_generator();
             *node_ptr() = test_node{
                 pred, unexplored(), unexplored{}, id, test_prio
@@ -233,6 +234,8 @@ public:
     {
         if (boost::get<unexplored>(node_ptr())) {
             uint16_t prio = (left_prio + right_prio) / 2;
+            if (prio <= left_prio or prio >= right_prio)
+                RUNOS_THROW(priority_exceeded());
             *node_ptr() = flow_node{ new_flow, prio };
         } else if (flow_node* leaf = boost::get<flow_node>(node_ptr())) {
             leaf->flow = new_flow;
