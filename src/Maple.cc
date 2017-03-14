@@ -100,6 +100,8 @@ class FlowImpl final : public Flow
     oxm::field_set m_match;
     oxm::field_set m_mods;
 
+    uint16_t m_priority;
+
     bool m_packet_in {false};
     uint32_t m_xid {0};
     uint32_t m_buffer_id {OFP_NO_BUFFER};
