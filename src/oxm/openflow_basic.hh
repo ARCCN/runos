@@ -13,6 +13,12 @@ namespace oxm {
 
 // TODO: unmaskable<type>
 
+struct switch_id : define_type  < switch_id
+                                , uint16_t(of::oxm::ns::NON_OPENFLOW)
+                                , uint8_t(of::oxm::non_openflow_fields::SWITCH_ID)
+                                , 64, uint64_t, uint64_t, false >
+{ };
+
 template< class Final,
           of::oxm::basic_match_fields ID,
           size_t NBITS,
