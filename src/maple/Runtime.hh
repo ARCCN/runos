@@ -44,9 +44,7 @@ public:
 
         try {
             flow->decision(policy(tpkt, flow));
-            if (not flow->disposable()) {
-                installer = tracer->finish(flow);
-            } // Sometimes we don't need to create a new flow on the switch.
+            installer = tracer->finish(flow);
         } catch (boost::exception& e) {
             try {
                 e << errinfo_trace(log_tracer.log());

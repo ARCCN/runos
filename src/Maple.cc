@@ -178,6 +178,7 @@ class FlowImpl final : public Flow
                 po.in_port(m_in_port);
 
                 conn->send(po);
+                m_state = State::Evicted; // Flow is evicted to controller
             }
         } else {
             of13::FlowMod fm;
@@ -214,12 +215,12 @@ class FlowImpl final : public Flow
             fm.add_instruction(applyActions);
 
             conn->send(fm);
+            m_state = State::Active; //Flow is installed
         }
 
         m_packet_in = false;
         m_xid = 0;
         m_buffer_id = OFP_NO_BUFFER;
-        m_state = State::Active;
         m_in_port = of13::OFPP_CONTROLLER;
     }
 
@@ -508,8 +509,11 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
     flow->packet_in(pi);
 
     switch (flow->state()) {
-        case Flow::State::Egg:
-        case Flow::State::Idle:
+        case Flow::State::Egg: // If flow just created
+        case Flow::State::Idle: // If flow was idle
+        case Flow::State::Evicted: // If flow evicted from switches
+                            // For exmaple : switch cannon handle this packet
+                            // Or Packet Out needed
         {
             ModTrackingPacket mpkt {pkt};
             maple::Installer installer;
@@ -530,20 +534,9 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
                 }
                     LOG(INFO) << "Updating trace tree succesful";
             }
-            if (flow->disposable()){
-            // Sometimes we don't need to create a new flow on the switch.
-            // So, reply to the packet-in using packet-out message.
-                flow->packet_out(1, mpkt.mods() );
-                flows.erase(flow->cookie());
-            } else {
-                flow->mods( std::move(mpkt.mods()) );
-                installer();
-            }
+            flow->mods( std::move(mpkt.mods()) );
+            installer();
         }
-        break;
-
-        case Flow::State::Evicted:
-            flow->wakeup();
         break;
 
         case Flow::State::Expired:
