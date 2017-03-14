@@ -492,7 +492,7 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
               << (isTableMiss(pi) ? " (miss)" : " (inspect)");
 
     // Serializes to/from raw buffer
-    PacketParser pkt { pi };
+    PacketParser pkt { pi, connection->dpid() };
     // Find flow in the trace tree
     std::shared_ptr<FlowImpl> flow = runtime(pkt);
 
