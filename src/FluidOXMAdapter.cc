@@ -1,9 +1,16 @@
 #include "FluidOXMAdapter.hh"
 #include "oxm/field_set.hh"
+#include "openflow/common.hh"
+#include "types/exception.hh"
 
 using namespace fluid_msg;
 
 namespace runos {
+
+typedef boost::error_info< struct tag_oxm_ns, unsigned >
+    errinfo_oxm_ns;
+typedef boost::error_info< struct tag_oxm_field, unsigned >
+    errinfo_oxm_field;
 
 FluidOXMAdapter::FluidOXMAdapter(const oxm::field<> f)
     : OXMTLV(static_cast<uint16_t>(f.type().ns()),
@@ -12,6 +19,19 @@ FluidOXMAdapter::FluidOXMAdapter(const oxm::field<> f)
              f.type().nbytes() * (f.exact() ? 1 : 2)),
       field_(f)
 {
+    //check openflow field
+    switch (f.type().ns()) {
+        case unsigned(of::oxm::ns::NXM_0): break;
+        case unsigned(of::oxm::ns::NXM_1): break;
+        case unsigned(of::oxm::ns::OPENFLOW_BASIC): break;
+        case unsigned(of::oxm::ns::EXPERIMENTER): break;
+        default :
+            RUNOS_THROW(
+                    runtime_error() <<
+                    errinfo_msg("non openflow oxm field") <<
+                    errinfo_oxm_ns(f.type().ns()) <<
+                    errinfo_oxm_field(f.type().id()));
+    }
     create_oxm_req(0, 0, 0, 0);
 }
 
@@ -54,7 +74,7 @@ size_t FluidOXMAdapter::pack(uint8_t* buffer)
 of_error FluidOXMAdapter::unpack(uint8_t* buffer)
 {
     OXMTLV::unpack(buffer);
-    
+
     auto value_bits = bits<>(field_.type().nbits(),
                              buffer + of13::OFP_OXM_HEADER_LEN);
     if (has_mask_) {
