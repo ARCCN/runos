@@ -31,7 +31,7 @@ public:
     * Registers new message handler for each worker thread.
     * Used for performance-critical message processing, such as packet-in's.
     */
-    void registerHandler(const char* name, PacketMissHandlerFactory factory);
+    void registerHandler(const char* name, PacketMissHandler factory);
 
     /**
      *  Get number of Maple's table

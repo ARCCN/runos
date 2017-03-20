@@ -24,6 +24,7 @@
 #include <sstream>
 #include <memory>
 #include <functional>
+#include <iterator>
 
 #include <boost/assert.hpp>
 #include <boost/variant/apply_visitor.hpp>
@@ -32,9 +33,11 @@
 
 #include "maple/Runtime.hh"
 #include "oxm/field_set.hh"
+#include "oxm/openflow_basic.hh" //switch_id
 #include "types/exception.hh"
 
 #include "Controller.hh"
+#include "Decision.hh"
 #include "OFMsgUnion.hh"
 #include "SwitchConnection.hh"
 #include "Flow.hh"
@@ -92,19 +95,36 @@ struct unhandled_packet: runtime_error
 class FlowImpl final : public Flow
                      , public maple::Flow
 {
-    SwitchConnectionPtr conn;
+    struct SwitchInfo
+    {
+        SwitchConnectionPtr conn;
+        bool packet_in{false};
+        uint32_t buffer_id {OFP_NO_BUFFER};
+        uint32_t in_port {of13::OFPP_CONTROLLER};
+        uint32_t xid;
+        SwitchInfo(SwitchConnectionPtr conn,
+              bool packet_in=false,
+              uint32_t buffer_id = OFP_NO_BUFFER,
+              uint32_t in_port = of13::OFPP_CONTROLLER)
+        : conn(conn)
+        , packet_in(packet_in)
+        , buffer_id(buffer_id)
+        , in_port(in_port)
+        { }
+    };
+
+    std::unordered_map<uint64_t, SwitchInfo> m_switches;
 
     uint8_t m_table{0};
-    uint32_t m_in_port;
     Decision m_decision {DecisionImpl()};
-    oxm::field_set m_match;
     oxm::field_set m_mods;
 
-    uint16_t m_priority;
+    maple::Installer m_installer; // Installer of flow through maple trace tree
+    //underlying installed by install method
 
-    bool m_packet_in {false};
-    uint32_t m_xid {0};
-    uint32_t m_buffer_id {OFP_NO_BUFFER};
+    bool installTrigger{false}; // true if flow is installing now
+    friend class MapleBackend; // need diactivate this trigger, on miss flow
+
     class DecisionCompiler : public boost::static_visitor<void> {
         ActionList& ret;
         uint64_t dpid;
@@ -163,72 +183,119 @@ class FlowImpl final : public Flow
         return ret;
     }
 
-    void install()
+    void packet_out(uint16_t priority,
+                    const oxm::field_set& match,
+                    uint64_t dpid)
+    {
+        auto &scope = m_switches.at(dpid);
+        if (scope.packet_in){
+            of13::PacketOut po;
+            po.xid(scope.xid);
+            po.buffer_id(scope.buffer_id);
+            po.actions(actions(dpid));
+            po.in_port(scope.in_port);
+
+            scope.conn->send(po);
+            }
+    }
+
+    void flow_mod(uint16_t priority,
+                  const oxm::field_set& match,
+                  uint64_t dpid)
     {
         using std::chrono::duration_cast;
         using std::chrono::seconds;
+        auto &scope = m_switches.at(dpid);
+        of13::FlowMod fm;
 
-        if (state() == State::Evicted && not m_packet_in)
-            return;
+        fm.command(of13::OFPFC_ADD);
+        fm.xid(scope.xid);
 
-        if (m_decision.idle_timeout() <= Decision::duration::zero()) {
-            if (m_packet_in) {
-                of13::PacketOut po;
-                po.xid(m_xid);
-                po.buffer_id(m_buffer_id);
-                po.actions(actions(conn->dpid()));
-                po.in_port(m_in_port);
+        fm.buffer_id(scope.buffer_id);
 
-                conn->send(po);
-                m_state = State::Evicted; // Flow is evicted to controller
-            }
-        } else {
-            of13::FlowMod fm;
+        fm.table_id(m_table);
+        fm.priority(priority);
+        fm.cookie(cookie());
+        fm.match(make_of_match(match));
 
-            fm.command(of13::OFPFC_ADD);
-            fm.xid(m_xid);
-            fm.buffer_id(m_buffer_id);
+        auto ito = m_decision.idle_timeout();
+        auto hto = m_decision.hard_timeout();
+        long long ito_seconds = duration_cast<seconds>(ito).count();
+        long long hto_seconds = duration_cast<seconds>(hto).count();
 
-            fm.table_id(m_table);
-            fm.priority(m_priority);
-            fm.cookie(cookie());
-            fm.match(make_of_match(m_match));
+        if (ito == Decision::duration::max())
+            fm.idle_timeout(0);
+        else
+            fm.idle_timeout(std::min(ito_seconds, 65535LL));
 
-            auto ito = m_decision.idle_timeout();
-            auto hto = m_decision.hard_timeout();
-            long long ito_seconds = duration_cast<seconds>(ito).count();
-            long long hto_seconds = duration_cast<seconds>(hto).count();
+        if (hto == Decision::duration::max())
+            fm.hard_timeout(0);
+        else
+            fm.hard_timeout(std::min(hto_seconds, 65535LL));
 
-            if (ito == Decision::duration::max())
-                fm.idle_timeout(0);
-            else
-                fm.idle_timeout(std::min(ito_seconds, 65535LL));
+        fm.flags( of13::OFPFF_CHECK_OVERLAP |
+                  of13::OFPFF_SEND_FLOW_REM );
 
-            if (hto == Decision::duration::max())
-                fm.hard_timeout(0);
-            else
-                fm.hard_timeout(std::min(hto_seconds, 65535LL));
+        of13::ApplyActions applyActions;
+        applyActions.actions(actions(dpid));
+        fm.add_instruction(applyActions);
 
-            fm.flags( of13::OFPFF_CHECK_OVERLAP |
-                      of13::OFPFF_SEND_FLOW_REM );
-
-            of13::ApplyActions applyActions;
-            applyActions.actions(actions(conn->dpid()));
-            fm.add_instruction(applyActions);
-
-            conn->send(fm);
-            m_state = State::Active; //Flow is installed
-        }
-
-        m_packet_in = false;
-        m_xid = 0;
-        m_buffer_id = OFP_NO_BUFFER;
-        m_in_port = of13::OFPP_CONTROLLER;
+        scope.conn->send(fm);
     }
 
 public:
-    explicit FlowImpl(SwitchConnectionPtr conn, uint8_t table)
-        : conn(conn), m_table(table)
+    void install(uint16_t priority,
+                 const oxm::field_set& match,
+                 uint64_t dpid)
+    {
+        BOOST_ASSERT(installTrigger);
+
+        using std::chrono::duration_cast;
+        using std::chrono::seconds;
+
+        auto& scope = m_switches.at(dpid);
+
+        if (state() == State::Evicted && not scope.packet_in)
+            return;
+
+        if (m_decision.idle_timeout() <= Decision::duration::zero()) {
+            packet_out(priority, match, dpid);
+        } else {
+            flow_mod(priority, match, dpid);
+        }
+
+        scope.packet_in = false;
+        scope.xid = 0;
+        scope.buffer_id = OFP_NO_BUFFER;
+        scope.in_port = of13::OFPP_CONTROLLER;
+    }
+
+    void install(uint16_t priority,
+                 const oxm::field_set& match,
+                 SwitchConnectionPtr conn)
+    {
+        m_switches.emplace(conn->dpid(), conn);
+        install(priority, match, conn->dpid());
+    }
+
+    void installer(maple::Installer installer)
+    {
+        m_installer = std::move(installer);
+    }
+
+    void activate()
+    {
+        installTrigger = true;
+        m_installer();
+        if (not disposable()) {
+            m_state = State::Active;
+        } else {
+            m_state = State::Evicted;
+        }
+    }
+
+    explicit FlowImpl(uint8_t table)
+        : m_table(table)
     { }
 
     void mods(oxm::field_set mod)
@@ -250,7 +317,7 @@ public:
     }
 
     // Transitions
-    void packet_in(of13::PacketIn& pi)
+    void packet_in(of13::PacketIn& pi, SwitchConnectionPtr conn)
     {
         //BOOST_ASSERT(state() == State::Egg ||
         //             state() == State::Evicted ||
@@ -259,10 +326,14 @@ public:
         //                boost::get<Decision::Inspect>(&m_decision.data()))
         //           );
 
-        m_packet_in = true;
-        m_xid = pi.xid();
-        m_buffer_id = pi.buffer_id();
-        m_in_port = pi.match().in_port()->value();
+        uint64_t dpid = conn->dpid();
+
+        auto it = m_switches.emplace(dpid, conn).first;
+
+        it->second.packet_in = true;
+        it->second.xid = pi.xid();
+        it->second.buffer_id = pi.buffer_id();
+        it->second.in_port = pi.match().in_port()->value();
     }
 
     void flow_removed(of13::FlowRemoved& fr)
@@ -278,26 +349,13 @@ public:
             VLOG(30) << "Deleted flow by idle timeout";
             break;
         case of13::OFPRR_HARD_TIMEOUT:
+            kill();
             m_state = State::Expired;
-            VLOG(30) << "Deted flow by hard timeout";
+            VLOG(30) << "Deleted flow by hard timeout";
             break;
         }
     }
 
-    void packet_out(uint16_t priority, oxm::field_set match)
-    {
-        m_priority = priority;
-        m_match = std::move(match);
-        install();
-    }
-
-    void wakeup()
-    {
-       // BOOST_ASSERT( state() == State::Idle
-       //     || state() == State::Evicted
-       //     || disposable() );
-        install();
-    }
     bool disposable(){
         return m_decision.idle_timeout() <= Decision::duration::zero();
     }
@@ -311,16 +369,20 @@ public:
         }
         return false;
     }
+    std::vector<uint64_t> switches() {return std::vector<uint64_t>();}
 };
 
 typedef std::shared_ptr<FlowImpl> FlowImplPtr;
 typedef std::weak_ptr<FlowImpl> FlowImplWeakPtr;
 
 class MapleBackend : public maple::Backend {
-    SwitchConnectionPtr conn;
+    std::unordered_map<uint64_t, SwitchConnectionPtr> connections;
     uint8_t table{0};
     FlowImplPtr miss;
     std::unordered_map<uint64_t, uint16_t> miss_rules; //and their prioritets
+    std::unordered_map<uint64_t, SwitchConnectionPtr> conections;
+
+    oxm::switch_id of_switch_id = oxm::switch_id();
 
     static FlowImplPtr flow_cast(maple::FlowPtr flow)
     {
@@ -330,26 +392,77 @@ class MapleBackend : public maple::Backend {
         return ret;
     }
 
+    std::set<uint64_t> compute_switches(oxm::expirementer::full_field_set const &matchs,
+                                        FlowImplPtr flow)
+    {
+        std::set<uint64_t> switches;
+        if (flow->switches().empty()){
+            // decision might be on any switches
+            for (auto sw : connections){
+                switches.insert(sw.first);
+            }
+        } else {
+            // decision define switches
+            for (auto sw : flow->switches()){
+                switches.insert(sw);
+            }
+        }
+        auto ids = matchs.included().equal_range(of_switch_id);
+        if (ids.first != ids.second){
+            std::set<uint64_t> maple_switches;//(ids.first, ids.second);
+            for (auto id = ids.first; id != ids.second; id++){
+                auto tmp = bits<64>(id->second.value_bits());
+                maple_switches.insert(tmp.to_ullong());
+            }
+            std::set<uint64_t> result;
+            std::set_intersection( switches.begin(), switches.end(),
+                                maple_switches.begin(), maple_switches.end(),
+                                std::inserter(result, result.begin()) );
+            std::swap(switches, result);
+        }
+        ids = matchs.excluded().equal_range(of_switch_id);
+        std::set<uint64_t> excluded_switches;//(ids.first, ids.second);
+        for (auto id = ids.first; id != ids.second; id++){
+            auto tmp = bits<64>(id->second.value_bits());
+            excluded_switches.insert(tmp.to_ullong());
+        }
+        std::set<uint64_t> result;
+        std::set_difference(switches.begin(), switches.end(),
+                        excluded_switches.begin(), excluded_switches.end(),
+                        std::inserter(result, result.begin()));
+        return std::move(result);
+    }
+
 public:
-    explicit MapleBackend(SwitchConnectionPtr conn, uint8_t table)
-        : conn(conn), table(table), miss{new FlowImpl(conn, table) }
+    explicit MapleBackend(uint8_t table)
+        : table(table), miss{new FlowImpl(table) }
     {
         miss->decision( DecisionImpl{}.inspect(128,
                     [](Packet&, FlowPtr){return false;} )); // TODO: unhardcode
     }
 
+    void add_switch(SwitchConnectionPtr conn)
+    {
+        connections.emplace(conn->dpid(), conn);
+    }
+
     uint64_t miss_cookie() const { return miss->cookie(); }
 
     virtual void install(unsigned priority,
-                         oxm::expirementer::full_field_set const& matchs,
+                         oxm::expirementer::full_field_set const& _matchs,
                          maple::FlowPtr flow_) override
     {
         auto flow = flow_cast(flow_);
-        for (auto& match : matchs.included().fields()){
-            DVLOG(20) << "Installing prio=" << priority
-                     << ", match={" << match << "}"
-                     << " => cookie = " << std::setbase(16) << flow->cookie() << " on switch " << conn->dpid();
-            flow->packet_out(priority, match);
+        std::set<uint64_t> switches = compute_switches(_matchs, flow);
+        auto matchs = _matchs;
+        matchs.erase(oxm::mask<>(of_switch_id));
+        for (uint64_t dpid : switches){
+            for (auto& match : matchs.included().fields()){
+                DVLOG(20) << "Installing prio=" << priority
+                         << ", match={" << match << "}"
+                         << " => cookie = " << std::setbase(16) << flow->cookie() << " on switch " << dpid;
+                flow->install(priority, match, connections[dpid]);
+            }
         }
     }
 
@@ -358,6 +471,10 @@ public:
                               oxm::field<> const& test,
                               uint64_t id)
     {
+        miss->installTrigger = true;
+        install(priority, match, miss);
+        miss->installTrigger = false;
+        /* TODO
         auto it = miss_rules.find(id);
         if (it == miss_rules.end()){
             miss_rules.insert({id, priority});
@@ -366,11 +483,15 @@ public:
             it->second = priority;
             install(priority, match, miss);
         }
+        */
     }
 
-    void remove(oxm::field_set const& match) override
+    void remove(oxm::field_set const& _match) override
     {
-        DVLOG(20) << "Removing flows matching {" << match << "}" << " on switch " << conn->dpid();
+        DVLOG(20) << "Removing flows matching {" << _match << "}" << " on switch ";
+
+        auto match = _match;
+        match.erase(oxm::mask<>(of_switch_id));
 
         of13::FlowMod fm;
         fm.command(of13::OFPFC_DELETE);
@@ -383,14 +504,24 @@ public:
         fm.out_port(of13::OFPP_ANY);
         fm.out_group(of13::OFPG_ANY);
 
-        conn->send(fm);
+        auto dpid = _match.load(oxm::mask<>(of_switch_id));
+        if (dpid.wildcard()){
+            for (auto& conn : connections)
+                conn.second->send(fm);
+        } else {
+            auto tmp = bits<64>(dpid.value_bits());
+            connections[tmp.to_ullong()]->send(fm);
+        }
     }
 
     void remove(unsigned priority,
-                oxm::field_set const& match) override
+                oxm::field_set const& _match) override
     {
         DVLOG(20) << "Removing flows matching prio=" << priority
-                  << " with " << match;
+                  << " with " << _match;
+
+        auto match = _match;
+        match.erase(oxm::mask<>(of_switch_id));
 
         of13::FlowMod fm;
         fm.command(of13::OFPFC_DELETE_STRICT);
@@ -404,7 +535,14 @@ public:
         fm.out_port(of13::OFPP_ANY);
         fm.out_group(of13::OFPG_ANY);
 
-        conn->send(fm);
+        auto dpid = _match.load(oxm::mask<>(of_switch_id));
+        if (dpid.wildcard()){
+            for (auto& conn : connections)
+                conn.second->send(fm);
+        } else {
+            auto tmp = bits<64>(dpid.value_bits());
+            connections[tmp.to_ullong()]->send(fm);
+        }
     }
 
     void remove(maple::FlowPtr flow_) override
@@ -422,41 +560,48 @@ public:
         fm.out_port(of13::OFPP_ANY);
         fm.out_group(of13::OFPG_ANY);
 
-        conn->send(fm);
+        for (auto conn : connections){
+            conn.second->send(fm);
+        }
     }
 
     void barrier() override
     {
-        conn->send(of13::BarrierRequest());
+        for (auto conn : connections){
+            conn.second->send(of13::BarrierRequest());
+        }
     }
 };
 
 typedef boost::error_info< struct tag_pi_handler, std::string >
     errinfo_packetin_handler;
 
-struct SwitchScope {
-    SwitchConnectionPtr connection;
+struct runos::MapleImpl {
+    bool started{false};
+    Maple &app;
+    Config config;
+
     MapleBackend backend;
     maple::Runtime<DecisionImpl, FlowImpl> runtime;
     PacketMissPipeline pipeline;
     std::unordered_map<uint64_t, FlowImplPtr> flows;
     uint8_t handler_table;
-    std::function <Action*()> flood;
 
-    SwitchScope(PacketMissPipelineFactory const& pipeline_factory,
-                SwitchConnectionPtr connection,
-                uint64_t dpid,
-                uint8_t handler_table)
-        : connection{connection}
-        , backend{connection, handler_table}
-        , runtime{std::bind(&SwitchScope::process, this, _1, _2), backend}
-        , handler_table{handler_table}
+    std::unordered_map<std::string, PacketMissHandler> handlers;
+
+    MapleImpl(Maple& maple,
+              uint8_t handler_table=0)
+        : app(maple)
+        , backend{handler_table}
+        , runtime{std::bind(&MapleImpl::process, this, _1, _2), backend}
+        , handler_table(handler_table)
+    {  }
+
+    void createSwitchScope(SwitchConnectionPtr conn)
     {
-        for (auto &factory : pipeline_factory) {
-            pipeline.emplace_back(factory.first,
-                                  std::move(factory.second(connection)));
-        }
+        backend.add_switch(conn);
     }
+
 
     DecisionImpl process(Packet& pkt, FlowImplPtr flow) const
     {
@@ -484,11 +629,11 @@ struct SwitchScope {
         return false;
     }
 
-    void processPacketIn(of13::PacketIn& pi);
+    void processPacketIn(of13::PacketIn& pi, SwitchConnectionPtr connection);
     void processFlowRemoved(of13::FlowRemoved& fr);
 };
 
-void SwitchScope::processPacketIn(of13::PacketIn& pi)
+void MapleImpl::processPacketIn(of13::PacketIn& pi, SwitchConnectionPtr connection)
 {
     DVLOG(10) << "Packet-in on switch " << connection->dpid()
               << (isTableMiss(pi) ? " (miss)" : " (inspect)");
@@ -502,13 +647,13 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
               << flow->cookie() << " packet cookie : " << pi.cookie();
     // Delete flow if it doesn't found or expired
     if (flow == nullptr || flow->state() == Flow::State::Expired) {
-        flow = std::make_shared<FlowImpl>(connection, handler_table);
+        flow = std::make_shared<FlowImpl>(handler_table);
         flows[flow->cookie()] = flow;
     }
     if (flow->preprocess(pkt, flow)){
         return;
     }
-    flow->packet_in(pi);
+    flow->packet_in(pi, connection);
 
     switch (flow->state()) {
         case Flow::State::Egg: // If flow just created
@@ -537,7 +682,8 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
                     LOG(INFO) << "Updating trace tree succesful";
             }
             flow->mods( std::move(mpkt.mods()) );
-            installer();
+            flow->installer(installer);
+            flow->activate(); // this is needed way to install flow
         }
         break;
 
@@ -555,7 +701,7 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
             if (not isTableMiss(pi)){
                 flow->decision(process(pkt, flow));
             } else {
-                flow->wakeup();
+                flow->activate();
             }
             // Maybe this packet arrived on switch when maple reload table, but may be from remowed flows
             // TODO: implement FSM of flow
@@ -565,9 +711,8 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
     }
 }
 
-void SwitchScope::processFlowRemoved(of13::FlowRemoved& fr)
+void MapleImpl::processFlowRemoved(of13::FlowRemoved& fr)
 {
-    DVLOG(30) << "Flow-remowed message handled on  switch : " << connection->dpid();
     auto it = flows.find( fr.cookie() );
     if (it == flows.end())
         return;
@@ -578,65 +723,21 @@ void SwitchScope::processFlowRemoved(of13::FlowRemoved& fr)
         flows.erase(it);
 }
 
-struct runos::MapleImpl {
-    bool started{false};
-    Maple &app;
-    uint8_t handler_table;
-    Config config;
-
-    std::unordered_map<std::string, PacketMissHandlerFactory> handlers;
-    PacketMissPipelineFactory pipeline_factory;
-    std::unordered_map<uint64_t, SwitchScope> switches;
-    MapleImpl(Maple& maple)
-        : app(maple)
-    { }
-    ~MapleImpl() = default;
-    SwitchScope *createSwitchScope(SwitchConnectionPtr conn)
-    {
-
-        // lock mutex is a hard operation
-        auto it = switches.find(conn->dpid());
-        if (it != switches.end())
-            goto ret;
-        {
-            static std::mutex mutex;
-            std::lock_guard<std::mutex> lock(mutex);
-
-            it = switches.find(conn->dpid());
-            if (it != switches.end())
-                goto ret;
-
-            it = switches.emplace(std::piecewise_construct,
-                                  std::forward_as_tuple(conn->dpid()),
-                                  std::forward_as_tuple(pipeline_factory,
-                                                        conn,
-                                                        conn->dpid(),
-                                                        handler_table))
-                         .first;
-            return &it->second;
-        }
-
-        ret:
-        SwitchScope *ctx = &it->second;
-        return ctx;
-   }
-
-};
 
 void Maple::init(Loader* loader, const Config& root_config)
 {
     auto ctrl = Controller::get(loader);
-    impl.reset(new MapleImpl(*this));
-    impl->handler_table = ctrl->getTable("maple");
+    uint8_t handler_table = ctrl->getTable("maple");
+    impl.reset(new MapleImpl(*this, handler_table));
     impl->config = config_cd(root_config, "maple");
     ctrl->registerHandler<of13::PacketIn>(
             [=](of13::PacketIn &pi, SwitchConnectionPtr conn){
                 //TODO : create a copy of packetIn
-                impl->switches.at(conn->dpid()).processPacketIn(pi);
+                impl->processPacketIn(pi, conn);
             });
     ctrl->registerHandler<of13::FlowRemoved>(
             [=](of13::FlowRemoved &fr, SwitchConnectionPtr conn){
-                impl->switches.at(conn->dpid()).processFlowRemoved(fr);
+                impl->processFlowRemoved(fr);
             });
     QObject::connect(ctrl, &Controller::switchUp, this, &Maple::onSwitchUp);
 }
@@ -656,7 +757,7 @@ void Maple::startUp(Loader*)
     for (const auto& name_token : names) {
         // TODO: warn if doesn't exists
         auto name = name_token.string_value();
-        impl->pipeline_factory.emplace_back(name, impl->handlers.at(name));
+        impl->pipeline.emplace_back(name, impl->handlers.at(name));
     }
     // TODO: print unused handlers
 
@@ -669,7 +770,7 @@ void Maple::onSwitchUp(SwitchConnectionPtr conn, of13::FeaturesReply fr)
 }
 
 void Maple::registerHandler(const char* name,
-                            PacketMissHandlerFactory factory)
+                            PacketMissHandler handler)
 {
     if (impl->started) {
         LOG(ERROR) << "Registering handler after startup";
@@ -677,7 +778,7 @@ void Maple::registerHandler(const char* name,
     }
 
     VLOG(10) << "Registering flow processor " << name;
-    impl->handlers[std::string(name)] = factory;
+    impl->handlers[std::string(name)] = handler;
 }
 
 Maple::~Maple() = default;
