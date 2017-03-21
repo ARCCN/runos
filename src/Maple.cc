@@ -369,7 +369,14 @@ public:
         }
         return false;
     }
-    std::vector<uint64_t> switches() {return std::vector<uint64_t>();}
+    std::vector<uint64_t> switches()
+    {
+        if (auto custom = boost::get<Decision::Cistom>(&m_decsion.data())) {
+            return std::move(custom->body->switches());
+        } else {
+            return std::move(std::vector<uint64_t>() ) ;
+        }
+    }
 };
 
 typedef std::shared_ptr<FlowImpl> FlowImplPtr;

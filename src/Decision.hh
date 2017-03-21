@@ -21,6 +21,11 @@ public:
 
     struct CustomDecision {
         virtual void apply(ActionList& ret, uint64_t dpid) = 0;
+
+        // switches, that should be installed this decision
+        // zero-size vector means all switches
+        virtual std::vector<uint64_t> switches() const
+        { return std::vector<uint64_t>(); }
     };
 
     typedef std::shared_ptr<CustomDecision> CustomDecisionPtr;
