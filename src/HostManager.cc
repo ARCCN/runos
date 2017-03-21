@@ -120,15 +120,15 @@ void HostManager::init(Loader *loader, const Config &config)
     m_switch_manager = SwitchManager::get(loader);
     auto maple = Maple::get(loader);
 
-    maple->registerHandler("host-manager",
-        [this](SwitchConnectionPtr connection) {
-            const auto ofb_in_port = oxm::in_port();
-            const auto ofb_eth_type = oxm::eth_type();
-            const auto ofb_eth_src = oxm::eth_src();
-            const auto ofb_arp_spa = oxm::arp_spa();
-            const auto ofb_ipv4_src = oxm::ipv4_src();
+    const auto ofb_in_port = oxm::in_port();
+    const auto ofb_eth_type = oxm::eth_type();
+    const auto ofb_eth_src = oxm::eth_src();
+    const auto ofb_arp_spa = oxm::arp_spa();
+    const auto ofb_ipv4_src = oxm::ipv4_src();
+    const auto of_switch_id = oxm::switch_id();
 
-            return [=](Packet& pkt, FlowPtr, Decision decision) {
+    maple->registerHandler("host-manager",
+            [=](Packet& pkt, FlowPtr, Decision decision) {
                 auto tpkt = packet_cast<TraceablePacket>(pkt);
 
                 ethaddr eth_src = pkt.load(ofb_eth_src);
@@ -150,7 +150,8 @@ void HostManager::init(Loader *loader, const Config &config)
                     return decision;
 
                 if (not findMac(host_mac)) {
-                    Switch* sw = m_switch_manager->getSwitch(connection->dpid());
+                    Switch* sw =
+                        m_switch_manager->getSwitch(tpkt.watch(of_switch_id));
                     addHost(sw, host_ip, host_mac, in_port);
 
                     LOG(INFO) << "Host discovered. MAC: " << host_mac
@@ -165,7 +166,6 @@ void HostManager::init(Loader *loader, const Config &config)
                 }
 
                 return decision;
-            };
         }
     );
 

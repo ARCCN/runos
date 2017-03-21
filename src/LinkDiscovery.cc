@@ -103,44 +103,43 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
 
         });
 
+    const auto ofb_in_port = oxm::in_port();
+    const auto ofb_eth_type = oxm::eth_type();
+    const auto of_switch_id = oxm::switch_id();
+
     /* Connect with other applications */
     auto maple = Maple::get(loader);
-    maple->registerHandler("link-discovery",
-        [this](SwitchConnectionPtr connection) {
-            const auto ofb_in_port = oxm::in_port();
-            const auto ofb_eth_type = oxm::eth_type();
+    auto handler = [=](Packet& pkt, FlowPtr){
+        lldp_packet lldp;
+        auto written = packet_cast<SerializablePacket&>(pkt)
+                      //.ethernet()
+                      .serialize_to(sizeof lldp, &lldp);
+        if (written < sizeof lldp) {
+            LOG(ERROR) << "LLDP packet is too small";
+       }
 
-            auto handler = [=](Packet& pkt, FlowPtr){
-                lldp_packet lldp;
-                auto written = packet_cast<SerializablePacket&>(pkt)
-                              //.ethernet()
-                              .serialize_to(sizeof lldp, &lldp);
-                if (written < sizeof lldp) {
-                    LOG(ERROR) << "LLDP packet is too small";
-               }
+        switch_and_port source
+            = { lldp.dpid_data, lldp.port_id_sub_component };
+        switch_and_port target
+            = { target.dpid = pkt.load(of_switch_id),
+               pkt.load(ofb_in_port) };
 
-                switch_and_port source
-                    = { lldp.dpid_data, lldp.port_id_sub_component };
-                switch_and_port target
-                    = { target.dpid = connection->dpid(),
-                        packet_cast<TraceablePacket>(pkt).watch(ofb_in_port) };
+        DVLOG(5) << "LLDP packet received on "
+            << target.dpid << ':' << target.port;
 
-                DVLOG(5) << "LLDP packet received on "
-                    << target.dpid << ':' << target.port;
+        if (source > target)
+            std::swap(source, target);
 
-                if (source > target)
-                    std::swap(source, target);
+        QMetaObject::invokeMethod(this, "handleBeacon",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(switch_and_port, source),
+                                  Q_ARG(switch_and_port, target));
 
-                QMetaObject::invokeMethod(this, "handleBeacon",
-                                          Qt::QueuedConnection,
-                                          Q_ARG(switch_and_port, source),
-                                          Q_ARG(switch_and_port, target));
+        return true;
+        };
 
-                return true;
-                };
-
-
-            return [=](Packet& pkt, FlowPtr, Decision decision) {
+   maple->registerHandler("link-discovery",
+            [=](Packet& pkt, FlowPtr, Decision decision) {
                 if (not pkt.test(ofb_eth_type == LLDP_ETH_TYPE))
                     return decision;
 
@@ -148,7 +147,6 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
                 return decision
                     .inspect(sizeof(lldp_packet), handler)
                     .return_();
-           };
         });
 }
 

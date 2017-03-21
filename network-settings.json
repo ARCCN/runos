@@ -3,6 +3,7 @@
 "default": {
     "services": [
         "learning-switch",
+        "link-discovery",
         "rest-listener",
         "host-manager",
         "webui",

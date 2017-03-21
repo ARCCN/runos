@@ -76,18 +76,19 @@ void LearningSwitch::init(Loader *loader, const Config &)
     auto topology = Topology::get(loader);
     auto db = std::make_shared<HostsDatabase>();
 
+    const auto ofb_in_port = oxm::in_port();
+    const auto ofb_eth_src = oxm::eth_src();
+    const auto ofb_eth_dst = oxm::eth_dst();
+    const auto switch_id = oxm::switch_id();
+
     auto maple = Maple::get(loader);
     maple->registerHandler("forwarding",
-    [=](SwitchConnectionPtr connection) {
-        const auto ofb_in_port = oxm::in_port();
-        const auto ofb_eth_src = oxm::eth_src();
-        const auto ofb_eth_dst = oxm::eth_dst();
-
-        return [=](Packet& pkt, FlowPtr, Decision decision) {
+        [=](Packet& pkt, FlowPtr, Decision decision) {
             // Get required fields
             ethaddr dst_mac = pkt.load(ofb_eth_dst);
 
-            db->learn(connection->dpid(),
+            uint64_t dpid = pkt.load(switch_id);
+            db->learn(dpid,
                       pkt.load(ofb_in_port),
                       packet_cast<TraceablePacket>(pkt).watch(ofb_eth_src));
 
@@ -96,11 +97,11 @@ void LearningSwitch::init(Loader *loader, const Config &)
             // Forward
             if (target) {
                 auto route = topology
-                             ->computeRoute(connection->dpid(), target->dpid);
+                             ->computeRoute(dpid, target->dpid);
 
                 if (route.size() > 0) {
                     DVLOG(10) << "Forwarding packet from "
-                              << connection->dpid()
+                              << dpid
                               << ':' << uint32_t(pkt.load(ofb_in_port))
                               << " via port " << route[0].port
                               << " to " << ethaddr(pkt.load(ofb_eth_dst))
@@ -109,9 +110,9 @@ void LearningSwitch::init(Loader *loader, const Config &)
                     return decision.unicast(route[0].port)
                                    .idle_timeout(std::chrono::seconds(60))
                                    .hard_timeout(std::chrono::minutes(30));
-                } else if (connection->dpid() == target->dpid) {
+                } else if (dpid == target->dpid) {
                     DVLOG(10) << "Forwarding packet from "
-                              << connection->dpid()
+                              << dpid
                               << ':' << uint32_t(pkt.load(ofb_in_port))
                               << " via port " << target->port;
                     // send through core border
@@ -120,7 +121,7 @@ void LearningSwitch::init(Loader *loader, const Config &)
                                    .hard_timeout(std::chrono::minutes(30));
                 } else {
                     LOG(WARNING)
-                        << "Path from " << connection->dpid()
+                        << "Path from " << dpid
                         << " to " << target->dpid << " not found";
                     return decision.drop()
                                    .idle_timeout(std::chrono::seconds(30))
@@ -137,6 +138,5 @@ void LearningSwitch::init(Loader *loader, const Config &)
                 return decision.custom(
                         Decision::CustomDecisionPtr(new STP::Decision()));
             }
-        };
     });
 }
