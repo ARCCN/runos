@@ -4,6 +4,7 @@
 
 #include "openflow/common.hh"
 #include "types/ethaddr.hh"
+#include "types/IPv4Addr.hh"
 #include "types/IPv6Addr.hh"
 #include "type.hh"
 
@@ -43,10 +44,10 @@ struct ip_proto : define_ofb_type
 { };
 // TODO: replace with ipaddr type
 struct ipv4_src : define_ofb_type
-    < ipv4_src, of::oxm::basic_match_fields::IPV4_SRC, 32, uint32_t, uint32_t, true >
+    < ipv4_src, of::oxm::basic_match_fields::IPV4_SRC, 32, IPv4Addr, IPv4Addr, true >
 { };
 struct ipv4_dst : define_ofb_type
-    < ipv4_dst, of::oxm::basic_match_fields::IPV4_DST, 32, uint32_t, uint32_t, true >
+    < ipv4_dst, of::oxm::basic_match_fields::IPV4_DST, 32, IPv4Addr, IPv4Addr, true >
 { };
 
 struct tcp_src : define_ofb_type

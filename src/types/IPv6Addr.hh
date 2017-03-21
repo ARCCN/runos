@@ -17,12 +17,10 @@
 #pragma once
 
 #include <cstdint>
-#include <array>
 #include <functional>  // for hash
 #include <string>
 #include <stdexcept>
 #include <tuple>
-#include <utility>
 
 #include "bits.hh"
 
@@ -44,7 +42,7 @@ public:
     static constexpr size_t                nbytes = 16;
     typedef bits<nbits>                    bits_type;
     typedef std::array<uint8_t, nbytes>    bytes_type;
-    typedef std::array<uint16_t, nbytes/2> twobytes_type;
+    typedef std::array<uint16_t, nbytes/2> hextets_type;
     struct bad_representation : std::domain_error {
         using std::domain_error::domain_error;
     };
@@ -71,7 +69,7 @@ public:
     IPv6Addr(std::pair<uint64_t, uint64_t> num);
 
     // Return IPv6 address data in network two byte order
-    twobytes_type to_twooctets() const noexcept;
+    hextets_type to_hextets() const noexcept;
 
     // Return IPv6 address data in byte order
     bytes_type to_octets() const noexcept;

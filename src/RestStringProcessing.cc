@@ -20,25 +20,22 @@
 #include "Controller.hh"
 #include "Switch.hh"
 
-#define SHOW(field, obj) {#field, toString_cast(obj.field())}
+#define SHOW(field, obj) {#field, toString_cast(obj.field(), false)}
 
+#define EMPLACE_IF_EXIST(field, match, isHex) \
+    if (match.field()) { \
+        ans.emplace(std::pair<std::string, json11::Json>(#field, toString_cast(match.field()->value(), isHex))); \
+    }
 
-template<typename T>
-inline std::string toString_cast(const T &value)
-{
-    std::stringstream ss;
-    ss << value;
-    return ss.str();
-}
 
 template<>
-std::string toString_cast<std::string>(const std::string &value)
+std::string toString_cast<std::string>(const std::string &value, bool toHex)
 {
     return value;
 }
 
 template<>
-std::string toString_cast<char>(const char &value)
+std::string toString_cast<char>(const char &value, bool toHex)
 {
     std::stringstream ss;
     ss << static_cast<int>(value);
@@ -46,19 +43,17 @@ std::string toString_cast<char>(const char &value)
 }
 
 template<>
-std::string toString_cast<unsigned char>(const unsigned char &value)
+std::string toString_cast<unsigned char>(const unsigned char &value, bool toHex)
 {
     std::stringstream ss;
     ss << static_cast<unsigned int>(value);
     return ss.str();
 }
 
-
 json11::Json toJson(std::vector<of13::FlowStats> &stats)
 {
     std::vector<json11::Json::object> ans;
     for (auto &stat : stats) {
-        // TODO: add other fields
         ans.emplace_back(json11::Json::object {
                 SHOW(length, stat),
                 SHOW(table_id, stat),
@@ -67,13 +62,299 @@ json11::Json toJson(std::vector<of13::FlowStats> &stats)
                 SHOW(priority, stat),
                 SHOW(idle_timeout, stat),
                 SHOW(hard_timeout, stat),
-                {"flags", toString_cast(stat.get_flags())},
+                {"flags", toString_cast(stat.get_flags(), false)},
                 SHOW(cookie, stat),
                 SHOW(packet_count, stat),
-                SHOW(byte_count, stat)
+                SHOW(byte_count, stat),
+                {"match:", json11::Json::object {processMatch(stat.match())}},
+                {"actions:", json11::Json::object {processInstructions(stat.instructions())}}
         });
     }
     return ans;
+}
+
+std::map<std::string, json11::Json> processMatch(of13::Match match)
+{
+    std::map<std::string, json11::Json> ans;
+    EMPLACE_IF_EXIST(in_port, match, false)
+    EMPLACE_IF_EXIST(in_phy_port, match, false)
+    EMPLACE_IF_EXIST(eth_type, match, true)
+    EMPLACE_IF_EXIST(ip_proto, match, true)
+    EMPLACE_IF_EXIST(tcp_dst, match, false)
+    EMPLACE_IF_EXIST(tcp_src, match, false)
+    EMPLACE_IF_EXIST(udp_dst, match, false)
+    EMPLACE_IF_EXIST(udp_src, match, false)
+    EMPLACE_IF_EXIST(metadata, match, false)
+    if (match.ipv4_src()) {
+        ans.emplace(std::pair<std::string, json11::Json>("ipv4_src", AppObject::uint32_t_ip_to_string(match.ipv4_src()->value().getIPv4())));
+    }
+    if (match.ipv4_dst()) {
+        ans.emplace(std::pair<std::string, json11::Json>("ipv4_dst", AppObject::uint32_t_ip_to_string(match.ipv4_dst()->value().getIPv4())));
+    }
+    if (match.eth_src()) {
+        ans.emplace(std::pair<std::string, json11::Json>("eth_src", match.eth_src()->value().to_string()));
+    }
+    if (match.eth_dst()) {
+        ans.emplace(std::pair<std::string, json11::Json>("eth_dst", match.eth_dst()->value().to_string()));
+    }
+
+    // arp
+    EMPLACE_IF_EXIST(arp_op, match, true)
+    if (match.arp_spa()) {
+        ans.emplace(std::pair<std::string, json11::Json>("arp_spa", AppObject::uint32_t_ip_to_string(match.arp_spa()->value().getIPv4())));
+    }
+    if (match.arp_tpa()) {
+        ans.emplace(std::pair<std::string, json11::Json>("arp_tpa", AppObject::uint32_t_ip_to_string(match.arp_tpa()->value().getIPv4())));
+    }
+    if (match.arp_sha()) {
+        ans.emplace(std::pair<std::string, json11::Json>("arp_sha", match.arp_sha()->value().to_string()));
+    }
+    if (match.arp_tha()) {
+        ans.emplace(std::pair<std::string, json11::Json>("arp_tha", match.arp_tha()->value().to_string()));
+    }
+
+    // vlan
+    EMPLACE_IF_EXIST(vlan_vid, match, false)
+    EMPLACE_IF_EXIST(vlan_pcp, match, false)
+
+    return ans;
+}
+
+std::map<std::string, json11::Json> processInstructions(of13::InstructionSet instructionSet)
+{
+    std::map<std::string, json11::Json> ans;
+    auto instructions = instructionSet.instruction_set();
+    for (of13::Instruction* inst : instructions) {
+        switch(inst->type()){
+        case of13::OFPIT_GOTO_TABLE:
+            ans["goto_table"] = toString_cast(((of13::GoToTable*)inst)->table_id());
+            break;
+        case of13::OFPIT_WRITE_METADATA:
+            ans["metadata"] = json11::Json::object({
+                {"metadata",
+                   toString_cast(((of13::WriteMetadata*)inst)->metadata()) },
+                {"metadata_mask",
+                   toString_cast(((of13::WriteMetadata*)inst)->metadata_mask()) }
+            });
+            break;
+        case of13::OFPIT_WRITE_ACTIONS:
+            ans["write_actions"] = processActions(((of13::ApplyActions *) inst)->actions());
+            break;
+        case of13::OFPIT_APPLY_ACTIONS:
+            ans["apply_actions"] = processActions(((of13::ApplyActions *) inst)->actions());
+            break;
+        case of13::OFPIT_CLEAR_ACTIONS:
+            ans["clear_actions"] = "clear_actions";
+            break;
+        case of13::OFPIT_METER:
+            ans["meter"] = toString_cast(((of13::Meter *)inst)->meter_id());
+            break;
+        case of13::OFPAT_EXPERIMENTER:
+            ans["experimenter"] = "experimenter";
+            break;
+        default :
+            LOG(ERROR) << "Unhandled instuction type: " << inst->type();
+            break;
+        }
+    }
+    return ans;
+}
+
+std::vector<json11::Json> processActions(ActionList actions)
+{
+    std::vector<json11::Json> ans;
+
+    for (auto *action : actions.action_list()) {
+        std::map<std::string, json11::Json> elem;
+        switch (action->type()) {
+        case of13::OFPAT_OUTPUT:
+        {
+            auto act = static_cast<of13::OutputAction *>(action);
+            elem["type"] = "OUTPUT";
+            elem["port"] = toString_cast(act->port(), true);
+            break;
+        }
+        case of13::OFPAT_COPY_TTL_OUT:
+        {
+            elem["type"] = "COPY_TTL_OUT";
+            break;
+        }
+        case of13::OFPAT_COPY_TTL_IN:
+        {
+            elem["type"] = "COPY_TTL_IN";
+            break;
+        }
+        case of13::OFPAT_SET_MPLS_TTL:
+        {
+            auto *act = static_cast<of13::SetMPLSTTLAction *>(action);
+            elem["type"] = "SET_MPLS_TTL";
+            elem["mpls_ttl"] = toString_cast(act->mpls_ttl());
+            break;
+        }
+        case of13::OFPAT_DEC_MPLS_TTL:
+        {
+            elem["type"] = "DEC_MPLS_TTL";
+            break;
+        }
+        case of13::OFPAT_PUSH_VLAN:
+        {
+            auto *act = static_cast<of13::PushVLANAction *>(action);
+            elem["type"] = "PUSH_VLAN";
+            elem["ethertype"] = toString_cast(act->ethertype());
+            break;
+        }
+        case of13::OFPAT_POP_VLAN:
+        {
+            elem["type"] = "POP_VLAN";
+            break;
+        }
+        case of13::OFPAT_PUSH_MPLS:
+        {
+            auto *act = static_cast<of13::PushMPLSAction *>(action);
+            elem["type"] = "PUSH_MPLS";
+            elem["ethertype"] = toString_cast(act->ethertype());
+            break;
+        }
+        case of13::OFPAT_POP_MPLS:
+        {
+            auto *act = static_cast<of13::PopMPLSAction *>(action);
+            elem["type"] = "POP_MPLS";
+            elem["ethertype"] = toString_cast(act->ethertype());
+            break;
+        }
+        case of13::OFPAT_SET_QUEUE:
+        {
+            auto *act = static_cast<of13::SetQueueAction *>(action);
+            elem["type"] = "SET_QUEUE";
+            elem["queue_id"] = toString_cast(act->queue_id());
+            break;
+        }
+        case of13::OFPAT_GROUP:
+        {
+            auto *act = static_cast<of13::GroupAction *>(action);
+            elem["type"] = "GROUP";
+            elem["group_id"] = toString_cast(act->group_id());
+            break;
+        }
+        case of13::OFPAT_SET_NW_TTL:
+        {
+            auto *act = static_cast<of13::SetNWTTLAction *>(action);
+            elem["type"] = "SET_NW_TTL";
+            elem["nw_ttl"] = toString_cast(act->nw_ttl());
+            break;
+        }
+        case of13::OFPAT_DEC_NW_TTL:
+        {
+            elem["type"] = "DEC_NW_TTL";
+            break;
+        }
+        case of13::OFPAT_SET_FIELD:
+        {
+            auto *act = static_cast<of13::SetFieldAction *>(action);
+            elem = processSetField(act->field());
+            elem["type"] = "SET_FIELD";
+            break;
+        }
+        case of13::OFPAT_PUSH_PBB:
+        {
+            auto *act = static_cast<of13::PushPBBAction *>(action);
+            elem["type"] = "PUSH_PBB";
+            elem["ethertype"] = toString_cast(act->ethertype());
+            break;
+        }
+        case of13::OFPAT_POP_PBB:
+        {
+            elem["type"] = "POP_PBB";
+            break;
+        }
+        case of13::OFPAT_EXPERIMENTER:
+        {
+            elem["type"] = "EXPERIMENTER";
+            break;
+        }
+        default:
+            elem["type"] = "Unknown action type";
+            break;
+        }
+        ans.emplace_back(elem);
+    }
+    return ans;
+}
+
+json11::Json::object processSetField(of13::OXMTLV *field)
+{
+    switch (field->field()){
+    case of13::OFPXMT_OFB_IN_PORT:
+        return json11::Json::object {
+            { "field", "in_port"},
+            { "value", toString_cast(static_cast<of13::InPort*>(field)->value()) }
+        };
+    case of13::OFPXMT_OFB_ETH_SRC:
+        return json11::Json::object {
+           { "field", "eth_src"},
+           { "value", static_cast<of13::EthSrc*>(field)->value().to_string() }
+        };
+    case of13::OFPXMT_OFB_ETH_DST:
+        return json11::Json::object {
+            { "field", "eth_dst"},
+            { "value", static_cast<of13::EthDst*>(field)->value().to_string() }
+        };
+    case of13::OFPXMT_OFB_ETH_TYPE:
+        return json11::Json::object{
+            { "field", "eth_type"},
+            { "value", toString_cast(static_cast<of13::EthType*>(field)->value()) }
+        };
+    case of13::OFPXMT_OFB_VLAN_VID:
+        return json11::Json::object{
+            { "field", "vlan_vid"},
+            { "value", toString_cast(static_cast<of13::VLANVid*>(field)->value()) }
+        };
+    case of13::OFPXMT_OFB_IPV4_SRC:
+        return json11::Json::object {
+            { "field", "ip_src"},
+            { "value", AppObject::uint32_t_ip_to_string(static_cast<of13::IPv4Src*>(field)->value().getIPv4()) }
+        };
+    case of13::OFPXMT_OFB_IPV4_DST:
+        return json11::Json::object {
+            { "field", "ip_dst"},
+            { "value", AppObject::uint32_t_ip_to_string(static_cast<of13::IPv4Dst*>(field)->value().getIPv4()) }
+        };
+    case of13::OFPXMT_OFB_IP_PROTO:
+        return json11::Json::object {
+            { "field", "ip_proto"},
+            { "value", toString_cast(static_cast<of13::IPProto*>(field)->value()) }
+        };
+    case of13::OFPXMT_OFB_ARP_SPA:
+        return json11::Json::object {
+            { "field", "arp_spa"},
+            { "value", AppObject::uint32_t_ip_to_string(static_cast<of13::ARPSPA*>(field)->value().getIPv4()) }
+        };
+    case of13::OFPXMT_OFB_ARP_TPA:
+        return json11::Json::object {
+            { "field", "arp_tpa"},
+            { "value", AppObject::uint32_t_ip_to_string(static_cast<of13::ARPTPA*>(field)->value().getIPv4()) }
+        };
+    case of13::OFPXMT_OFB_ARP_SHA:
+        return json11::Json::object {
+            { "field", "arp_sha"},
+            { "value", static_cast<of13::ARPSHA*>(field)->value().to_string() }
+        };
+    case of13::OFPXMT_OFB_ARP_THA:
+        return json11::Json::object {
+            { "field", "arp_tha"},
+            { "value", static_cast<of13::ARPTHA*>(field)->value().to_string() }
+        };
+    case of13::OFPXMT_OFB_ARP_OP:
+        return json11::Json::object {
+            { "field", "arp_op"},
+            { "value", toString_cast(static_cast<of13::ARPOp*>(field)->value()) }
+        };
+    default:
+        LOG(INFO) << " TODO : Unhandled SetField: " << (int)field->field();
+    }
+    return json11::Json::object{
+        { "unhandled field", "error" }
+    };
 }
 
 json11::Json toJson(std::vector<of13::PortStats> &stats)

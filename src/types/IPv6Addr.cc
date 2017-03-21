@@ -16,11 +16,7 @@
 
 #include "IPv6Addr.hh"
 
-#include <istream>
 #include <tuple>
-#include <utility>
-#include <algorithm>
-
 #include <regex>
 #include <boost/format.hpp>
 
@@ -29,15 +25,24 @@ namespace runos {
 static std::pair<uint64_t, uint64_t> parseIPv6(const std::string &_str)
 {
     static const std::string validation =
-    "([[:xdigit:]]{1,4}:){7}[[:xdigit:]]{1,4}|"           // 1:2:3:4:5:6:7:8
-    "([[:xdigit:]]{1,4}:){1,7}:|"                         // 1::                              1:2:3:4:5:6:7::
-    "([[:xdigit:]]{1,4}:){1,6}:[[:xdigit:]]{1,4}|"        // 1::8             1:2:3:4:5:6::8  1:2:3:4:5:6::8
-    "([[:xdigit:]]{1,4}:){1,5}(:[[:xdigit:]]{1,4}){1,2}|" // 1::7:8           1:2:3:4:5::7:8  1:2:3:4:5::8
-    "([[:xdigit:]]{1,4}:){1,4}(:[[:xdigit:]]{1,4}){1,3}|" // 1::6:7:8         1:2:3:4::6:7:8  1:2:3:4::8
-    "([[:xdigit:]]{1,4}:){1,3}(:[[:xdigit:]]{1,4}){1,4}|" // 1::5:6:7:8       1:2:3::5:6:7:8  1:2:3::8
-    "([[:xdigit:]]{1,4}:){1,2}(:[[:xdigit:]]{1,4}){1,5}"  // 1::4:5:6:7:8     1:2::4:5:6:7:8  1:2::8
-    "[[:xdigit:]]{1,4}:((:[[:xdigit:]]{1,4}){1,6})|"      // 1::3:4:5:6:7:8   1::3:4:5:6:7:8  1::8
-    ":((:[[:xdigit:]]{1,4}){1,7}|:)";                     // ::2:3:4:5:6:7:8  ::2:3:4:5:6:7:8 ::8       ::
+    "([[:xdigit:]]{1,4}:){7}[[:xdigit:]]{1,4}|"
+    // 1:2:3:4:5:6:7:8
+    "([[:xdigit:]]{1,4}:){1,7}:|"
+    // 1::  1:2:3:4:5:6:7::
+    "([[:xdigit:]]{1,4}:){1,6}:[[:xdigit:]]{1,4}|"
+    // 1::8  1:2:3:4:5:6::8  1:2:3:4:5:6::8
+    "([[:xdigit:]]{1,4}:){1,5}(:[[:xdigit:]]{1,4}){1,2}|"
+    // 1::7:8  1:2:3:4:5::7:8  1:2:3:4:5::8
+    "([[:xdigit:]]{1,4}:){1,4}(:[[:xdigit:]]{1,4}){1,3}|"
+    // 1::6:7:8 1:2:3:4::6:7:8  1:2:3:4::8
+    "([[:xdigit:]]{1,4}:){1,3}(:[[:xdigit:]]{1,4}){1,4}|"
+    // 1::5:6:7:8  1:2:3::5:6:7:8  1:2:3::8
+    "([[:xdigit:]]{1,4}:){1,2}(:[[:xdigit:]]{1,4}){1,5}|"
+    // 1::4:5:6:7:8  1:2::4:5:6:7:8  1:2::8
+    "[[:xdigit:]]{1,4}:((:[[:xdigit:]]{1,4}){1,6})|"
+    // 1::3:4:5:6:7:8  1::3:4:5:6:7:8  1::8
+    ":((:[[:xdigit:]]{1,4}){1,7}|:)";
+    // ::2:3:4:5:6:7:8  ::2:3:4:5:6:7:8 ::8  ::
     static const auto regex_validation = std::regex(validation, std::regex::optimize);
     if (not std::regex_match(_str, regex_validation)){
         throw IPv6Addr::bad_representation("Bad IPv6 address: " + _str);
@@ -76,57 +81,29 @@ static std::pair<uint64_t, uint64_t> parseIPv6(const std::string &_str)
     return std::make_pair(one, two);
 }
 
-static std::string getBits(std::pair<uint64_t, uint64_t> num){
-    uint64_t one, two;
-    std::tie(one, two) = num;
-    std::string ret;
-    for (int i = 0; i < 64; i++){
-        if ((one >> (63 - i)) & 1){
-            ret.push_back('1');
-        } else {
-            ret.push_back('0');
-        }
-    }
-
-    for (int i = 0; i < 64; i++){
-        if ((two >> (63 - i)) & 1){
-            ret.push_back('1');
-        } else {
-            ret.push_back('0');
-        }
-    }
-    return ret;
-}
-
-static std::string getBits(const std::string &str){
-    return getBits(parseIPv6(str));
-}
-
 IPv6Addr::IPv6Addr(const std::string &str)
-     : data_(getBits(str), 0)
+     : IPv6Addr(parseIPv6(str))
 { }
 IPv6Addr::IPv6Addr(std::pair<uint64_t, uint64_t> num)
-     : data_(getBits(num), 0)
-{ }
+    : data_(num.first)
+{
+    data_ <<= 64;
+    data_ |= num.second;
+}
 
 std::pair <uint64_t, uint64_t> IPv6Addr::to_number() const noexcept
 {
-    std::string str = data_.to_string();
     uint64_t one = 0, two = 0;
-    for (int i = 0; i < 64; ++i){
-        one |= uint64_t(str[i] == '1' ? 1 : 0) << uint64_t(63 - i);
-    }
-    for (int i = 64; i < 128; i++){
-        two |= uint64_t(str[i] == '1' ? 1 : 0) << uint64_t(127 - i);
-    }
+    one = data_.to_ullong();
+    two = (data_ >> 64).to_ullong();
     return std::make_pair(one, two);
 }
 
-IPv6Addr::twobytes_type IPv6Addr::to_twooctets() const noexcept
+IPv6Addr::hextets_type IPv6Addr::to_hextets() const noexcept
 {
     uint64_t one, two;
     std::tie(one, two) = to_number();
-    return twobytes_type{{
+    return hextets_type{{
         (uint16_t) ((one & 0xffff000000000000ULL) >> 48ULL),
         (uint16_t) ((one & 0xffff00000000ULL)     >> 32ULL),
         (uint16_t) ((one & 0xffff0000ULL)         >> 16ULL),
@@ -167,8 +144,9 @@ IPv6Addr::bytes_type IPv6Addr::to_octets() const noexcept
 
 std::ostream& operator<<(std::ostream& out, const IPv6Addr& addr)
 {
-    const auto& data = addr.to_twooctets();
-    return out << boost::format("%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x")
+    //TODO: pretty print
+    const auto& data = addr.to_hextets();
+    return out << boost::format("%x:%x:%x:%x:%x:%x:%x:%x")
     % (unsigned long)data[0] % (unsigned long)data[1]
     % (unsigned long)data[2] % (unsigned long)data[3]
     % (unsigned long)data[4] % (unsigned long)data[5]

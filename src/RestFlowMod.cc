@@ -178,10 +178,22 @@ void RestFlowMod::processMatches(of13::FlowMod &fm, const json11::Json::object &
             added = false;
         }
     }
-
-//    todo: HANDLE_UINT(vlan_vid, uint16_t)
+    if (!ether_type.isFilled()) {
+        HANDLE_UINT(arp_op, uint16_t)
+        HANDLE_STRING(arp_spa)
+        HANDLE_STRING(arp_tpa)
+        HANDLE_STRING(arp_sha)
+        HANDLE_STRING(arp_tha)
+        if (added) {
+            fm.add_oxm_field(new of13::EthType{eth_types::arp});
+            ether_type.val(eth_types::arp);
+            added = false;
+        }
+    }
 
     // process L2, L1
+    HANDLE_UINT(vlan_vid, uint16_t)
+    HANDLE_UINT(vlan_pcp, uint8_t)
     HANDLE_UINT(in_port, uint32_t)
     HANDLE_UINT(in_phy_port, uint32_t)
     HANDLE_UINT(metadata, uint64_t)
@@ -442,6 +454,22 @@ of13::OXMTLV *doSwitch(const std::string &field,
     }
     if (field == "udp_dst") {
         return new udp_dst{string_cast<uint16_t>(value)};
+    }
+
+    if (field == "arp_spa") {
+        return new arp_spa{value};
+    }
+    if (field == "arp_tpa") {
+        return new arp_tpa{value};
+    }
+    if (field == "arp_sha") {
+        return new arp_sha{value};
+    }
+    if (field == "arp_tha") {
+        return new arp_tha{value};
+    }
+    if (field == "arp_op") {
+        return new arp_op{string_cast<uint16_t>(value)};
     }
     throw "unsupported field name";
 }

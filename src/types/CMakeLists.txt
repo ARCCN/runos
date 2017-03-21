@@ -4,6 +4,7 @@ set(SOURCES
     ethaddr.cc
     exception.cc
     IPv6Addr.cc
+    IPv4Addr.cc
 )
 
 add_library(runos_types STATIC ${SOURCES})

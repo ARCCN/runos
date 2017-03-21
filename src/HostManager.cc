@@ -135,7 +135,8 @@ void HostManager::init(Loader *loader, const Config &config)
 
                 IPAddress host_ip("0.0.0.0");
                 if (pkt.test(ofb_eth_type == 0x0800)) {
-                    host_ip = IPAddress(tpkt.watch(ofb_ipv4_src));
+                IPv4Addr ipv4_src = tpkt.watch(ofb_ipv4_src);
+                    host_ip = IPAddress(ipv4_src.to_number());
                 } else if (pkt.test(ofb_eth_type == 0x0806)) {
                     host_ip = IPAddress(tpkt.watch(ofb_arp_spa));
                 }

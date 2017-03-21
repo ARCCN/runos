@@ -29,7 +29,15 @@
 //******************************PART 1: FUNCTIONS******************************
 /// use instead of lexical_cast when need to interpret (u)int8_t as num, not a char (symbol code)
 template<typename T>
-inline std::string toString_cast(const T &value);
+inline std::string toString_cast(const T &value, bool toHex=false)
+{
+    std::stringstream ss;
+    if (toHex) {
+        ss << "0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex;
+    }
+    ss << value;
+    return ss.str();
+}
 
 /// works on "0xffffffff" and interpret char as int instead of boost one
 template<typename T>
@@ -67,6 +75,11 @@ json11::Json toJson(of13::MultipartReplyAggregate &stat);
 json11::Json toJson(std::vector<of13::TableStats> &stats);
 json11::Json toJson(std::vector<of13::Port> &stats);
 json11::Json toJson(std::vector<of13::QueueStats> &stats);
+
+std::map<std::string, json11::Json> processMatch(of13::Match match);
+std::map<std::string, json11::Json> processInstructions(of13::InstructionSet instructionSet);
+std::vector<json11::Json> processActions(ActionList actions);
+json11::Json::object processSetField(of13::OXMTLV *field);
 
 of13::OXMTLV *doSwitch(const std::string &field,
                        const std::string &value);
@@ -108,6 +121,7 @@ namespace fluid_fix
         typedef of13::EthSrc eth_src;
         typedef of13::EthType eth_type;
         typedef of13::VLANVid vlan_vid;
+        typedef of13::VLANPcp vlan_pcp;
         typedef of13::IPDSCP ip_dscp;
         typedef of13::IPECN ip_ecn;
         typedef of13::IPProto ip_proto;
@@ -117,7 +131,6 @@ namespace fluid_fix
         typedef of13::TCPDst tcp_dst;
         typedef of13::UDPSrc udp_src;
         typedef of13::UDPDst udp_dst;
-        // not used:
         typedef of13::SCTPSrc sctp_src;
         typedef of13::SCTPDst sctp_dst;
         typedef of13::ICMPv4Type icmpv4_type;

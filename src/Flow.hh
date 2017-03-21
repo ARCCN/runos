@@ -67,18 +67,6 @@ signals:
       *   - Idle    - flow was removed by idle timeout.
       *   - Expired - flow was removed by hard timeout.
       */
-    void changeState(State new_state, uint64_t this_cookie);
-
-signals:
-    /**
-      * Signals about change state of flow.
-      * State of packet may be :
-      *   - Egg     - new flow, that not be installed yet.
-      *   - Active  - flow installed on switch.
-      *   - Evicted - flow was removed from switch.
-      *   - Idle    - flow was removed by idle timeout.
-      *   - Expired - flow was removed by hard timeout.
-      */
     void stateChanged(State new_state, uint64_t this_cookie);
 
 protected:
