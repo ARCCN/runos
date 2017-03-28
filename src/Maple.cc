@@ -377,6 +377,30 @@ public:
             return std::move(std::vector<uint64_t>() ) ;
         }
     }
+
+    std::vector<std::pair<oxm::field<>,
+                          oxm::field<>>>
+    virtual_fields(oxm::mask<> by, oxm::mask<> what) const override
+    {
+        if (auto custom = boost::get<Decision::Custom>(&m_decision.data())) {
+            auto sw_ports = std::move(custom->body->in_ports());
+            std::vector<std::pair<oxm::field<>,
+                                  oxm::field<>>> ret;
+            for (auto &i : sw_ports){
+                ret.push_back(
+                        { (by.type() == bits<>(i.first)) & by,
+                          (what.type() == bits<>(i.second)) & what }
+                    );
+            }
+            return ret;
+
+        } else {
+            return {};
+        }
+
+    }
+
+
 };
 
 typedef std::shared_ptr<FlowImpl> FlowImplPtr;
@@ -460,6 +484,10 @@ public:
                          maple::FlowPtr flow_) override
     {
         auto flow = flow_cast(flow_);
+
+        if (not flow->installTrigger)
+            return;
+
         std::set<uint64_t> switches = compute_switches(_matchs, flow);
         auto matchs = _matchs;
         matchs.erase(oxm::mask<>(of_switch_id));

@@ -23,6 +23,7 @@
 #include <boost/variant/static_visitor.hpp>
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/recursive_variant.hpp>
+#include <boost/optional.hpp>
 
 #include "api/Packet.hh"
 #include "TraceablePacketImpl.hh"
@@ -37,6 +38,15 @@ struct TraceTree::flow_node {
     std::weak_ptr<Flow> flow;
     uint16_t prio;
 };
+
+
+// non recursive structes must be declared above recursive
+struct TraceTree::vload_node {
+    oxm::mask<> mask;
+    std::unordered_map< bits<>, std::shared_ptr<node> >
+        cases;
+};
+
 
 struct TraceTree::test_node {
     oxm::field<> need;
@@ -55,12 +65,6 @@ static uint64_t id_generator()
 struct TraceTree::load_node {
     oxm::mask<> mask;
     std::unordered_map< bits<>, node >
-        cases;
-};
-
-struct TraceTree::vload_node {
-    oxm::mask<> mask;
-    std::unordered_map< bits<>, std::shared_ptr<node> >
         cases;
 };
 
@@ -187,7 +191,12 @@ class TraceTree::Impl::TracerImpl : public Tracer {
     uint16_t left_prio, right_prio;
     oxm::expirementer::full_field_set match;
 
-    std::pair<node*, node*> vload_ends = {nullptr, nullptr}; //TODO varios of vloads
+    std::pair<node*,
+              std::shared_ptr<node>> vload_ends = {nullptr, nullptr}; //TODO varios of vloads
+    boost::optional<
+        std::pair<oxm::mask<>, oxm::mask<>>
+        > ovload_masks = boost::none;
+
 
     node* node_ptr() { return path.back(); }
     void node_push(node* n) { path.push_back(n); }
@@ -228,6 +237,8 @@ public:
             // TODO
         }
         vload_ends.first = node_ptr();
+        ovload_masks = std::make_pair(oxm::mask<>(by), oxm::mask<>(what));
+
         if (boost::get<unexplored>(node_ptr())) {
             *node_ptr() = load_node{ oxm::mask<>(by), {} };
             node_push( &boost::get<load_node>(*node_ptr())
@@ -253,13 +264,18 @@ public:
                 RUNOS_THROW(inconsistent_trace());
 
             auto it = vload->cases.find( what.value_bits() );
-            std::shared_ptr<node> next_node;
+            std::shared_ptr<node>next_node;
             if (it == vload->cases.end()){
-                next_node = std::make_shared<node>();
+                next_node =
+                    vload->cases.
+                           emplace(what.value_bits(), std::make_shared<node>())
+                           .first->second;
             } else {
                 next_node = it->second;
             }
-            vload_ends.second = next_node.get();
+
+            vload_ends.second = next_node;
+
             path.push_back(next_node.get());
         } else {
             RUNOS_THROW(inconsistent_trace());
@@ -318,14 +334,43 @@ public:
             RUNOS_THROW(inconsistent_trace());
         }
 
-        auto node = node_ptr();
+        auto node = path[0];//node_ptr();
 
         node_push(nullptr);
+
+        if (ovload_masks){
+            auto vload_masks = *ovload_masks;
+            auto virtual_fields =
+                new_flow->virtual_fields( vload_masks.first,
+                                          vload_masks.second);
+            for (auto &p : virtual_fields){
+                connect_nodes(vload_ends.first, vload_ends.second,
+                              p.first, p.second);
+            }
+        }
 
         return [match=match, node=node, &backend=backend](){
             Impl::Compiler compiler(backend, match);
             boost::apply_visitor(compiler, *node);
         };
+    }
+
+    void connect_nodes(node* from, std::shared_ptr<node> to,
+                    oxm::field<> by, oxm::field<> what)
+    {
+        //TODO check all variants
+
+        load_node* load = boost::get<load_node>(from);
+        node* middle = &load->cases[ by.value_bits() ];
+
+        if (boost::get<unexplored>(middle)) {
+            *middle = vload_node{ oxm::mask<>(what), {} };
+            boost::get<vload_node>(*middle)
+                .cases
+                .emplace(what.value_bits(),  to);;
+        } else if(vload_node* vload = boost::get<vload_node>( middle  )){
+            vload->cases[what.value_bits()] = to;
+        }
     }
 };
 

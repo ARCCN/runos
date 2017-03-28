@@ -26,6 +26,11 @@ public:
         // zero-size vector means all switches
         virtual std::vector<uint64_t> switches() const
         { return std::vector<uint64_t>(); }
+
+        virtual std::vector<std::pair<uint64_t,
+                                      uint32_t>> const
+        in_ports()
+        { return std::vector<std::pair<uint64_t, uint32_t>>(); }
     };
 
     typedef std::shared_ptr<CustomDecision> CustomDecisionPtr;

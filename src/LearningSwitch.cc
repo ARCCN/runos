@@ -139,7 +139,9 @@ void LearningSwitch::init(Loader *loader, const Config &)
             auto tpkt = packet_cast<TraceablePacket>(pkt);
             ethaddr dst_mac = pkt.load(ofb_eth_dst);
             ethaddr src_mac = tpkt.watch(ofb_eth_src);
-            uint64_t dpid = tpkt.watch(switch_id);
+            uint64_t dpid;
+            uint32_t inport;
+            std::tie(dpid, inport) = tpkt.vload(switch_id, ofb_in_port);
 
             db->learn(dpid,
                       tpkt.watch(ofb_in_port),
@@ -160,7 +162,7 @@ void LearningSwitch::init(Loader *loader, const Config &)
                               << route;
                     return decision.custom(
                             Decision::CustomDecisionPtr(new Route(route)))
-                            .idle_timeout(std::chrono::seconds(60))
+                            .idle_timeout(std::chrono::seconds(20*60))
                             .hard_timeout(std::chrono::minutes(30));
                 } else {
                     LOG(WARNING)

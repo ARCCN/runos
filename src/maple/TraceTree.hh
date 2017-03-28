@@ -58,9 +58,10 @@ protected:
     using node =
         boost::variant< unexplored
                       , flow_node
+                      , vload_node
                       , boost::recursive_wrapper<test_node>
                       , boost::recursive_wrapper<load_node>
-                      , boost::recursive_wrapper<vload_node> >;
+                      >;
 
     struct Impl;
 
