@@ -44,7 +44,7 @@ public:
     }
 
     std::pair< oxm::field<>,
-                       oxm::field<> >
+               oxm::field<> >
     vload(oxm::mask<> by, oxm::mask<> what) const override
     {
         return tpkt ?
@@ -52,8 +52,33 @@ public:
             std::make_pair(pkt.load(by), pkt.load(what));
     }
 
-    //TODO : template functions.
+    template<class Type1, class Type2>
+    std::pair<oxm::value<Type1>,
+              oxm::value<Type2>>
+    vload(Type1 by, Type2 what) const
+    {
+        auto ret = vload(oxm::mask<Type1>{by}, oxm::mask<Type2>{what});
+        // TODO asserts
+        return {
+            oxm::value<Type1>(ret.first),
+            oxm::value<Type2>(ret.second)
+        };
+    }
 
+
+    template<class Type1, class Type2>
+    std::pair<oxm::field<Type1>,
+              oxm::field<Type2> >
+    vload(oxm::mask<Type1> by, oxm::mask<Type2> what) const
+    {
+        auto generic_by = static_cast<oxm::mask<>>(by);
+        auto generic_what = static_cast<oxm::mask<>>(what);
+        auto ret = vload(generic_by, generic_what);
+        return {
+            static_cast<oxm::field<Type1>>(ret.first),
+            static_cast<oxm::field<Type2>>(ret.second)
+        };
+    }
 
     explicit TraceableProxy(Packet& pkt) noexcept
         : PacketProxy(pkt)
