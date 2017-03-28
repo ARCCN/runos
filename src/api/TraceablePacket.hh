@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 #include "api/Packet.hh"
 #include "oxm/field.hh"
 
@@ -9,6 +11,11 @@ class TraceablePacket {
 public:
     // get field without tracing
     virtual oxm::field<> watch(oxm::mask<> mask) const = 0;
+
+    // get field depending by other field
+    virtual std::pair< oxm::field<>,
+                       oxm::field<> >
+            vload(oxm::mask<> by, oxm::mask<> what) const = 0;
 };
 
 class TraceableProxy final : public TraceablePacket,
@@ -19,7 +26,7 @@ public:
     {
         return tpkt ? tpkt->watch(mask) : pkt.load(mask);
     }
-    
+
     template<class Type>
     oxm::value<Type> watch(Type type) const
     {
@@ -35,6 +42,18 @@ public:
         auto generic_ret = watch(generic_mask);
         return static_cast<oxm::field<Type>>(generic_ret);
     }
+
+    std::pair< oxm::field<>,
+                       oxm::field<> >
+    vload(oxm::mask<> by, oxm::mask<> what) const override
+    {
+        return tpkt ?
+            tpkt->vload(by, what) :
+            std::make_pair(pkt.load(by), pkt.load(what));
+    }
+
+    //TODO : template functions.
+
 
     explicit TraceableProxy(Packet& pkt) noexcept
         : PacketProxy(pkt)

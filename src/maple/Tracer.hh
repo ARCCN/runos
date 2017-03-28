@@ -19,6 +19,7 @@ struct Tracer {
     virtual void load(oxm::field<> unexplored) = 0;
     virtual void test(oxm::field<> pred, bool ret) = 0;
     virtual Installer finish(FlowPtr flow) = 0;
+    virtual void vload(oxm::field<> by, oxm::field<> what) = 0;
     virtual ~Tracer() = default;
 };
 
