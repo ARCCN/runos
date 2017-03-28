@@ -16,6 +16,7 @@ public:
 
     void load(oxm::field<> unexplored) override;
     void test(oxm::field<> pred, bool ret) override;
+    void vload(oxm::field<> by, oxm::field<> what) override;
     Installer finish(FlowPtr flow) override;
 
     std::string log() const

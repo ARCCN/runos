@@ -58,6 +58,12 @@ struct TraceTree::load_node {
         cases;
 };
 
+struct TraceTree::vload_node {
+    oxm::mask<> mask;
+    std::unordered_map< bits<>, std::shared_ptr<node> >
+        cases;
+};
+
 struct TraceTree::Impl {
     class Lookup;
     class Compiler;
@@ -108,6 +114,17 @@ public:
         }
     }
 
+    void operator()(vload_node& vload)
+    {
+        auto type = vload.mask.type();
+
+        for (auto& record : vload.cases) {
+            match.add((type == record.first) & vload.mask);
+            boost::apply_visitor(*this, *record.second);
+            match.erase(vload.mask);
+        }
+    }
+
     void operator()(flow_node& node)
     {
         if (auto flow = node.flow.lock())
@@ -146,6 +163,15 @@ public:
             return nullptr;
     }
 
+    FlowPtr operator()(const vload_node& vload) const
+    {
+        auto it = vload.cases.find( pkt.load(vload.mask).value_bits() );
+        if (it != vload.cases.end())
+            return boost::apply_visitor(*this, *it->second);
+        else
+            return nullptr;
+    }
+
     FlowPtr operator()(const flow_node& leaf) const
     {
         if (auto flow = leaf.flow.lock())
@@ -160,6 +186,8 @@ class TraceTree::Impl::TracerImpl : public Tracer {
     Backend& backend;
     uint16_t left_prio, right_prio;
     oxm::expirementer::full_field_set match;
+
+    std::pair<node*, node*> vload_ends = {nullptr, nullptr}; //TODO varios of vloads
 
     node* node_ptr() { return path.back(); }
     void node_push(node* n) { path.push_back(n); }
@@ -190,6 +218,53 @@ public:
             RUNOS_THROW(inconsistent_trace());
         }
         match.add(data);
+    }
+
+    void vload(oxm::field<> by, oxm::field<> what) override
+    {
+        if (vload_ends.first != nullptr or vload_ends.second != nullptr)
+        {
+            RUNOS_THROW(inconsistent_trace());
+            // TODO
+        }
+        vload_ends.first = node_ptr();
+        if (boost::get<unexplored>(node_ptr())) {
+            *node_ptr() = load_node{ oxm::mask<>(by), {} };
+            node_push( &boost::get<load_node>(*node_ptr())
+                        .cases
+                        .emplace(by.value_bits(), unexplored())
+                        .first->second ); // inserted value
+        } else if (load_node* load = boost::get<load_node>(node_ptr())) {
+            if (load->mask != oxm::mask<>(by))
+                RUNOS_THROW(inconsistent_trace());
+            path.push_back(&load->cases[ by.value_bits() ]);
+        } else {
+            RUNOS_THROW(inconsistent_trace());
+        }
+
+        if (boost::get<unexplored>(node_ptr())) {
+            *node_ptr() = vload_node{ oxm::mask<>(what), {} };
+            node_push( boost::get<vload_node>(*node_ptr())
+                        .cases
+                        .emplace(what.value_bits(), std::make_shared<node>())
+                        .first->second.get() ); //inserted value
+        } else if (vload_node* vload = boost::get<vload_node>(node_ptr())) {
+            if (vload->mask != oxm::mask<>(what))
+                RUNOS_THROW(inconsistent_trace());
+
+            auto it = vload->cases.find( what.value_bits() );
+            std::shared_ptr<node> next_node;
+            if (it == vload->cases.end()){
+                next_node = std::make_shared<node>();
+            } else {
+                next_node = it->second;
+            }
+            vload_ends.second = next_node.get();
+            path.push_back(next_node.get());
+        } else {
+            RUNOS_THROW(inconsistent_trace());
+        }
+
     }
 
     void test(oxm::field<> pred, bool ret) override
@@ -301,6 +376,17 @@ class TraceTree::Impl::PriorityUpdater {
             return max_d;
         }
 
+        unsigned operator()(const vload_node& vload) const
+        {
+            unsigned max_d = 0;
+            for (auto& record: vload.cases) {
+                max_d =
+                    std::max(boost::apply_visitor(*this, *record.second), max_d);
+            }
+            return max_d;
+        }
+
+
         unsigned operator()(const flow_node& ) const
         {
             return 1;
@@ -331,6 +417,14 @@ class TraceTree::Impl::PriorityUpdater {
                 boost::apply_visitor(*this, record.second);
             }
         }
+
+        void operator() (vload_node& vload)
+        {
+            for (auto& record : vload.cases) {
+                boost::apply_visitor(*this, *record.second);
+            }
+        }
+
 
         void operator() (test_node& test)
         {

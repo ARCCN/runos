@@ -53,12 +53,14 @@ protected:
     struct flow_node;
     struct test_node;
     struct load_node;
+    struct vload_node;
 
     using node =
         boost::variant< unexplored
                       , flow_node
                       , boost::recursive_wrapper<test_node>
-                      , boost::recursive_wrapper<load_node> >;
+                      , boost::recursive_wrapper<load_node>
+                      , boost::recursive_wrapper<vload_node> >;
 
     struct Impl;
 

@@ -10,6 +10,12 @@ void LoggableTracer::load(oxm::field<> unexplored)
     m_wrapee.load(unexplored);
 }
 
+void LoggableTracer::vload(oxm::field<> by, oxm::field<> what)
+{
+    m_log << "V " << what << " by " << by << ") ";
+    m_wrapee.vload(by, what);
+}
+
 void LoggableTracer::test(oxm::field<> pred, bool ret)
 {
     m_log << "(T " << pred << " -> " << ret << ") ";
