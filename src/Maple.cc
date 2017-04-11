@@ -388,8 +388,8 @@ public:
                                   oxm::field<>>> ret;
             for (auto &i : sw_ports){
                 ret.push_back(
-                        { (by.type() == bits<>(i.first)) & by,
-                          (what.type() == bits<>(i.second)) & what }
+                        { (by.type() == bits<64>(i.first)) & by,
+                          (what.type() == bits<32>(i.second)) & what }
                     );
             }
             return ret;

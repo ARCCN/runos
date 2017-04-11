@@ -255,10 +255,11 @@ public:
 
         if (boost::get<unexplored>(node_ptr())) {
             *node_ptr() = vload_node{ oxm::mask<>(what), {} };
-            node_push( boost::get<vload_node>(*node_ptr())
+            vload_ends.second =  boost::get<vload_node>(*node_ptr())
                         .cases
                         .emplace(what.value_bits(), std::make_shared<node>())
-                        .first->second.get() ); //inserted value
+                        .first->second; //inserted value
+            node_push(vload_ends.second.get());
         } else if (vload_node* vload = boost::get<vload_node>(node_ptr())) {
             if (vload->mask != oxm::mask<>(what))
                 RUNOS_THROW(inconsistent_trace());
@@ -367,7 +368,7 @@ public:
             *middle = vload_node{ oxm::mask<>(what), {} };
             boost::get<vload_node>(*middle)
                 .cases
-                .emplace(what.value_bits(),  to);;
+                .emplace(what.value_bits(),  to);
         } else if(vload_node* vload = boost::get<vload_node>( middle  )){
             vload->cases[what.value_bits()] = to;
         }

@@ -79,6 +79,18 @@ public:
     {
         ret.add_action(new of13::OutputAction(ports[dpid].outport, 0));
     }
+
+    std::vector<std::pair<uint64_t,
+                          uint32_t>> const
+    in_ports() override
+    {
+        std::vector<std::pair<uint64_t, uint32_t>> ret;
+        for (auto i : ports) {
+            ret.push_back({i.first, i.second.inport});
+        }
+        return ret;
+    }
+
 };
 
 class HostsDatabase {
