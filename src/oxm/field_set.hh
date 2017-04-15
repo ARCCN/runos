@@ -166,7 +166,7 @@ public:
         {
             if ( f < it->second) return; // return if our set cover this field
             if ( it->second < f){
-                elements.erase(it++); // delete element if new fileld cover it
+                it = elements.erase(it); // delete element if new fileld cover it
             } else {
                 it++;
             }
@@ -183,7 +183,7 @@ public:
         {
             it->second = it->second & ~m;
             if (it->second.wildcard()){
-                elements.erase(it++);
+                it = elements.erase(it);
             } else {
                 it++;
             }

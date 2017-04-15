@@ -350,8 +350,8 @@ public:
             }
         }
 
-        return [match=match, node=node, &backend=backend](){
-            Impl::Compiler compiler(backend, match);
+        return [node=node, &backend=backend](){
+            Impl::Compiler compiler(backend);
             boost::apply_visitor(compiler, *node);
         };
     }
