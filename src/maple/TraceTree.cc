@@ -351,8 +351,10 @@ public:
         }
 
         return [node=node, &backend=backend](){
+            backend.barrier();
             Impl::Compiler compiler(backend);
             boost::apply_visitor(compiler, *node);
+            backend.barrier();
         };
     }
 
