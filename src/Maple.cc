@@ -289,6 +289,7 @@ public:
         m_installer();
         if (not disposable()) {
             m_state = State::Active;
+            installTrigger = false;
         } else {
             m_state = State::Evicted;
         }
