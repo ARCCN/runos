@@ -264,6 +264,19 @@ public:
     void erase(oxm::mask<> m) {_included.erase(m);}
     void exclude(oxm::field<> f) {_excluded.add(f);}
     void include(oxm::mask<> m) {_excluded.erase(m);}
+
+    friend std::ostream& operator<<(std::ostream& o, const full_field_set& ffs)
+    {
+        o << "included : ";
+        for (auto & fs : ffs.included().fields()){
+            o << "{" << fs << "}";
+        }
+        o << " excluded : ";
+        for (auto& fs : ffs.excluded().fields()){
+            o << "{" << fs << "}";
+        }
+        return o;
+    }
 };
 
 } // namespace expirementer
