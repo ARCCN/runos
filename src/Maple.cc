@@ -44,6 +44,22 @@
 #include "PacketParser.hh"
 #include "FluidOXMAdapter.hh"
 
+//hash for pairs
+namespace std{
+
+template<typename K1, typename K2>
+struct hash<pair<K1, K2>>
+{
+    size_t operator()(pair<K1, K2> p) const
+    {
+        hash<K1> hash1;
+        hash<K2> hash2;
+        return hash1(p.first) ^ hash2(p.second);
+    }
+};
+} // namespace std
+
+
 
 REGISTER_APPLICATION(Maple, {"controller", ""})
 
@@ -289,10 +305,10 @@ public:
         m_installer();
         if (not disposable()) {
             m_state = State::Active;
-            installTrigger = false;
         } else {
             m_state = State::Evicted;
         }
+        installTrigger = false;
     }
 
     explicit FlowImpl(uint8_t table)
@@ -407,11 +423,17 @@ public:
 typedef std::shared_ptr<FlowImpl> FlowImplPtr;
 typedef std::weak_ptr<FlowImpl> FlowImplWeakPtr;
 
+
+
 class MapleBackend : public maple::Backend {
     std::unordered_map<uint64_t, SwitchConnectionPtr> connections;
     uint8_t table{0};
     FlowImplPtr miss;
-    std::unordered_map<uint64_t, uint16_t> miss_rules; //and their prioritets
+
+    //set of miss rules by their identificator and hash
+    // hash by string : match={...}prio=...
+    // hash provide non collision for same rules, but differenet switches
+    mutable std::unordered_set<std::pair<uint64_t, size_t>> miss_rules;
     std::unordered_map<uint64_t, SwitchConnectionPtr> conections;
 
     oxm::switch_id of_switch_id = oxm::switch_id();
@@ -507,24 +529,39 @@ public:
                               oxm::field<> const& test,
                               uint64_t id)
     {
-        miss->installTrigger = true;
-        install(priority, match, miss);
-        miss->installTrigger = false;
-        /* TODO
-        auto it = miss_rules.find(id);
-        if (it == miss_rules.end()){
-            miss_rules.insert({id, priority});
-            install(priority, match, miss); // test is repeated in match
-        } else if (it->second != priority) {
-            it->second = priority;
-            install(priority, match, miss);
+        oxm::type test_type = test.type();
+        if (test_type.ns() == of_switch_id.ns() &&
+            test_type.id () == of_switch_id.id()){
+            return;
         }
-        */
+        size_t hash;
+        std::stringstream tmp;
+        tmp << "match={" << match << "}"
+            << "prio="<<priority;
+        std::string tmp_str = tmp.str();
+        std::hash<std::string> tmp_hash;
+        hash = tmp_hash(tmp_str);
+
+        // id for same rule with different switches
+        std::pair<uint64_t, size_t> full_id = {id, hash};
+        auto it = miss_rules.find(full_id);
+        if (it == miss_rules.end()){
+            DVLOG(20) << "barrier rule install"
+                         << " match={" << match << "} "
+                         << "prio=" << priority;
+            miss_rules.insert(full_id);
+            miss->installTrigger = true;
+            install(priority, match, miss);
+            miss->installTrigger = false;
+        }
     }
 
     void remove(oxm::field_set const& _match) override
     {
         DVLOG(20) << "Removing flows matching {" << _match << "}" << " on switch ";
+
+        // clear cache of muss_rules
+        miss_rules.clear();
 
         auto match = _match;
         match.erase(oxm::mask<>(of_switch_id));
@@ -556,6 +593,9 @@ public:
         DVLOG(20) << "Removing flows matching prio=" << priority
                   << " with " << _match;
 
+        // clear cache of muss_rules
+        miss_rules.clear();
+
         auto match = _match;
         match.erase(oxm::mask<>(of_switch_id));
 
@@ -585,6 +625,10 @@ public:
     {
         auto flow = flow_cast(flow_);
         DVLOG(20) << "Removing flow with cookie=" << flow->cookie();
+
+        //clear cache of miss rule
+        //TODO : maybe uneccessary
+        miss_rules.clear();
 
         of13::FlowMod fm;
         fm.command(of13::OFPFC_DELETE);
