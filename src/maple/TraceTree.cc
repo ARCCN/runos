@@ -189,6 +189,8 @@ class TraceTree::Impl::TracerImpl : public Tracer {
     std::vector<node*> path;
     Backend& backend;
     uint16_t left_prio, right_prio;
+
+    bool isVloadOccured = false;
     oxm::expirementer::full_field_set match;
 
     std::pair<node*,
@@ -226,11 +228,13 @@ public:
         } else {
             RUNOS_THROW(inconsistent_trace());
         }
-        match.add(data);
+        if (not isVloadOccured)
+            match.add(data);
     }
 
     void vload(oxm::field<> by, oxm::field<> what) override
     {
+        isVloadOccured = true;
         if (vload_ends.first != nullptr or vload_ends.second != nullptr)
         {
             RUNOS_THROW(inconsistent_trace());
@@ -315,10 +319,10 @@ public:
         // update priotity range, and match
         if (ret){
             left_prio = test_prio;
-            match.add(pred);
+            if (not isVloadOccured) match.add(pred);
         } else {
             right_prio = test_prio;
-            match.exclude(pred);
+            if (not isVloadOccured) match.exclude(pred);
         }
     }
 
@@ -335,7 +339,8 @@ public:
             RUNOS_THROW(inconsistent_trace());
         }
 
-        auto node = path[0];//node_ptr();
+        //auto node = path[0];//node_ptr();
+        auto node = isVloadOccured ? vload_ends.first : node_ptr();
 
         node_push(nullptr);
 
@@ -350,9 +355,9 @@ public:
             }
         }
 
-        return [node=node, &backend=backend](){
+        return [node=node, match=match, &backend=backend](){
             backend.barrier();
-            Impl::Compiler compiler(backend);
+            Impl::Compiler compiler(backend, match);
             boost::apply_visitor(compiler, *node);
             backend.barrier();
         };
