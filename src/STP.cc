@@ -16,6 +16,9 @@
 
 #include "STP.hh"
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/kruskal_min_spanning_tree.hpp>
+
 #include "Topology.hh"
 #include "Controller.hh"
 #include "SwitchConnection.hh"
@@ -25,12 +28,6 @@ enum {
     FLOOD_GROUP = 0xf100d
 };
 
-void SwitchSTP::computeSTP()
-{
-    parent->computePathForSwitch(this->sw->id());
-}
-
-
 void SwitchSTP::resetBroadcast()
 {
     for (auto port : ports) {
@@ -39,13 +36,24 @@ void SwitchSTP::resetBroadcast()
     }
 }
 
+STPPorts SwitchSTP::getEnabledPorts()
+{
+    STPPorts result;
+
+    for (auto port : ports) {
+        if (port.second->broadcast)
+            result.push_back(port.second->port_no);
+    }
+    return result;
+}
+
 void SwitchSTP::updateGroup()
 {
     of13::GroupMod gm;
     gm.commmand(of13::OFPGC_MODIFY);
     gm.group_type(of13::OFPGT_ALL);
     gm.group_id(FLOOD_GROUP);
-    STPPorts ports = parent->getSTP(sw->id());
+    STPPorts ports = getEnabledPorts();
     for (auto port : ports) {
         of13::Bucket b;
         b.watch_port(of13::OFPP_ANY);
@@ -54,6 +62,7 @@ void SwitchSTP::updateGroup()
         b.add_action(new of13::OutputAction(port, 0));
         gm.add_bucket(b);
     }
+    DVLOG(20) << "Update group in switch" << sw->id();
     sw->connection()->send(gm);
 }
 
@@ -64,6 +73,7 @@ void SwitchSTP::clearGroup()
         gm.commmand(of13::OFPGC_DELETE);
         gm.group_type(of13::OFPGT_ALL);
         gm.group_id(FLOOD_GROUP);
+        DVLOG(20) << "Clear group in switch " <<  sw->id();
         sw->connection()->send(gm);
     }
 }
@@ -74,7 +84,7 @@ void SwitchSTP::installGroup()
     gm.commmand(of13::OFPGC_ADD);
     gm.group_type(of13::OFPGT_ALL);
     gm.group_id(FLOOD_GROUP);
-    STPPorts ports = parent->getSTP(sw->id());
+    STPPorts ports = getEnabledPorts();
     for (auto port : ports) {
         of13::Bucket b;
         b.watch_port(of13::OFPP_ANY);
@@ -83,6 +93,7 @@ void SwitchSTP::installGroup()
         b.add_action(new of13::OutputAction(port, 0));
         gm.add_bucket(b);
     }
+    DVLOG(20) << "Install group in switch" << sw->id();
     sw->connection()->send(gm);
 }
 
@@ -111,25 +122,21 @@ void STP::init(Loader* loader, const Config& config)
     connect(sw, &SwitchManager::switchDown, this, &STP::onSwitchDown);
     connect(sw, &SwitchManager::switchUp, this, &STP::onSwitchUp);
     topo = Topology::get(loader);
+
+    computed = false;
+    timer = new QTimer;
+    connect(timer, SIGNAL(timeout()), this, SLOT(computeSpanningTree()));
+    timer->start(poll_timeout * 1000);
 }
 
 STPPorts STP::getSTP(uint64_t dpid)
 {
-    std::vector<uint32_t> ports;
-    if (switch_list.count(dpid) == 0) {
-        return ports;
+    if (switch_list.count(dpid) == 0 or not computed) {
+        return {};
     }
 
     SwitchSTP* sw = switch_list[dpid];
-    if (!sw->computed) {
-        return ports;
-    }
-
-    for (auto port : sw->ports) {
-        if (port.second->broadcast)
-            ports.push_back(port.second->port_no);
-    }
-    return ports;
+    return sw->getEnabledPorts();
 }
 
 void STP::onLinkDiscovered(switch_and_port from, switch_and_port to)
@@ -145,10 +152,11 @@ void STP::onLinkDiscovered(switch_and_port from, switch_and_port to)
         Port* port = new Port(from.port);
         sw->ports[from.port] = port;
     }
-    if (!sw->root){
-        sw->unsetBroadcast(from.port);
-        sw->updateGroup();
-    }
+
+    // port is disabled by default
+    sw->unsetBroadcast(from.port);
+    sw->updateGroup();
+
     sw->setSwitchPort(from.port, to.dpid);
 
     sw = switch_list[to.dpid];
@@ -156,50 +164,37 @@ void STP::onLinkDiscovered(switch_and_port from, switch_and_port to)
         Port* port = new Port(to.port);
         sw->ports[to.port] = port;
     }
-    if (!sw->root){
-        sw->unsetBroadcast(to.port);
-        sw->updateGroup();
-    }
+
+    // port is disabled by default
+    sw->unsetBroadcast(to.port);
+    sw->updateGroup();
+
     sw->setSwitchPort(to.port, from.dpid);
 
     // recompute pathes for all switches
-    for (auto ss : switch_list) {
-        if (!ss.second->root)
-            ss.second->computed = false;
-    }
+    computed = false;
 }
 
 void STP::onLinkBroken(switch_and_port from, switch_and_port to)
 {
     // recompute pathes for all switches
-    for (auto ss : switch_list) {
-        if (!ss.second->root)
-            ss.second->computed = false;
-    }
+    computed = false;
 }
 
 void STP::onSwitchDiscovered(Switch* dp)
 {
     SwitchSTP* sw;
-    if (switch_list.empty()){
-        sw = new SwitchSTP(dp, this, true, true);
-        VLOG(10) << "Set " << dp->id() << " as root";
-    }
-    else
-        sw = new SwitchSTP(dp, this);
+    sw = new SwitchSTP(dp, this);
 
     switch_list[dp->id()] = sw;
 
     connect(dp, &Switch::portUp, this, &STP::onPortUp);
-    connect(sw->timer, SIGNAL(timeout()), sw, SLOT(computeSTP()));
-    sw->timer->start(poll_timeout * 1000);
 }
 
 void STP::onSwitchDown(Switch* dp)
 {
     if (switch_list.count(dp->id()) > 0) {
         SwitchSTP* sw = switch_list[dp->id()];
-        sw->timer->stop();
         switch_list.erase(dp->id());
         delete sw;
     }
@@ -208,19 +203,9 @@ void STP::onSwitchDown(Switch* dp)
 void STP::onSwitchUp(Switch* dp)
 {
     if (switch_list.count(dp->id()) == 0) {
-        SwitchSTP* sw;
-        if (switch_list.empty()){
-            sw = new SwitchSTP(dp, this, true, true);
-            VLOG(10) << "Set " << dp->id() << " as root";
-        }
-        else
-            sw = new SwitchSTP(dp, this);
-
+        SwitchSTP* sw = new SwitchSTP(dp, this);
         switch_list[dp->id()] = sw;
-
         connect(dp, &Switch::portUp, this, &STP::onPortUp);
-        connect(sw->timer, SIGNAL(timeout()), sw, SLOT(computeSTP()));
-        sw->timer->start(poll_timeout * 1000);
     }
 }
 
@@ -236,69 +221,55 @@ void STP::onPortUp(Switch *dp, of13::Port port)
     }
 }
 
-SwitchSTP* STP::findRoot()
+void STP::computeSpanningTree()
 {
-    for (auto it : switch_list) {
-        if (it.second->root)
-            return it.second;
-    }
-    return nullptr;
-}
+    static std::mutex compute_mutex;
+    using namespace boost;
+    using namespace topology;
 
-void STP::computePathForSwitch(uint64_t dpid)
-{
-    static std::mutex compute;
-    SwitchSTP *sw = switch_list[dpid];
-    if (!sw->computed) {
-        SwitchSTP* root = findRoot();
-        if (root == nullptr) {
-            LOG(ERROR) << "Root switch not found!";
-            sw->root = true;
-            sw->computed = true;
-            sw->updateGroup();
-            VLOG(10) << "Set " << sw->sw->id() << " as root";
-            return;
+    typedef graph_traits<TopologyGraph>::edge_descriptor edge_descriptor ;
+
+    // clear spanning tree before new computing
+
+    if (not computed){
+        VLOG(20) << "Compute spanning tree";
+        compute_mutex.lock();
+
+        // all switch-switch ports are not broadcast
+        for (auto sw : switch_list){
+            sw.second->resetBroadcast();
         }
-        std::vector<uint32_t> old_broadcast = getSTP(dpid);
+        spanning_tree.clear();
 
-        compute.lock();
-        sw->resetBroadcast();
-
-        data_link_route route = topo->computeRoute(dpid, root->sw->id());
-        if (route.size() > 0) {
-            uint32_t broadcast_port = route[0].port;
-
-            if (sw->existsPort(broadcast_port))
-                sw->setBroadcast(broadcast_port);
-
-            sw->nextSwitchToRoot = switch_list[route[1].dpid];
-
-            // getting broadcast port on second switch
-            data_link_route r_route = topo->computeRoute(route[1].dpid, dpid);
-            SwitchSTP* r_sw = switch_list[r_route[0].dpid];
-            uint32_t r_broadcast_port = r_route[0].port;
-            if (r_sw->existsPort(r_broadcast_port)){
-                r_sw->setBroadcast(r_broadcast_port);
-                r_sw->updateGroup();
+        auto boost_kruskal = [this](const topology::TopologyGraph& g){
+            std::vector<edge_descriptor> result;
+            kruskal_minimum_spanning_tree(g, std::back_inserter(result),
+                    boost::weight_map( boost::get(&link_property::weight, g )) );
+            for (auto& i : result){
+                link_property l = g[i];
+                spanning_tree[l.source.dpid].push_back(l.source.port);
+                spanning_tree[l.target.dpid].push_back(l.target.port);
             }
-            for (auto port : sw->ports) {
-                if (port.second->to_switch) {
-                    if (port.second->nextSwitch->nextSwitchToRoot == sw) {
-                        sw->setBroadcast(port.second->port_no);
-                    }
+
+        };
+        topo->apply(boost_kruskal);
+
+        // set ports broadcast in spanning tree
+        for (auto& i : spanning_tree){
+            SwitchSTP *sw = switch_list[i.first];
+            for (auto& p : i.second){
+                if (sw->existsPort(p)){
+                    sw->setBroadcast(p);
+                    VLOG(10) << i.first << ":" << p << " added in spanning tree";
                 }
             }
-
-            if (getSTP(dpid).size() == old_broadcast.size()){
-                sw->computed = true;
-                sw->updateGroup();
-                VLOG(10) << "Computed for  : " << sw->sw->id();
-
-            }
-        } else {
-            LOG(WARNING) << "Path between " << dpid
-                << " and root switch " << root->sw->id() << " not found";
+            // update bucket groups
+            sw->updateGroup();
         }
-        compute.unlock();
+
+        computed = true;
+
+        compute_mutex.unlock();
     }
 }
+

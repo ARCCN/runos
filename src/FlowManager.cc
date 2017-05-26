@@ -158,7 +158,9 @@ json11::Json Rule::to_json() const
     json11::Json::array set;
     std::vector<int> out_port;
 
-    auto instructions = flow1->instructions().instruction_set();
+    // Libfluid_msg has a bug, thus next two line must be separated
+    auto instructions_tmp = flow1->instructions();
+    auto instructions = instructions_tmp.instruction_set();
     for (of13::Instruction* inst : instructions){
         json11::Json::object tmp;
         switch(inst->type()){

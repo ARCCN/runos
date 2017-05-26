@@ -457,6 +457,14 @@ struct SwitchScope {
         installTableMissRule();
     }
 
+    void reinit(){
+        clearTables();
+        for (uint8_t i = 0; i < handler_table; i++){
+            installGoto(i);
+        }
+        installTableMissRule();
+    }
+
     DecisionImpl process(Packet& pkt, FlowImplPtr flow) const
     {
         DecisionImpl ret = DecisionImpl{};
@@ -724,6 +732,7 @@ public:
             LOG(ERROR) << "Overwriting switch scope on active connection";
         }
         ctx->connection->replace(ofconn);
+        ctx->reinit();
 
         return ctx;
     }
@@ -763,13 +772,13 @@ void SwitchScope::processPacketIn(of13::PacketIn& pi)
         {
             ModTrackingPacket mpkt {pkt};
             runtime.augment(mpkt, flow);
+            flow->mods( std::move(mpkt.mods()) );
             if (flow->disposable()){
             // Sometimes we don't need to create a new flow on the switch.
             // So, reply to the packet-in using packet-out message.
                 flow->packet_out(1, mpkt.mods() );
                 flows.erase(flow->cookie());
             } else {
-                flow->mods( std::move(mpkt.mods()) );
                 runtime.commit();
             }
         }

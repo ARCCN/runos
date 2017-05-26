@@ -146,7 +146,7 @@ Net = function () {
                 _links = events["topology"];
             if (events["host-manager"])
                 _hosts = events["host-manager"];
-            if (events["flow"])
+            if (events["flow-manager"])
                 _flow = events["flow-manager"];
 
             var i, len;

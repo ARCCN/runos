@@ -50,20 +50,12 @@ class SwitchSTP : public QObject {
 public:
     Switch* sw;
     STP* parent;
-    bool root;
-    bool computed;
-    SwitchSTP* nextSwitchToRoot;
-    QTimer* timer;
     std::unordered_map<uint32_t, Port*> ports;
 
     SwitchSTP() = delete;
-    SwitchSTP(Switch* _sw, STP* stp, bool _root = false, bool _comp = false):
+    SwitchSTP(Switch* _sw, STP* stp):
         sw(_sw),
-        parent(stp),
-        root(_root),
-        computed(_comp),
-        nextSwitchToRoot(nullptr),
-        timer(new QTimer(this))
+        parent(stp)
         {
             clearGroup();
             installGroup();
@@ -75,11 +67,11 @@ public:
     void setSwitchPort(uint32_t port_no, uint64_t dpid);
     void resetBroadcast();
     void updateGroup();
+
+    STPPorts getEnabledPorts();
 private:
     void clearGroup();
     void installGroup();
-protected slots:
-    void computeSTP();
     friend STP;
 };
 
@@ -89,6 +81,7 @@ protected slots:
  * This application register function which implement flood action, and prevents
  * loops and storm of broadcast packets, by disabling some ports
  *
+ * This application computes mininal spanning tree by kruskal alghorithm
  */
 class STP : public Application {
     Q_OBJECT
@@ -110,6 +103,7 @@ protected slots:
     void onSwitchDown(Switch* dp);
     void onSwitchUp(Switch* dp);
     void onPortUp(Switch* dp, of13::Port port);
+    void computeSpanningTree();
 
 private:
     unsigned int poll_timeout;
@@ -117,8 +111,10 @@ private:
     std::unordered_map<uint64_t, SwitchSTP*> switch_list;
     class Topology* topo;
 
-    SwitchSTP* findRoot();
-    void computePathForSwitch(uint64_t dpid);
-
     friend class SwitchSTP;
+
+    std::unordered_map<uint64_t, STPPorts> spanning_tree;
+
+    bool computed;
+    QTimer *timer;
 };

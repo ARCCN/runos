@@ -28,12 +28,7 @@
 REGISTER_APPLICATION(Topology, {"link-discovery", "rest-listener", ""})
 
 using namespace boost;
-
-struct link_property {
-    switch_and_port source;
-    switch_and_port target;
-    int weight;
-};
+using namespace topology;
 
 class Link : public AppObject {
     switch_and_port source;
@@ -90,15 +85,6 @@ json11::Json Link::to_floodlight_json() const {
         {"direction", "bidirectional"}
     };
 }
-
-struct dpid_t {
-    typedef vertex_property_tag kind;
-};
-
-typedef adjacency_list< vecS, vecS, undirectedS,
-                        property<dpid_t, uint64_t>,
-                        link_property>
-    TopologyGraph;
 
 typedef TopologyGraph::vertex_descriptor
     vertex_descriptor;
@@ -212,6 +198,12 @@ data_link_route Topology::computeRoute(uint64_t from_dpid, uint64_t to_dpid)
     }
 
     return ret;
+}
+
+void Topology::apply(std::function<void(const TopologyGraph&)> f) const
+{
+    QReadLocker locker(&m->graph_mutex);
+    f(m->graph);
 }
 
 json11::Json Topology::handleGET(std::vector<std::string> params, std::string body)
