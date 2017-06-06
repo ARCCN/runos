@@ -163,7 +163,7 @@
 <dt id="_CPPv210Controller">
 <span id="Controller"></span><em class="property">class </em><code class="descclassname"></code><code class="descname">Controller</code><a class="headerlink" href="#_CPPv210Controller" title="Ссылка на это определение">¶</a></dt>
 <dd><p>Объявлен в файле <code class="docutils literal"><span class="pre">Controller.hh</span></code></p>
-<p><a class="reference internal" href="ApplicationOverView.html#ref-controller-overview"><span>Controller</span></a> принимает на себя низкоуровневые обязанности по установке и поддержке соединения с коммутаторами а так же обмене OpenFlow сообщениями.</p>
+<p><a class="reference internal" href="ApplicationOverView.html#ref-controller-overview"><span>Controller</span></a> принимает на себя низкоуровневые обязанности по установке и поддержке соединения с коммутаторами, а так же обмену OpenFlow сообщениями.</p>
 </dd></dl>
 
 <p>Так как контроллер это основное приложение, то для полезной работы вам придется прямо или косвенно взаимодействовать с контроллером.</p>
@@ -349,7 +349,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Примечание</p>
-<p class="last">Для работы контроллера в минимальной конфигурации достаточно одной таблицы. Она будет управляться <span class="xref std std-ref">ядром (`Maple</span>) &lt;refMaple&gt;` контроллера и все асинхронно созданные в ней правила будут вскоре удаляться. Если создано более одной таблицы, Maple будет управлять таблицей с наибольшим номером.</p>
+<p class="last">Для работы контроллера в минимальной конфигурации достаточно одной таблицы. Она будет управляться <span class="xref std std-ref">ядром (`Maple</span>) &lt;refMaple&gt;` контроллера, и все асинхронно созданные в ней правила будут вскоре удаляться. Если создано более одной таблицы, Maple будет управлять таблицей с наибольшим номером.</p>
 </div>
 <p>Пример:</p>
 <div class="highlight-python"><div class="highlight"><pre>void ExampleFireWall::init(Loader* loader, const Config&amp;)
@@ -385,7 +385,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <p>Функция обработчик : функция которая определяет действие с пакетом для коммутатора, она вызывается на каждый PacketIn.</p>
 <p>Для каждого коммутатора описывается отдельная функция обработчик. Поэтому программисту необходимо описать не одну функцию обработчик, а <em>фабрику</em>, которая будет создавать для каждого коммутатора свою функцию обработчик.</p>
 <img alt="_images/PacketMissFactory.png" src="_images/PacketMissFactory.png" />
-<p>В контроллере могут быть одновременно зарегистрировано множество обработчиков, они все выстраиваются в конвеер и выполняются один за другим.
+<p>В контроллере может быть одновременно зарегистрировано множество обработчиков, они все выстраиваются в конвеер и выполняются один за другим.
 Порядок определяется файлом настроек <code class="docutils literal"><span class="pre">network-settings.json</span></code>.</p>
 <p>Обработчик <em>PacketMissHandler</em> &#8211; это callable объект, который  имеет следующую сигнатуру :</p>
 <blockquote>
@@ -395,7 +395,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <dd></dd></dl>
 
 <p>На вход подается пакет, который пришел как PacketIn.</p>
-<p>Параметр  decision  это решение обработчиков, которые выполнялись до вашего обработчика.</p>
+<p>Параметр  decision &ndash; это решение обработчиков, которые выполнялись до вашего обработчика.</p>
 <p>Возвращается действие над пакетом.</p>
 </div></blockquote>
 <p>Фабрика <em>PacketMissHandlerFactory</em> &#8211; это callable объект, который имеет следующую сигнатуру :</p>
@@ -414,7 +414,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 <dl class="function">
 <dt id="_CPPv2N10Controller15registerHandlerEPKc24PacketMissHandlerFactory">
 <span id="Controller::registerHandler__cCP.PacketMissHandlerFactory"></span>void <code class="descclassname">Controller::</code><code class="descname">registerHandler</code><span class="sig-paren">(</span><em class="property">const</em> char *<em>name</em>, <a class="reference internal" href="#_CPPv224PacketMissHandlerFactory19SwitchConnectionPtr" title="PacketMissHandlerFactory">PacketMissHandlerFactory</a> <em>factory</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N10Controller15registerHandlerEPKc24PacketMissHandlerFactory" title="Ссылка на это определение">¶</a></dt>
-<dd><p>Вам необходимо зарегистрировать фабрику обработчиков, и имя обработчика.</p>
+<dd><p>Вам необходимо зарегистрировать фабрику обработчиков и имя обработчика.</p>
 <p>Имя обработчика надо указывать в файле <code class="docutils literal"><span class="pre">network-settings.json</span></code>, чтобы <a class="reference internal" href="#_CPPv210Controller" title="Controller"><code class="xref cpp cpp-class docutils literal"><span class="pre">Controller</span></code></a> запускал ее в pipeline.</p>
 </dd></dl>
 
@@ -871,7 +871,7 @@ OFPST_FLOW reply (OF1.3) (xid=0x2):
 </div>
 <div class="section" id="id9">
 <h3>5.4.6. Состояния потока<a class="headerlink" href="#id9" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Поток, который установится в результате работы обработчиков может находиться в некоторых состояниях:</p>
+<p>Поток, который установится в результате работы обработчиков, может находиться в некоторых состояниях:</p>
 <blockquote>
 <div><ul class="simple">
 <li><code class="docutils literal"><span class="pre">Flow::State::Egg</span></code> &#8211; поток только создается и еще не был установлен на коммутатор.</li>
