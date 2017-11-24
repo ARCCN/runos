@@ -18,11 +18,11 @@ RuNOS documentation [ru]: http://arccn.github.io/runos/doc/ru/index.html
 This components should be installed in the system:
 
 * Utilities: cmake, autoconf, libtool, pkg-config
-* libfluid dependencies: libevent openssl. NOTE : libfluid requierd libevent v2.1.5, that still in beta. We recommend you install it from source.
+* libfluid dependencies: libevent openssl.
 * Libraries: QtCore 5, google-glog, boost::graph, boost::system, boost::thread, boost::coroutine, boost::context, uglifyjs
 * UglifyJS dependencies: npm, nodejs
 
-You can use this line on Ubuntu 15.10+ to install all required packages:
+You can use this line on Ubuntu 17.10+ to install all required packages:
 
 ```
 $ sudo apt-get install build-essential cmake autoconf libtool \
@@ -39,19 +39,6 @@ You need to install the JavaScript packages:
 
     # You maybe needed to  creating symbolic link from nodejs to node
     $ sudo ln -s /usr/bin/nodejs /usr/bin/node
-```
-
-To install libevent 2.1.5 :
-```
-# Get source code
-$ wget https://github.com/libevent/libevent/releases/download/release-2.1.5-beta/libevent-2.1.5-beta.tar.gz
-$ tar -xvf libevent-2.1.5-beta.tar.gz
-$ cd libevent-2.1.5-beta
-# And build
-$ ./configure
-$ make
-$ sudo make install
-$ sudo ldconfig
 ```
 
 To build project you must use g++-5.2 compiler (or above) or similar another compiler with support std::regex.
@@ -149,7 +136,7 @@ So, `Edit configurations... -> runos`:
 
 # Writing your first RuNOS app
 
-Note: look at full documentation in Russian: http://arccn.github.io/runos/doc/ru/index.html 
+Note: look at full documentation in Russian: http://arccn.github.io/runos/doc/ru/index.html
 
 ## Step 1: Override Application class
 

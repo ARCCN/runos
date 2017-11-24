@@ -5,7 +5,7 @@ project(runos)
 include(third_party/configure.cmake)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 # Locally installed libraries
 find_package(Qt5Core)

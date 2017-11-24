@@ -114,6 +114,12 @@ class FlowImpl final : public Flow
     int expect_remowed{0};
     uint32_t m_xid {0};
     uint32_t m_buffer_id {OFP_NO_BUFFER};
+
+    // arrived packetIn take care of this data
+    // FlowImpl shouldn't free it
+    void* m_packet_data {nullptr};
+    size_t m_data_len {0};
+
     std::function<Action *()>m_flood;
 
     void setState(State new_state)
@@ -201,9 +207,27 @@ class FlowImpl final : public Flow
                 po.actions(actions());
                 po.in_port(m_in_port);
 
+                // if switch not buffering packets
+                if (m_buffer_id == OFP_NO_BUFFER && m_packet_data != nullptr){
+                    po.data(m_packet_data, m_data_len);
+                }
+
                 conn->send(po);
             }
         } else {
+
+            // if we have data and switch not buffering it
+            if (m_packet_in &&
+                m_buffer_id == OFP_NO_BUFFER &&
+                m_packet_data != nullptr) {
+                of13::PacketOut po;
+                po.xid(m_xid);
+                po.buffer_id(OFP_NO_BUFFER);
+                po.actions(actions());
+                po.in_port(m_in_port);
+                po.data(m_packet_data, m_data_len);
+                conn->send(po);
+            }
             of13::FlowMod fm;
 
             fm.command(of13::OFPFC_ADD);
@@ -243,6 +267,8 @@ class FlowImpl final : public Flow
         m_packet_in = false;
         m_xid = 0;
         m_buffer_id = OFP_NO_BUFFER;
+        m_packet_data = nullptr;
+        m_data_len = 0;
         if (state() != State::Active)
             setState(State::Active);
         m_in_port = of13::OFPP_CONTROLLER;
@@ -280,6 +306,8 @@ public:
         m_xid = pi.xid();
         m_buffer_id = pi.buffer_id();
         m_in_port = pi.match().in_port()->value();
+        m_packet_data = pi.data();
+        m_data_len = pi.data_len();
     }
 
     void flow_removed(of13::FlowRemoved& fr)
@@ -516,6 +544,7 @@ struct SwitchScope {
         fm.cookie(0);
         fm.idle_timeout(0);
         fm.hard_timeout(0);
+        fm.buffer_id(OFP_NO_BUFFER);
         fm.table_id(table);
         fm.flags( of13::OFPFF_CHECK_OVERLAP |
                   of13::OFPFF_SEND_FLOW_REM );
@@ -533,13 +562,14 @@ struct SwitchScope {
         tableMiss.command(of13::OFPFC_ADD);
         tableMiss.priority(0);
         tableMiss.cookie(0);
+        tableMiss.buffer_id(OFP_NO_BUFFER);
         tableMiss.idle_timeout(0);
         tableMiss.hard_timeout(0);
         tableMiss.table_id(handler_table);
         tableMiss.flags( of13::OFPFF_CHECK_OVERLAP |
                   of13::OFPFF_SEND_FLOW_REM );
         of13::ApplyActions act;
-        of13::OutputAction out(of13::OFPP_CONTROLLER, 0);
+        of13::OutputAction out(of13::OFPP_CONTROLLER, 128); //TODO : unhardcore
         act.add_action(out);
         tableMiss.add_instruction(act);
         connection->send(tableMiss);
