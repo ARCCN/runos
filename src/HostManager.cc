@@ -200,13 +200,13 @@ void HostManager::addHost(Switch* sw, IPAddress ip, std::string mac, uint32_t po
     attachHost(mac, sw->id(), port);
     addEvent(Event::Add, dev);
     dev->connectedSince(time(NULL));
+    emit hostDiscovered(dev);
 }
 
 Host* HostManager::createHost(std::string mac, IPAddress ip)
 {
     Host* dev = new Host(mac, ip);
     m->hosts[mac] = dev;
-    emit hostDiscovered(dev);
     return dev;
 }
 
