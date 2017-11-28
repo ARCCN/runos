@@ -21,11 +21,11 @@
 #include "api/TraceablePacket.hh"
 
 #include "types/ethaddr.hh"
+#include "types/IPv4Addr"
 
 #include "SwitchConnection.hh"
 #include "Controller.hh"
 #include "HostManager.hh"
-#include "AppObject.hh" // uint32_t_ip_to_string
 
 using namespace boost::endian;
 
