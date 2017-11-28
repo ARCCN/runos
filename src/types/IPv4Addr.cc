@@ -81,7 +81,7 @@ IPv4Addr::bytes_type IPv4Addr::to_octets() const noexcept
     }};
 }
 
-std::ostream& operator<<(std::ostream &out, IPv4Addr &ipv4)
+std::ostream& operator<<(std::ostream &out, const IPv4Addr &ipv4)
 {
     static boost::format format("%u.%u.%u.%u");
     const auto& data = ipv4.to_octets();

@@ -19,21 +19,21 @@
 #include <boost/lexical_cast.hpp>
 #include <fluid/util/ipaddr.hh>
 
-#include "Controller.hh"
-#include "RestListener.hh"
-#include "api/PacketMissHandler.hh"
 #include "api/Packet.hh"
+#include "api/PacketMissHandler.hh"
 #include "api/TraceablePacket.hh"
-#include "oxm/openflow_basic.hh"
-#include "SwitchConnection.hh"
+#include "Controller.hh"
 #include "Flow.hh"
+#include "oxm/openflow_basic.hh"
+#include "RestListener.hh"
+#include "SwitchConnection.hh"
 
 REGISTER_APPLICATION(HostManager, {"switch-manager", "rest-listener", ""})
 
 struct HostImpl {
     uint64_t id;
     std::string mac;
-    IPAddress ip;
+    IPv4Addr ip;
     uint64_t switchID;
     uint32_t switchPort;
 };
@@ -43,7 +43,7 @@ struct HostManagerImpl {
     std::unordered_map<std::string, Host*> hosts;
 };
 
-Host::Host(std::string mac, IPAddress ip)
+Host::Host(std::string mac, IPv4Addr ip)
 {
     m = new HostImpl;
     m->mac = mac;
@@ -61,7 +61,7 @@ std::string Host::mac() const
 { return m->mac; }
 
 std::string Host::ip() const
-{ return uint32_t_ip_to_string(m->ip.getIPv4()); }
+{ return boost::lexical_cast<std::string>(m->ip); }
 
 uint64_t Host::switchID() const
 { return m->switchID; }
@@ -104,7 +104,10 @@ void Host::switchPort(uint32_t port)
 { m->switchPort = port; }
 
 void Host::ip(std::string ip)
-{ m->ip = IPAddress(ip); }
+{ m->ip = IPv4Addr(ip); }
+
+void Host::ip(IPv4Addr ip)
+{ m->ip = IPv4Addr(ip); }
 
 HostManager::HostManager()
 {
@@ -133,12 +136,11 @@ void HostManager::init(Loader *loader, const Config &config)
                 ethaddr eth_src = pkt.load(ofb_eth_src);
                 std::string host_mac = boost::lexical_cast<std::string>(eth_src);
 
-                IPAddress host_ip("0.0.0.0");
+                IPv4Addr host_ip("0.0.0.0");
                 if (pkt.test(ofb_eth_type == 0x0800)) {
-                IPv4Addr ipv4_src = tpkt.watch(ofb_ipv4_src);
-                    host_ip = IPAddress(ipv4_src.to_number());
+                    host_ip = tpkt.watch(ofb_ipv4_src);
                 } else if (pkt.test(ofb_eth_type == 0x0806)) {
-                    host_ip = IPAddress(tpkt.watch(ofb_arp_spa));
+                    host_ip = IPv4Addr(tpkt.watch(ofb_arp_spa));
                 }
 
                 if (isSwitch(host_mac))
@@ -153,13 +155,12 @@ void HostManager::init(Loader *loader, const Config &config)
                     addHost(sw, host_ip, host_mac, in_port);
 
                     LOG(INFO) << "Host discovered. MAC: " << host_mac
-                              << ", IP: " << AppObject::uint32_t_ip_to_string(host_ip.getIPv4())
+                              << ", IP: " << host_ip
                               << ", Switch ID: " << sw->id() << ", port: " << in_port;
                 } else {
                     Host* h = getHost(host_mac);
-                    std::string s_ip = AppObject::uint32_t_ip_to_string(host_ip.getIPv4());
-                    if (s_ip != "0.0.0.0") {
-                        h->ip(s_ip);
+                    if (host_ip != "0.0.0.0") {
+                        h->ip(host_ip);
                     }
                 }
 
@@ -192,7 +193,7 @@ void HostManager::onSwitchDown(Switch *dp)
     }
 }
 
-void HostManager::addHost(Switch* sw, IPAddress ip, std::string mac, uint32_t port)
+void HostManager::addHost(Switch* sw, IPv4Addr ip, std::string mac, uint32_t port)
 {
     std::lock_guard<std::mutex> lk(mutex);
 
@@ -203,7 +204,7 @@ void HostManager::addHost(Switch* sw, IPAddress ip, std::string mac, uint32_t po
     emit hostDiscovered(dev);
 }
 
-Host* HostManager::createHost(std::string mac, IPAddress ip)
+Host* HostManager::createHost(std::string mac, IPv4Addr ip)
 {
     Host* dev = new Host(mac, ip);
     m->hosts[mac] = dev;
@@ -253,10 +254,11 @@ Host* HostManager::getHost(std::string mac)
         return nullptr;
 }
 
-Host* HostManager::getHost(IPAddress ip)
+Host* HostManager::getHost(IPv4Addr ip)
 {
+    auto string_ip = boost::lexical_cast<std::string>(ip);
     for (auto it : m->hosts) {
-        if (it.second->ip() == AppObject::uint32_t_ip_to_string(ip.getIPv4()))
+        if (it.second->ip() == string_ip)
             return it.second;
     }
     return nullptr;
