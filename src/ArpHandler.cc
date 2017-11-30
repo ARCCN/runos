@@ -21,7 +21,7 @@
 #include "api/TraceablePacket.hh"
 
 #include "types/ethaddr.hh"
-#include "types/IPv4Addr"
+#include "types/IPv4Addr.hh"
 
 #include "SwitchConnection.hh"
 #include "Controller.hh"
