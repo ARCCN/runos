@@ -19,6 +19,8 @@
 #include <regex>
 #include <boost/format.hpp>
 
+#include <mutex>
+
 namespace runos {
 
 static unsigned long parseIPv4Address(const std::string &str)
@@ -81,9 +83,10 @@ IPv4Addr::bytes_type IPv4Addr::to_octets() const noexcept
     }};
 }
 
-std::ostream& operator<<(std::ostream &out, IPv4Addr &ipv4)
+std::ostream& operator<<(std::ostream &out, const IPv4Addr &ipv4)
 {
-    static boost::format format("%u.%u.%u.%u");
+    static boost::format static_format("%u.%u.%u.%u");
+    boost::format format(static_format); // boost::format is not thread safety
     const auto& data = ipv4.to_octets();
     return out << format % unsigned(data[0]) % unsigned(data[1])
                          % unsigned(data[2]) % unsigned(data[3]);

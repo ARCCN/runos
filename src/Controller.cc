@@ -73,6 +73,15 @@ public:
         }
         installTableMiss(max_table);
     }
+
+    void reinit() {
+        clearTables();
+        for (uint8_t i = 0; i < max_table; i++) {
+            installGoto(i);
+        }
+        installTableMiss(max_table);
+    }
+
 private:
 
     void barrier()
@@ -98,6 +107,7 @@ private:
         barrier();
         of13::FlowMod fm;
         fm.command(of13::OFPFC_ADD);
+        fm.buffer_id(OFP_NO_BUFFER);
         fm.priority(0);
         fm.cookie(0);
         fm.idle_timeout(0);
@@ -115,6 +125,7 @@ private:
         barrier();
         of13::FlowMod fm;
         fm.command(of13::OFPFC_ADD);
+        fm.buffer_id(OFP_NO_BUFFER);
         fm.priority(0);
         fm.cookie(0);
         fm.idle_timeout(0);
@@ -122,7 +133,7 @@ private:
         fm.table_id(table);
         fm.flags(of13::OFPFF_CHECK_OVERLAP | of13::OFPFF_SEND_FLOW_REM);
         of13::ApplyActions act;
-        of13::OutputAction out(of13::OFPP_CONTROLLER, 0);
+        of13::OutputAction out(of13::OFPP_CONTROLLER, 128); // TODO : unhardcore
         act.add_action(out);
         fm.add_instruction(act);
 
@@ -309,6 +320,7 @@ private:
             LOG(ERROR) << "Overwriting switchscope on active connection";
         }
         ctx->connection->replace(ofconn);
+        ctx->reinit();
         return ctx;
     }
 

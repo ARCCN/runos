@@ -578,7 +578,7 @@ UI = function () {
                         var flow_id = tmp[0],
                             switch_id = UI.menu.switch_id;
                         HCI.getHovered().routingRules.delete(flow_id);
-                        Server.ajax('DELETE', '/api/flow/' + switch_id + '/' + flow_id);
+                        Server.ajax('DELETE', '/api/flow-manager/' + switch_id + '/' + flow_id);
                     }
                     else {
                         UI.aux.querySelector('button.new').style.display = 'none';

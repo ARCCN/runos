@@ -67,14 +67,14 @@ typedef std::vector<Rule*> Rules;
  *
  * Application, that allow you manage flows on switchs table by Rest API.
  *
- * You may know which flows are installed on switch by GET request : GET /api/flow/<switch_id>
+ * You may know which flows are installed on switch by GET request : GET /api/flow-manager/<switch_id>
  * And FlowManager will reply a json, which contains following information about flows :
  *
  *  Matches : input port, ethernet source/destination address, ethernet type, VLAN id, IP source/destenation address, IP protocol
  *  Actions : output port, goto table, metadata and set fields.
  *  Flow identificator.
  *
- * You may delete flow by its identifictator, for this you need send DELETE request : DELETE /api/flow/<switch_id>/<flow_id>
+ * You may delete flow by its identifictator, for this you need send DELETE request : DELETE /api/flow-manager/<switch_id>/<flow_id>
  *
  *  This application support event model, and manage Rule objects.
  */

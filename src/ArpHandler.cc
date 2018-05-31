@@ -21,11 +21,11 @@
 #include "api/TraceablePacket.hh"
 
 #include "types/ethaddr.hh"
+#include "types/IPv4Addr.hh"
 
 #include "SwitchConnection.hh"
 #include "Controller.hh"
 #include "HostManager.hh"
-#include "AppObject.hh" // uint32_t_ip_to_string
 #include "Maple.hh"
 
 using namespace boost::endian;
@@ -67,25 +67,23 @@ void ArpHandler::init(Loader *loader, const Config& config)
                 const auto ofb_arp_tpa = oxm::arp_tpa();
                 const auto ofb_arp_spa = oxm::arp_spa();
                 const auto ofb_arp_sha = oxm::arp_sha();
-                const auto ofb_eth_src = oxm::eth_src();
                 return [=](Packet& pkt, FlowPtr, Decision decision){
                     auto tpkt = packet_cast<TraceablePacket>(pkt);
                     if (pkt.test(ofb_eth_type == ARP_ETH_TYPE) && tpkt.test(ofb_arp_op == ARP_REQUEST)) {
-                        auto arp_tpa = tpkt.watch(ofb_arp_tpa);
-                        IPAddress ip(arp_tpa);
-                        Host *target = host_manager->getHost(ip);
+                        IPv4Addr arp_tpa = tpkt.watch(ofb_arp_tpa);
+                        Host *target = host_manager->getHost(arp_tpa);
                         if (target) {
                             // arp_tha is declared above
-                            auto arp_tha = target->mac();
-                            auto arp_spa = tpkt.watch(ofb_arp_spa);
-                            auto arp_sha = tpkt.watch(ofb_arp_sha);
+                            ethaddr arp_tha = target->mac();
+                            ethaddr arp_sha = tpkt.watch(ofb_arp_sha);
+                            IPv4Addr arp_spa = tpkt.watch(ofb_arp_spa);
                             Reply reply;
-                            reply.dst = ethaddr(tpkt.watch(ofb_eth_src)).to_number();
-                            reply.src = ethaddr(arp_tha).to_number();
-                            reply.arp.sha = ethaddr(arp_tha).to_number();
-                            reply.arp.spa = bit_cast<uint32_t>(arp_tpa.value_bits());
-                            reply.arp.tha = ethaddr(arp_sha.value_bits()).to_number();
-                            reply.arp.tpa = bit_cast<uint32_t>(arp_spa.value_bits());
+                            reply.dst = arp_sha.to_number();
+                            reply.src = arp_tha.to_number();
+                            reply.arp.sha = arp_tha.to_number();
+                            reply.arp.spa = arp_tpa.to_number();
+                            reply.arp.tha = arp_sha.to_number();
+                            reply.arp.tpa = arp_spa.to_number();
 
                             uint8_t* data = (uint8_t *)&(reply);
                             of13::PacketOut out;
@@ -95,11 +93,10 @@ void ArpHandler::init(Loader *loader, const Config& config)
                             out.add_action(action);
 
                             connection->send(out);
-                            auto string_ip = AppObject::uint32_t_ip_to_string(arp_tpa);
                             VLOG(10) << "We said " << arp_sha
                                          << " (" << arp_spa
                                          << ") that IP = "
-                                         << string_ip << " has " << arp_tha;
+                                         << arp_tpa << " has " << arp_tha;
                             return decision
                             .idle_timeout(std::chrono::seconds::zero())
                             .drop() // To controller with arpheader lenght

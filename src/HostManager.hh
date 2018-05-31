@@ -31,6 +31,7 @@
 #include "Rest.hh"
 #include "AppObject.hh"
 #include "json11.hpp"
+#include "types/IPv4Addr.hh"
 
 /**
  * Host object corresponding end host
@@ -49,8 +50,9 @@ public:
     void switchID(uint64_t id);
     void switchPort(uint32_t port);
     void ip(std::string ip);
+    void ip(IPv4Addr ip);
 
-    Host(std::string mac, IPAddress ip);
+    Host(std::string mac, IPv4Addr ip);
     ~Host();
 };
 
@@ -73,7 +75,7 @@ public:
 
     std::unordered_map<std::string, Host*> hosts();
     Host* getHost(std::string mac);
-    Host* getHost(IPAddress ip);
+    Host* getHost(IPv4Addr ip);
 
     // rest
     bool eventable() override {return true;}
@@ -92,8 +94,8 @@ private:
     SwitchManager* m_switch_manager;
     std::mutex mutex;
 
-    void addHost(Switch* sw, IPAddress ip, std::string mac, uint32_t port);
-    Host* createHost(std::string mac, IPAddress ip);
+    void addHost(Switch* sw, IPv4Addr ip, std::string mac, uint32_t port);
+    Host* createHost(std::string mac, IPv4Addr ip);
     bool findMac(std::string mac);
     bool isSwitch(std::string mac);
     void attachHost(std::string mac, uint64_t id, uint32_t port);

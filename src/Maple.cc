@@ -118,6 +118,11 @@ class FlowImpl final : public Flow
         uint32_t buffer_id {OFP_NO_BUFFER};
         uint32_t in_port {of13::OFPP_CONTROLLER};
         uint32_t xid;
+
+        // arrived packetIn take care of this data
+        // FlowImpl shouldn't free it
+        void* packet_data {nullptr};
+        size_t data_len {0};
         SwitchInfo(SwitchConnectionPtr conn,
               bool packet_in=false,
               uint32_t buffer_id = OFP_NO_BUFFER,
@@ -211,7 +216,14 @@ class FlowImpl final : public Flow
             po.actions(actions(dpid));
             po.in_port(scope.in_port);
 
+            if (scope.buffer_id == OFP_NO_BUFFER && scope.packet_data != nullptr) {
+                po.data(scope.packet_data, scope.data_len);
+            }
+
             scope.conn->send(po);
+
+            scope.packet_data = nullptr;
+            scope.data_len = 0;
             }
     }
 
@@ -277,6 +289,10 @@ public:
         if (m_decision.idle_timeout() <= Decision::duration::zero()) {
             packet_out(priority, match, dpid);
         } else {
+            if (scope.packet_in && scope.buffer_id == OFP_NO_BUFFER) {
+                // Send packet if buffer is not supported
+                packet_out(priority, match, dpid);
+            }
             flow_mod(priority, match, dpid);
         }
 
@@ -351,6 +367,8 @@ public:
         it->second.xid = pi.xid();
         it->second.buffer_id = pi.buffer_id();
         it->second.in_port = pi.match().in_port()->value();
+        it->second.packet_data = pi.data();
+        it->second.data_len = pi.data_len();
     }
 
     void flow_removed(of13::FlowRemoved& fr)

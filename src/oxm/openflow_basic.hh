@@ -72,10 +72,10 @@ struct udp_dst : define_ofb_type
 
 // TODO: replace with ipaddr type
 struct arp_spa : define_ofb_type
-    < arp_spa, of::oxm::basic_match_fields::ARP_SPA, 32, uint32_t, uint32_t, true >
+    < arp_spa, of::oxm::basic_match_fields::ARP_SPA, 32, IPv4Addr, IPv4Addr, true >
 { };
 struct arp_tpa : define_ofb_type
-    < arp_tpa, of::oxm::basic_match_fields::ARP_TPA, 32, uint32_t, uint32_t, true >
+    < arp_tpa, of::oxm::basic_match_fields::ARP_TPA, 32, IPv4Addr, IPv4Addr, true >
 { };
 struct arp_sha : define_ofb_type
     < arp_sha, of::oxm::basic_match_fields::ARP_SHA, 48, ethaddr, ethaddr, true >

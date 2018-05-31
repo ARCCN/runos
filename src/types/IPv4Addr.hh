@@ -86,7 +86,7 @@ public:
 
 private:
     bits_type data_;
-    friend std::ostream& operator<<(std::ostream&, IPv4Addr&);
+    friend std::ostream& operator<<(std::ostream&, const IPv4Addr&);
     // TODO friend std::istream& operator>>(std::istream&,IPv4Addr&);
 };
 
