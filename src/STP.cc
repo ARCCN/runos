@@ -22,6 +22,7 @@
 #include "Topology.hh"
 #include "Controller.hh"
 #include "SwitchConnection.hh"
+#include "Maple.hh"
 REGISTER_APPLICATION(STP, {"controller", "switch-manager", "link-discovery", "topology", ""})
 
 enum {
@@ -113,10 +114,6 @@ void STP::init(Loader* loader, const Config& config)
     connect(ld, SIGNAL(linkBroken(switch_and_port, switch_and_port)),
                      this, SLOT(onLinkBroken(switch_and_port, switch_and_port)));
 
-    Controller *ctrl = Controller::get(loader);
-    ctrl->registerFlood([this](uint64_t dpid){
-        return new of13::GroupAction(FLOOD_GROUP);
-    });
     SwitchManager* sw = SwitchManager::get(loader);
     connect(sw, &SwitchManager::switchDiscovered, this, &STP::onSwitchDiscovered);
     connect(sw, &SwitchManager::switchDown, this, &STP::onSwitchDown);

@@ -16,6 +16,7 @@
 
 #include "LearningSwitch.hh"
 
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <boost/optional.hpp>
@@ -27,14 +28,70 @@
 #include "types/ethaddr.hh"
 #include "oxm/openflow_basic.hh"
 
-#include "Controller.hh"
 #include "Topology.hh"
 #include "SwitchConnection.hh"
 #include "Flow.hh"
+#include "STP.hh"
+#include "Maple.hh"
+#include "Decision.hh"
+#include "Common.hh"
 
-REGISTER_APPLICATION(LearningSwitch, {"controller", "topology", ""})
+
+REGISTER_APPLICATION(LearningSwitch, {"maple", "topology", "stp", ""})
 
 using namespace runos;
+
+class Route : public Decision::CustomDecision {
+    struct Ports {
+        uint32_t inport;
+        uint32_t outport;
+    };
+
+    std::unordered_map<uint64_t, Ports> ports;
+public:
+
+    /* route must contains only outports */
+    Route(data_link_route route)
+    {
+        if (route.size() % 2 != 0){
+            RUNOS_THROW( invalid_argument() );
+        }
+
+        for (auto it = route.begin(); it != route.end(); it += 2){
+            if (it->dpid != (it+1)->dpid){
+                RUNOS_THROW( invalid_argument() );
+            }
+            ports[it->dpid].inport = it->port;
+            ports[it->dpid].outport = (it+1)->port;
+        }
+    }
+
+    std::vector<uint64_t> switches() const override
+    {
+        std::vector<uint64_t> ret;
+        for (auto i : ports){
+            ret.push_back(i.first);
+        }
+        return ret;
+    }
+
+    void apply(ActionList& ret, uint64_t dpid) override
+    {
+        ret.add_action(new of13::OutputAction(ports[dpid].outport, 0));
+    }
+
+    std::vector<std::pair<uint64_t,
+                          uint32_t>> const
+    in_ports() override
+    {
+        std::vector<std::pair<uint64_t, uint32_t>> ret;
+        for (auto i : ports) {
+            ret.push_back({i.first, i.second.inport});
+        }
+        return ret;
+    }
+
+};
 
 class HostsDatabase {
     boost::shared_mutex mutex;
@@ -67,70 +124,71 @@ public:
     }
 };
 
+std::ostream& operator << (std::ostream &out,const data_link_route &route){
+    out << " [ ";
+    for (auto p : route) {
+        out << "(dpid : " << p.dpid << ", port : " << p.port << ")";
+    }
+    out << " ] ";
+    return out;
+}
+
 void LearningSwitch::init(Loader *loader, const Config &)
 {
-    Controller* ctrl = Controller::get(loader);
     auto topology = Topology::get(loader);
     auto db = std::make_shared<HostsDatabase>();
 
-    ctrl->registerHandler("forwarding",
-    [=](SwitchConnectionPtr connection) {
-        const auto ofb_in_port = oxm::in_port();
-        const auto ofb_eth_src = oxm::eth_src();
-        const auto ofb_eth_dst = oxm::eth_dst();
+    const auto ofb_in_port = oxm::in_port();
+    const auto ofb_eth_src = oxm::eth_src();
+    const auto ofb_eth_dst = oxm::eth_dst();
+    const auto switch_id = oxm::switch_id();
 
-        return [=](Packet& pkt, FlowPtr, Decision decision) {
+    auto maple = Maple::get(loader);
+
+    maple->registerHandler("forwarding",
+        [=](Packet& pkt, FlowPtr, Decision decision) {
             // Get required fields
+            auto tpkt = packet_cast<TraceablePacket>(pkt);
             ethaddr dst_mac = pkt.load(ofb_eth_dst);
+            ethaddr src_mac = tpkt.watch(ofb_eth_src);
+            uint64_t dpid;
+            uint32_t inport;
+            std::tie(dpid, inport) = tpkt.vload(switch_id, ofb_in_port);
 
-            db->learn(connection->dpid(),
-                      pkt.load(ofb_in_port),
-                      packet_cast<TraceablePacket>(pkt).watch(ofb_eth_src));
+            db->learn(dpid,
+                      tpkt.watch(ofb_in_port),
+                      src_mac);
 
             auto target = db->query(dst_mac);
+            auto source = db->query(src_mac);
 
             // Forward
             if (target) {
                 auto route = topology
-                             ->computeRoute(connection->dpid(), target->dpid);
-
-                if (route.size() > 0) {
-                    DVLOG(10) << "Forwarding packet from "
-                              << connection->dpid()
-                              << ':' << uint32_t(pkt.load(ofb_in_port))
-                              << " via port " << route[0].port
-                              << " to " << ethaddr(pkt.load(ofb_eth_dst))
-                              << " seen at " << target->dpid;
-                    // unicast via core
-                    return decision.unicast(route[0].port)
-                                   .idle_timeout(std::chrono::seconds(60))
-                                   .hard_timeout(std::chrono::minutes(30));
-                } else if (connection->dpid() == target->dpid) {
-                    DVLOG(10) << "Forwarding packet from "
-                              << connection->dpid()
-                              << ':' << uint32_t(pkt.load(ofb_in_port))
-                              << " via port " << target->port;
-                    // send through core border
-                    return decision.unicast(target->port)
-                                   .idle_timeout(std::chrono::seconds(60))
-                                   .hard_timeout(std::chrono::minutes(30));
+                             ->computeRoute(source->dpid, target->dpid);
+                if (not route.empty() or target->dpid == source->dpid){
+                    route.insert(route.begin(), *source);
+                    route.push_back(*target);
+                    DVLOG(10) << "Forwarding packet from " << source->dpid
+                              << "to " << target->dpid << " through route : "
+                              << route;
+                    return decision.custom(
+                            Decision::CustomDecisionPtr(new Route(route)))
+                            .idle_timeout(std::chrono::seconds(20*60))
+                            .hard_timeout(std::chrono::minutes(30));
                 } else {
                     LOG(WARNING)
-                        << "Path from " << connection->dpid()
-                        << " to " << target->dpid << " not found";
-                    return decision.drop()
-                                   .idle_timeout(std::chrono::seconds(30))
-                                   .hard_timeout(std::chrono::seconds(60))
-                                   .return_();
+                        << "Path from " << source->dpid
+                        << "to " << target->dpid << "not found";
+                    return decision.drop();
                 }
             } else {
                 if (not is_broadcast(dst_mac)) {
                     VLOG(5) << "Flooding for unknown address " << dst_mac;
-                    return decision.broadcast()
-                                   .idle_timeout(std::chrono::seconds::zero());
+                    return decision.custom(std::make_shared<STP::Decision>())
+                            .idle_timeout(std::chrono::seconds::zero());
                 }
-                return decision.broadcast();
+                return decision.custom(std::make_shared<STP::Decision>());
             }
-        };
     });
 }

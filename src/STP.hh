@@ -28,6 +28,7 @@
 #include "ILinkDiscovery.hh"
 #include "Switch.hh"
 #include "OFTransaction.hh"
+#include "Decision.hh"
 
 typedef std::vector<uint32_t> STPPorts;
 
@@ -87,6 +88,18 @@ class STP : public Application {
     Q_OBJECT
     SIMPLE_APPLICATION(STP, "stp")
 public:
+    struct Decision : public runos::Decision::CustomDecision {
+        void apply(ActionList& ret, uint64_t dpid) override {
+            // for all dpid the group is same
+            ret.add_action(new of13::GroupAction(FLOOD_GROUP));
+        }
+
+    private:
+        enum {
+            FLOOD_GROUP = 0xf100d
+        };
+    };
+
     void init(Loader* loader, const Config& config) override;
 /**
  * get enabling for flooding ports

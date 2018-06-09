@@ -25,10 +25,15 @@ class PacketParser final : public SerializablePacket {
     uint8_t* data;
     size_t data_len;
     boost::endian::big_uint32_t in_port;
+    boost::endian::big_uint64_t switch_id;
 
-    //bindings
-    typedef std::array<void*, 40> bindings_arr;
-    bindings_arr bindings;
+    //ofb_bindings
+    typedef std::array<void*, 40> ofb_bindings_arr;
+    ofb_bindings_arr ofb_bindings;
+
+    //non openflow bindings
+    typedef std::array<void*, 20> nonof_bindings_arr;
+    nonof_bindings_arr nonof_bindings;
 
     // replace with
     checked_ptr<struct ethernet_hdr> eth;
@@ -44,15 +49,25 @@ class PacketParser final : public SerializablePacket {
     void parse_l3(uint16_t eth_type, uint8_t* data, size_t data_len);
     void parse_l4(uint8_t protocol, uint8_t* data, size_t data_len);
 
-    using binding_list =
+    using ofb_binding_list =
         std::initializer_list<std::pair<of::oxm::basic_match_fields, void*>>;
 
-    void bind(binding_list bindings);
-    void rebind(binding_list bindings);
+    using nonof_binding_list =
+        std::initializer_list<std::pair<of::oxm::non_openflow_fields, void*>>;
+
+
+    // openflow basic bindings
+    void bind(ofb_binding_list ofb_bindings);
+    void rebind(ofb_binding_list ofb_bindings);
+
+    // non openflow bindings
+    void bind(nonof_binding_list nonof_bindings);
+    void rebind(nonof_binding_list nonof_bindings);
+
     uint8_t* access(oxm::type t) const;
 
 public:
-    PacketParser(fluid_msg::of13::PacketIn& pi);
+    PacketParser(fluid_msg::of13::PacketIn& pi, uint64_t from_dpid);
 
     oxm::field<> load(oxm::mask<> mask) const override;
     void modify(oxm::field<> patch) override;

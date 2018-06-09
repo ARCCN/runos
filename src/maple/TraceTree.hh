@@ -33,13 +33,19 @@ namespace maple {
 class TraceTree {
 public:
 
-    TraceTree(Backend& backend, FlowPtr barrier);
+    // left border can reached, right cannot
+    TraceTree(Backend& backend,
+              uint16_t left_prio=1,
+              uint16_t right_prio=65535);
+    TraceTree(Backend& backend,
+              std::pair<uint16_t, uint16_t> priority_space);
     ~TraceTree();
 
     FlowPtr lookup(const Packet& pkt) const;
     std::unique_ptr<Tracer> augment();
 
     void commit();
+    void update();
     void gc();
 
 protected:
@@ -47,18 +53,21 @@ protected:
     struct flow_node;
     struct test_node;
     struct load_node;
+    struct vload_node;
 
     using node =
         boost::variant< unexplored
                       , flow_node
+                      , vload_node
                       , boost::recursive_wrapper<test_node>
-                      , boost::recursive_wrapper<load_node> >;
+                      , boost::recursive_wrapper<load_node>
+                      >;
 
     struct Impl;
 
     Backend& m_backend;
-    FlowPtr m_barrier;
     std::unique_ptr<node> m_root;
+    uint16_t left_prio, right_prio;
 };
 
 } // namespace maple

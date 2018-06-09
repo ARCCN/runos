@@ -20,13 +20,40 @@
 #include "Application.hh"
 #include "Loader.hh"
 #include "OFTransaction.hh"
+#include "SwitchConnection.hh"
 
 #include "api/PacketMissHandler.hh"
 #include "SwitchConnectionFwd.hh"
 
+#include <vector>
+
 using runos::SwitchConnectionPtr;
 using runos::PacketMissHandlerFactory;
 using runos::FloodImplementation;
+using runos::OfMessageHandler;
+
+struct CommonHandlers{
+    virtual void apply(void *data, SwitchConnectionPtr connection) = 0;
+    virtual ~CommonHandlers(){}
+};
+
+template <class ofMessage>
+class Handlers : public CommonHandlers{
+    class OFMsgParseError : std::exception { };
+    std::vector<OfMessageHandler<ofMessage>> handlers;
+public:
+    void apply(void *data, SwitchConnectionPtr connection) override{
+        ofMessage msg;
+        if( msg.unpack(static_cast<uint8_t *>(data)) != 0 ){
+            throw OFMsgParseError();
+        }
+        for (auto h : handlers){
+            h(msg, connection);
+        }
+    }
+    friend class Controller;
+};
+
 
 /**
 * Implements OpenFlow 1.3 controller.
@@ -41,26 +68,20 @@ public:
     void startUp(Loader* loader) override;
 
     /**
-    * Registers new message handler for each worker thread.
-    * Used for performance-critical message processing, such as packet-in's.
+    * Register handler of openflow message
     */
-    void registerHandler(const char* name, PacketMissHandlerFactory factory);
+    template<class ofMessage>
+    void registerHandler(OfMessageHandler<ofMessage> handler){
+        static Handlers<ofMessage> handlers;
+        ofMessage tmp;
+        __register_handler__(tmp.type(), &handlers);
+        handlers.handlers.push_back(handler);
+    }
 
     /**
-     *  Get number of Maple's table
-     */
-    uint8_t handler_table() const;
-
-    /**
-     * If your application needed in own table, use this method
-     */
-    uint8_t reserveTable();
-
-    /**
-      * Deleting all TraceTrees
+      * get number of reserved table
       */
-
-    void invalidateTraceTree();
+    uint8_t getTable(const char* name) const;
 
     /**
      * Allocate unique OFMsg::xid and return's a wrapper class
@@ -71,11 +92,10 @@ public:
      */
     OFTransaction* registerStaticTransaction(Application* caller);
 
-
     /**
-    * register handler broadcast packets
-    */
-    void registerFlood(FloodImplementation flood);
+      * get the max number of using table
+      */
+    uint8_t maxTable() const;
 
 signals:
 
@@ -102,4 +122,5 @@ signals:
 
 private:
     std::unique_ptr<class ControllerImpl> impl;
+    void __register_handler__(uint8_t t, CommonHandlers *h);
 };

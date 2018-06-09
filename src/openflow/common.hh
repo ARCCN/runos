@@ -34,6 +34,7 @@ namespace oxm {
 enum class ns : uint16_t {
     NXM_0          = 0x0000,    /* Backward compatibility with NXM */
     NXM_1          = 0x0001,    /* Backward compatibility with NXM */
+    NON_OPENFLOW   = 0x7406,    /* Non OpenFlow field. Runos only. */
     OPENFLOW_BASIC = 0x8000,    /* Basic class for OpenFlow */
     EXPERIMENTER   = 0xFFFF,    /* Experimenter class */
 };
@@ -82,6 +83,11 @@ enum class basic_match_fields : uint8_t {
     IPV6_EXTHDR    = 39, /* IPv6 Extension Header pseudo-field */
 };
 
+/*OXM match field for non openflow class.  Runos only*/
+enum class non_openflow_fields : uint8_t {
+    SWITCH_ID = 1
+};
+
 struct header {
     big_uint16_t ns;
     uint8_t      field:7;
@@ -91,7 +97,7 @@ struct header {
 static_assert(sizeof(header) == 4, "");
 
 /* Bit definitions for IPv6 Extension Header pseudo-field. */
-enum class ipv6exthdr_flags {      
+enum class ipv6exthdr_flags {
     NONEXT = 1 << 0,     /* "No next header" encountered. */
     ESP    = 1 << 1,     /* Encrypted Sec Payload header present. */
     AUTH   = 1 << 2,     /* Authentication header present. */

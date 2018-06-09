@@ -95,7 +95,7 @@ void RestFlowMod::init(Loader* loader, const Config& rootConfig)
 {
     ctrl_ = Controller::get(loader);
     sw_m_ = SwitchManager::get(loader);
-    tableNo_ = ctrl_->reserveTable();
+    tableNo_ = ctrl_->getTable("rest-flow-mod");
 
     RestListener::get(loader)->registerRestHandler(this);
     acceptPath(Method::POST, "flowentry");
@@ -492,10 +492,10 @@ json11::Json RestFlowMod::handleDELETE(std::vector<std::string> params, std::str
 
         clearTables(dpid);
         // let switch work
-        for (uint8_t i = 0; i < ctrl_->handler_table(); i++){
+        for (uint8_t i = 0; i < ctrl_->maxTable(); i++){
             installGoto(dpid, i);
         }
-        installTableMissRule(dpid, ctrl_->handler_table());
+        installTableMissRule(dpid, ctrl_->maxTable());
 
         auto msg = "all tables have been initialized" + response_.str();
         response_.str("");

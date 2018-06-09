@@ -9,6 +9,7 @@
 #include <fluid/of13msg.hh>
 
 #include "types/exception.hh"
+#include "Common.hh"
 
 using namespace boost::endian;
 
@@ -20,6 +21,7 @@ typedef boost::error_info< struct tag_oxm_field, unsigned >
     errinfo_oxm_field;
 
 using ofb = of::oxm::basic_match_fields;
+using non_of = of::oxm::non_openflow_fields;
 
 struct ethernet_hdr {
     big_uint48_t dst;
@@ -146,33 +148,66 @@ static_assert(sizeof(icmp_hdr) == 4, "");
 
 // TODO: make it more safe
 // add size-checking of passed oxm type against field size
-void PacketParser::bind(binding_list new_bindings)
+void PacketParser::bind(ofb_binding_list new_bindings)
 {
     for (const auto& binding : new_bindings) {
         auto id = static_cast<size_t>(binding.first);
-        if (bindings.at(id)) {
+        if (ofb_bindings.at(id)) {
             RUNOS_THROW(
                     invalid_argument() <<
                     errinfo_msg("Trying to bind already binded field") <<
+                    errinfo_oxm_ns(uint16_t(of::oxm::ns::OPENFLOW_BASIC)) <<
                     errinfo_oxm_field(id));
         }
-        bindings.at(id) = binding.second;
+        ofb_bindings.at(id) = binding.second;
     }
 }
 
-void PacketParser::rebind(binding_list new_bindings)
+void PacketParser::rebind(ofb_binding_list new_bindings)
 {
     for (const auto& binding : new_bindings) {
         auto id = static_cast<size_t>(binding.first);
-        if (!bindings.at(id)) {
+        if (!ofb_bindings.at(id)) {
             RUNOS_THROW(
                     invalid_argument() <<
                     errinfo_msg("Trying to rebind unbinded field") <<
+                    errinfo_oxm_ns(uint16_t(of::oxm::ns::OPENFLOW_BASIC)) <<
                     errinfo_oxm_field(id));
         }
-        bindings.at(id) = binding.second;
+        ofb_bindings.at(id) = binding.second;
     }
 }
+
+void PacketParser::bind(nonof_binding_list new_bindings)
+{
+    for (const auto& binding : new_bindings) {
+        auto id = static_cast<size_t>(binding.first);
+        if (nonof_bindings.at(id)) {
+            RUNOS_THROW(
+                    invalid_argument() <<
+                    errinfo_msg("Trying to bind already binded field") <<
+                    errinfo_oxm_ns(uint16_t(of::oxm::ns::NON_OPENFLOW)) <<
+                    errinfo_oxm_field(id));
+        }
+        nonof_bindings.at(id) = binding.second;
+    }
+}
+
+void PacketParser::rebind(nonof_binding_list new_bindings)
+{
+    for (const auto& binding : new_bindings) {
+        auto id = static_cast<size_t>(binding.first);
+        if (!nonof_bindings.at(id)) {
+            RUNOS_THROW(
+                    invalid_argument() <<
+                    errinfo_msg("Trying to rebind unbinded field") <<
+                    errinfo_oxm_ns(uint16_t(of::oxm::ns::NON_OPENFLOW)) <<
+                    errinfo_oxm_field(id));
+        }
+        nonof_bindings.at(id) = binding.second;
+    }
+}
+
 
 void PacketParser::parse_l2(uint8_t* data, size_t data_len)
 {
@@ -295,14 +330,19 @@ void PacketParser::parse_l4(uint8_t protocol, uint8_t* data, size_t data_len)
     }
 }
 
-PacketParser::PacketParser(fluid_msg::of13::PacketIn& pi)
+PacketParser::PacketParser(fluid_msg::of13::PacketIn& pi, uint64_t dpid)
     : data(static_cast<uint8_t*>(pi.data()))
     , data_len(pi.data_len())
     , in_port(pi.match().in_port()->value())
+    , switch_id(dpid)
 {
-    bindings.fill(nullptr);
+    ofb_bindings.fill(nullptr);
+    nonof_bindings.fill(nullptr);
     bind({
         { ofb::IN_PORT, &in_port }
+    });
+    bind({
+        { non_of::SWITCH_ID, &switch_id }
     });
 
     if (data) {
@@ -312,22 +352,44 @@ PacketParser::PacketParser(fluid_msg::of13::PacketIn& pi)
 
 uint8_t* PacketParser::access(oxm::type t) const
 {
-    if (t.ns() != unsigned(of::oxm::ns::OPENFLOW_BASIC)) {
-        RUNOS_THROW(
-                out_of_range() <<
-                errinfo_msg("Unsupported oxm namespace") <<
-                errinfo_oxm_ns(t.ns()));
+    uint8_t* ret(nullptr);
+    switch (t.ns()){
+        case unsigned(of::oxm::ns::OPENFLOW_BASIC) :
+            if (t.id() >= ofb_bindings.size() || !ofb_bindings[t.id()]) {
+                RUNOS_THROW(
+                        out_of_range() <<
+                        errinfo_msg("Unsupported oxm field") <<
+                        errinfo_oxm_ns(t.ns()) <<
+                        errinfo_oxm_field(t.id()));
+            }
+            ret =  (uint8_t*) ofb_bindings[t.id()];
+        break;
+        case unsigned(of::oxm::ns::NON_OPENFLOW) :
+             if (t.id() >= nonof_bindings.size() || !nonof_bindings[t.id()]) {
+                RUNOS_THROW(
+                        out_of_range() <<
+                        errinfo_msg("Unsupported oxm field") <<
+                        errinfo_oxm_ns(t.ns()) <<
+                        errinfo_oxm_field(t.id()));
+            }
+            ret =  (uint8_t*) nonof_bindings[t.id()];
+        break;
+        default:
+            RUNOS_THROW(
+                    out_of_range() <<
+                    errinfo_msg("Unsupported oxm namespace") <<
+                    errinfo_oxm_ns(t.ns()));
+        break;
     }
-
-    if (t.id() >= bindings.size() || !bindings[t.id()]) {
+    if ( !ret ){
         RUNOS_THROW(
                 out_of_range() <<
-                errinfo_msg("Unsupported oxm field") <<
+                errinfo_msg("Couldn't find value") <<
                 errinfo_oxm_ns(t.ns()) <<
                 errinfo_oxm_field(t.id()));
     }
+    return ret;
 
-    return (uint8_t*) bindings[t.id()];
 }
 
 oxm::field<> PacketParser::load(oxm::mask<> mask) const

@@ -4,7 +4,7 @@
 
 #include "openflow/common.hh"
 #include "types/ethaddr.hh"
-#include "types/IPv4Addr.hh"
+#include "types/ipv4addr.hh"
 #include "types/IPv6Addr.hh"
 #include "type.hh"
 
@@ -12,6 +12,12 @@ namespace runos {
 namespace oxm {
 
 // TODO: unmaskable<type>
+
+struct switch_id : define_type  < switch_id
+                                , uint16_t(of::oxm::ns::NON_OPENFLOW)
+                                , uint8_t(of::oxm::non_openflow_fields::SWITCH_ID)
+                                , 64, uint64_t, uint64_t, false >
+{ };
 
 template< class Final,
           of::oxm::basic_match_fields ID,
@@ -44,10 +50,10 @@ struct ip_proto : define_ofb_type
 { };
 // TODO: replace with ipaddr type
 struct ipv4_src : define_ofb_type
-    < ipv4_src, of::oxm::basic_match_fields::IPV4_SRC, 32, IPv4Addr, IPv4Addr, true >
+    < ipv4_src, of::oxm::basic_match_fields::IPV4_SRC, 32, ipv4addr, ipv4addr, true >
 { };
 struct ipv4_dst : define_ofb_type
-    < ipv4_dst, of::oxm::basic_match_fields::IPV4_DST, 32, IPv4Addr, IPv4Addr, true >
+    < ipv4_dst, of::oxm::basic_match_fields::IPV4_DST, 32, ipv4addr, ipv4addr, true >
 { };
 
 struct tcp_src : define_ofb_type
@@ -66,10 +72,10 @@ struct udp_dst : define_ofb_type
 
 // TODO: replace with ipaddr type
 struct arp_spa : define_ofb_type
-    < arp_spa, of::oxm::basic_match_fields::ARP_SPA, 32, IPv4Addr, IPv4Addr, true >
+    < arp_spa, of::oxm::basic_match_fields::ARP_SPA, 32, ipv4addr, ipv4addr, true >
 { };
 struct arp_tpa : define_ofb_type
-    < arp_tpa, of::oxm::basic_match_fields::ARP_TPA, 32, IPv4Addr, IPv4Addr, true >
+    < arp_tpa, of::oxm::basic_match_fields::ARP_TPA, 32, ipv4addr, ipv4addr, true >
 { };
 struct arp_sha : define_ofb_type
     < arp_sha, of::oxm::basic_match_fields::ARP_SHA, 48, ethaddr, ethaddr, true >

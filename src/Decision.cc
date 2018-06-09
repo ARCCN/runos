@@ -75,7 +75,7 @@ Decision Decision::broadcast() const
     return Decision{Broadcast{base()}};
 }
 
-Decision Decision::inspect(uint16_t bytes) const
+Decision Decision::inspect(uint16_t bytes, Inspect::Handler handler) const
 {
     if (boost::get<Undefined>(&m_data) == nullptr) {
         if (not boost::get<Inspect>(&m_data))
@@ -84,15 +84,26 @@ Decision Decision::inspect(uint16_t bytes) const
 
     const Inspect* i = boost::get<Inspect>(&m_data);
     if (i) {
-        return Decision{Inspect{base(), std::max(bytes, i->send_bytes_len)}};
+        return Decision{Inspect{base(),
+                        std::max(bytes, i->send_bytes_len),
+                        handler}};
     } else {
-        return Decision{Inspect{base(), bytes}};
+        return Decision{Inspect{base(), bytes, handler}};
     }
 }
 
 Decision Decision::drop() const
 {
     return Decision{Drop{base()}};
+}
+
+Decision Decision::custom(CustomDecisionPtr body) const
+{
+    if (boost::get<Undefined>(&m_data) == nullptr) {
+        if (not boost::get<Custom>(&m_data))
+            RUNOS_THROW(decision_conflict());
+    }
+    return Decision{Custom{base(), body}};
 }
 
 Decision Decision::clear() const

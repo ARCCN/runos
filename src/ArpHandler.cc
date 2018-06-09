@@ -21,11 +21,12 @@
 #include "api/TraceablePacket.hh"
 
 #include "types/ethaddr.hh"
-#include "types/IPv4Addr.hh"
+#include "types/ipv4addr.hh"
 
 #include "SwitchConnection.hh"
 #include "Controller.hh"
 #include "HostManager.hh"
+#include "Maple.hh"
 
 using namespace boost::endian;
 
@@ -51,14 +52,14 @@ constexpr auto ARP_ETH_TYPE = 0x0806;
 constexpr auto ARP_REQUEST = 1;
 constexpr auto ARP_REPLY = 2;
 
-REGISTER_APPLICATION(ArpHandler, {"controller","switch-manager", "host-manager", ""})
+REGISTER_APPLICATION(ArpHandler, {"controller","maple", "switch-manager", "host-manager", ""})
 
 //TODO : deal with it application
 void ArpHandler::init(Loader *loader, const Config& config)
 {
-        Controller* ctrl = Controller::get(loader);
+        auto maple = Maple::get(loader);
         host_manager = HostManager::get(loader);
-        ctrl->registerHandler("arp-handler",
+        maple->registerHandler("arp-handler",
             [=](SwitchConnectionPtr connection) {
                 const auto ofb_in_port = oxm::in_port();
                 const auto ofb_eth_type = oxm::eth_type();
@@ -69,13 +70,13 @@ void ArpHandler::init(Loader *loader, const Config& config)
                 return [=](Packet& pkt, FlowPtr, Decision decision){
                     auto tpkt = packet_cast<TraceablePacket>(pkt);
                     if (pkt.test(ofb_eth_type == ARP_ETH_TYPE) && tpkt.test(ofb_arp_op == ARP_REQUEST)) {
-                        IPv4Addr arp_tpa = tpkt.watch(ofb_arp_tpa);
+                        ipv4addr arp_tpa = tpkt.watch(ofb_arp_tpa);
                         Host *target = host_manager->getHost(arp_tpa);
                         if (target) {
                             // arp_tha is declared above
                             ethaddr arp_tha = target->mac();
                             ethaddr arp_sha = tpkt.watch(ofb_arp_sha);
-                            IPv4Addr arp_spa = tpkt.watch(ofb_arp_spa);
+                            ipv4addr arp_spa = tpkt.watch(ofb_arp_spa);
                             Reply reply;
                             reply.dst = arp_sha.to_number();
                             reply.src = arp_tha.to_number();

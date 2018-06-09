@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 #include "api/Packet.hh"
 #include "api/TraceablePacket.hh"
 #include "oxm/field_set.hh"
@@ -28,6 +30,11 @@ public:
 
     oxm::field<> watch(oxm::mask<> mask) const override
     { return pkt.load(mask); }
+
+    std::pair< oxm::field<>,
+               oxm::field<> >
+    vload(oxm::mask<> by, oxm::mask<> what) const;
+
 };
 
 } // namespace maple

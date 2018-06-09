@@ -116,7 +116,7 @@ void StaticFlowPusher::init(Loader* loader, const Config& rootConfig)
     new_flow = ctrl->registerStaticTransaction(this);
 
     start_prio = 1;
-    table_no = ctrl->reserveTable();
+    table_no = ctrl->getTable("static-flow-pusher");
 
     sw_m = SwitchManager::get(loader);
     connect(sw_m, &SwitchManager::switchUp, this, &StaticFlowPusher::onSwitchUp);

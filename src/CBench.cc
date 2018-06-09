@@ -22,6 +22,7 @@
 #include "types/ethaddr.hh"
 #include "oxm/openflow_basic.hh"
 #include "Flow.hh"
+#include "Maple.hh"
 
 using namespace runos;
 
@@ -29,15 +30,12 @@ REGISTER_APPLICATION(CBench, {"controller", ""})
 
 void CBench::init(Loader* loader, const Config&)
 {
-    Controller::get(loader)->registerHandler("cbench",
-    [=](SwitchConnectionPtr) {
-        const auto ofb_eth_dst = oxm::eth_dst();
-
-        return [=](Packet& pkt, FlowPtr, Decision decision) {
+    const auto ofb_eth_dst = oxm::eth_dst();
+    Maple::get(loader)->registerHandler("cbench",
+        [=](Packet& pkt, FlowPtr, Decision decision) {
             uint32_t out_port = ethaddr(pkt.load(ofb_eth_dst))
                                .to_octets()[5] % 3;
             return decision.unicast(out_port)
                            .return_();
-        };
     });
 }

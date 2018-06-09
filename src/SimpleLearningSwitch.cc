@@ -26,23 +26,27 @@
 
 #include "Flow.hh"
 #include "Controller.hh"
+#include "Maple.hh"
 
 using namespace runos;
 
-REGISTER_APPLICATION(SimpleLearningSwitch, {"controller", ""})
+REGISTER_APPLICATION(SimpleLearningSwitch, {"controller","maple", ""})
 
 void SimpleLearningSwitch::init(Loader *loader, const Config &)
 {
-    Controller* ctrl = Controller::get(loader);
-    ctrl->registerHandler("forwarding", [](SwitchConnectionPtr) {
-        // MAC -> port mapping for EVERY switch
-        std::unordered_map<ethaddr, uint32_t> seen_port;
-        const auto ofb_in_port = oxm::in_port();
-        const auto ofb_eth_src = oxm::eth_src();
-        const auto ofb_eth_dst = oxm::eth_dst();
+    auto maple = Maple::get(loader);
+    // MAC -> port mapping for EVERY switch
+    std::unordered_map<uint64_t,
+        std::unordered_map<ethaddr, uint32_t>> seen_port;
+    const auto ofb_in_port = oxm::in_port();
+    const auto ofb_eth_src = oxm::eth_src();
+    const auto ofb_eth_dst = oxm::eth_dst();
+    const auto switch_id = oxm::switch_id();
 
-        return [=](Packet& pkt, FlowPtr, Decision decision) mutable {
+    maple->registerHandler("forwarding",
+        [=](Packet& pkt, FlowPtr, Decision decision) mutable {
             // Learn on packet data
+            uint64_t dpid = pkt.load(switch_id);
             ethaddr src_mac = pkt.load(ofb_eth_src);
             // Forward by packet destination
             ethaddr dst_mac = pkt.load(ofb_eth_dst);
@@ -52,13 +56,13 @@ void SimpleLearningSwitch::init(Loader *loader, const Config &)
                 return decision.drop().return_();
             }
 
-            seen_port[src_mac] = packet_cast<TraceablePacket>(pkt)
+            seen_port[dpid][src_mac] = packet_cast<TraceablePacket>(pkt)
                                 .watch(ofb_in_port);
 
             // forward
-            auto it = seen_port.find(dst_mac);
+            auto it = seen_port[dpid].find(dst_mac);
 
-            if (it != seen_port.end()) {
+            if (it != seen_port[dpid].end()) {
                 return decision.unicast(it->second)
                                .idle_timeout(std::chrono::seconds(60))
                                .hard_timeout(std::chrono::minutes(30));
@@ -70,6 +74,5 @@ void SimpleLearningSwitch::init(Loader *loader, const Config &)
                 }
                 return ret;
             }
-        };
     });
 }
