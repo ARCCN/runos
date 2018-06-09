@@ -94,6 +94,7 @@ private:
         of13::FlowMod fm;
         fm.command(of13::OFPFC_DELETE);
         fm.table_id(of13::OFPTT_ALL);
+        fm.buffer_id(OFP_NO_BUFFER);
         fm.cookie(0x0);
         fm.cookie_mask(0x0);
         fm.out_port(of13::OFPP_ANY);
@@ -151,6 +152,7 @@ public:
     bool started{false};
     bool cbench;
     Config config;
+    Config root_config;
     uint8_t max_table;
 
     std::unordered_map<uint8_t, CommonHandlers*> handlers;
@@ -343,6 +345,7 @@ void Controller::init(Loader*, const Config& rootConfig)
                     .liveness_check(config_get(config, "liveness_check", true))
     });
     impl->config = config;
+    impl->root_config = rootConfig;
     impl->max_table = config_get(config, "tables.max_table", 0);
 }
 
@@ -384,8 +387,10 @@ OFTransaction* Controller::registerStaticTransaction(Application *caller)
 
 uint8_t Controller::getTable(const char* name) const
 {
-    auto config = config_cd(impl->config, "tables");
-    return config_get(config, name, 0);
+    auto config = config_cd(impl->root_config, "tables");
+    uint8_t table = config_get(config, name, 0);
+    impl->max_table = std::max(table, impl->max_table);
+    return table;
 }
 
 uint8_t Controller::maxTable() const
