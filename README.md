@@ -11,7 +11,7 @@ More info: http://arccn.github.io/runos/
 
 Slides: http://www.slideshare.net/AlexanderShalimov/runos-openflow-controller-eng
 
-RuNOS documentation [ru]: http://arccn.github.io/runos/doc/ru/index.html
+RuNOS documentation [ru]: http://arccn.github.io/runos/doc/ru/index.html (Actual for 0.6 version)
 
 # Build prerequirements
 
@@ -218,7 +218,7 @@ And connect signal to it in `MyApp::init`:
 
 Finally, write `MyApp::onSwitchUp` implementation:
 
-    void MyApp::onsSitchUp(SwitchConnectionPtr ofconn, of13::FeaturesReply fr)
+    void MyApp::onSwitchUp(SwitchConnectionPtr ofconn, of13::FeaturesReply fr)
     {
         LOG(INFO) << "Look! This is a switch " << fr.datapath_id();
     }
@@ -231,9 +231,7 @@ You learned how subscribe to other application events, but how to manage flows?
 Imagine you wan't to do MAC filtering, ie drop all packets from hosts not listed
 in the configuration file.
 
-To do so you need to create packet-in handler. Packet-in handlers will be invoked
-for each switch by `controller` application and will live in a number of threads.
-So, you need define not only a "handler" but a handler factory.
+To do so you need to create packet-in handler.
 
 So, register PacketMissHandlerFactory in `init`:
 
@@ -242,20 +240,21 @@ So, register PacketMissHandlerFactory in `init`:
     #include "types/ethaddr.hh"
     #include "api/TraceablePacket.hh"
     #include "oxm/openflow_basic.hh"
+    #include "Maple.hh"
+
+    REGISTER_APPLICATION(MyApp, {"controller", "maple", ""})
 
     void MyApp::init(Loader *loader, const Config& config)
     {
         ...
 
-        Controller* ctrl = Controller::get(loader);
-        ctrl->registerHandler("mac-filtering",
-        [=](SwitchConnectionPtr connection){
-            return [=](Packet& pkt, FlowPtr, Decision decision){
+        Maple* maple = Maple::get(loader);
+        maple->registerHandler("mac-filtering",
+            [=](Packet& pkt, FlowPtr, Decision decision){
 		if (pkt.test(oxm::eth_src() == "00:11:22:33:44:55"))
 		     return decision.drop().return_();
 		else
                      return decision;
-            };
         });
 
         ...
@@ -263,7 +262,7 @@ So, register PacketMissHandlerFactory in `init`:
 
 What it means? First, all handlers arranged into pipeline, where every handler
 can stop processing, look at some packet fields and add actions. We need also
-insert our handler in pipeline. In `network-settings.json` `controller` has his setting,
+insert our handler in pipeline. In `network-settings.json` `maple` has his setting,
 and pariculary `pipeline`, which contains name of handlers in pipeline.
 
 
