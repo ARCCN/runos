@@ -12,8 +12,14 @@
         "stp",
         "flow-manager",
         "rest-multipart",
-        "rest-flowmod"
+        "rest-flowmod",
+        "maple"
     ],
+
+    "tables": {
+        "static-flow-pusher" : 0,
+        "maple" : 1
+    },
 
     "flow-manager" : {
         "interval" : 5
