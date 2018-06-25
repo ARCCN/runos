@@ -31,7 +31,7 @@
 
 using namespace runos;
 
-REGISTER_APPLICATION(SimpleLearningSwitch, {"controller","maple", "stp" ""})
+REGISTER_APPLICATION(SimpleLearningSwitch, {"controller","maple", "stp", ""})
 
 void SimpleLearningSwitch::init(Loader *loader, const Config &)
 {
