@@ -27,10 +27,11 @@
 #include "Flow.hh"
 #include "Controller.hh"
 #include "Maple.hh"
+#include "STP.hh"
 
 using namespace runos;
 
-REGISTER_APPLICATION(SimpleLearningSwitch, {"controller","maple", ""})
+REGISTER_APPLICATION(SimpleLearningSwitch, {"controller","maple", "stp", ""})
 
 void SimpleLearningSwitch::init(Loader *loader, const Config &)
 {
@@ -67,12 +68,12 @@ void SimpleLearningSwitch::init(Loader *loader, const Config &)
                                .idle_timeout(std::chrono::seconds(60))
                                .hard_timeout(std::chrono::minutes(30));
             } else {
-                auto ret = decision.broadcast();
                 if (not is_broadcast(dst_mac)) {
                     LOG(INFO) << "Flooding for unknown address " << dst_mac;
-                    ret.hard_timeout(std::chrono::seconds::zero());
+                    return decision.custom(std::make_shared<STP::Decision>())
+                            .idle_timeout(std::chrono::seconds::zero());
                 }
-                return ret;
+                return decision.custom(std::make_shared<STP::Decision>());
             }
     });
 }
