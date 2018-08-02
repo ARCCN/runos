@@ -22,16 +22,32 @@ This components should be installed in the system:
 * Libraries: QtCore 5, google-glog, boost::graph, boost::system, boost::thread, boost::coroutine, boost::context, uglifyjs
 * UglifyJS dependencies: npm, nodejs
 
-You can use this line on Ubuntu 17.10+ to install all required packages:
+You can use this line on Ubuntu 15.10+ to install required packages:
 
 ```
 $ sudo apt-get install build-essential cmake autoconf libtool \
-    pkg-config libgoogle-glog-dev libevent-dev \
+    pkg-config libgoogle-glog-dev \
     libssl-dev qtbase5-dev libboost-graph-dev libboost-system-dev \
     libboost-thread-dev libboost-coroutine-dev libboost-context-dev \
     libgoogle-perftools-dev curl nodejs npm \
 ```
+To install libevent on Ubuntu 17.10+, just use
+```
+$ sudo apt-get install libevent-dev
 
+```
+On older systems, you have to install it manually. At least version 2.1.5 is required:
+```
+# Get the source code
+$ wget https://github.com/libevent/libevent/releases/download/release-2.1.5-beta/libevent-2.1.5-beta.tar.gz
+$ tar -xvf libevent-2.1.5-beta.tar.gz
+$ cd libevent-2.1.5-beta
+# And build
+$ ./configure
+$ make
+$ sudo make install
+$ sudo ldconfig
+```
 You need to install the JavaScript packages:
 
 ```
@@ -41,8 +57,8 @@ You need to install the JavaScript packages:
     $ sudo ln -s /usr/bin/nodejs /usr/bin/node
 ```
 
-To build project you must use g++-5.2 compiler (or above) or similar another compiler with support std::regex.
-We recommend to install g++-5.2 by this way:
+To build the project you must use g++-5.2 compiler (or above) or another compiler with support of std::regex.
+If it is not bundled, we recommend to install g++-5.2 this way:
 
 ```
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
