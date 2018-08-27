@@ -25,15 +25,17 @@
 // #include <fmt/format.h>
 // #include <fmt/ostream.h>
 
+#include <boost/program_options.hpp>
+
 #include "Application.hh"
 #include "Loader.hh"
 
 
 namespace cli {
 
-    using pattern = std::regex;
-    using match   = std::cmatch;
-    using command = std::function<void(const match&)>;
+    using command_name = std::string;
+    namespace options = boost::program_options;
+    using command = std::function<void(const options::variables_map& vm)>;
 
 } // namespace cli
 
@@ -47,7 +49,13 @@ public:
     void init(Loader* loader, const Config& rootConfig) override;
     void startUp(Loader *) override;
 
-    void registerCommand(cli::pattern&& spec, cli::command&& fn);
+
+    // Boost programm options maybe?
+    void registerCommand(
+            cli::command_name&& name,
+            cli::options::options_description&& opts,
+            cli::command&& fn
+        );
 
     /** Prints a stringto the user. No newline insterted */
     void echo(const std::string& msg)
@@ -57,6 +65,9 @@ public:
 
     // TODO[dshvetsov] : errors
 private:
+
+    void register_builtins();
+
     struct implementation;
     std::unique_ptr<implementation> m_impl;
 };

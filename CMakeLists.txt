@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 find_package(Qt5Core)
 find_package(Qt5Network)
 find_package(Boost REQUIRED COMPONENTS
-    system thread unit_test_framework coroutine context)
+    system thread unit_test_framework coroutine context program_options)
 find_package(PkgConfig)
 find_package(edit)
 pkg_check_modules(GLOG REQUIRED libglog)
