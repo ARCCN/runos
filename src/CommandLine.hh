@@ -49,12 +49,25 @@ public:
     void init(Loader* loader, const Config& rootConfig) override;
     void startUp(Loader *) override;
 
+    void registerCommand(
+            cli::command_name&& name,
+            cli::command&& fn,
+            const char* help
+        );
 
-    // Boost programm options maybe?
     void registerCommand(
             cli::command_name&& name,
             cli::options::options_description&& opts,
-            cli::command&& fn
+            cli::command&& fn,
+            const char* help
+        );
+
+    void registerCommand(
+            cli::command_name&& name,
+            cli::options::options_description&& opts,
+            cli::options::positional_options_description&& pos_opts,
+            cli::command&& fn,
+            const char* help
         );
 
     /** Prints a stringto the user. No newline insterted */

@@ -17,20 +17,13 @@
 
 REGISTER_APPLICATION(CommandLine, {""})
 
-static std::pair<
-        std::string, // command name
-        std::vector<std::string> // args
-    > split(const char* line, size_t len)
+std::vector<std::string> split(const char* line, size_t len)
 {
     std::string str{line, len};
     std::istringstream ss{str};
     using str_it = std::istream_iterator<std::string>;
-    std::string cmd_name;
-    ss >> cmd_name;
     std::vector<std::string> args{str_it{ss}, str_it{}};
-    std::pair<std::string, std::vector<std::string>> result {std::move(cmd_name),
-                                                             std::move(args) };
-    return result;
+    return args;
 }
 
 struct CommandLine::implementation {
@@ -43,7 +36,8 @@ struct CommandLine::implementation {
     struct command_holder {
         cli::command fn;
         cli::options::options_description opts;
-        std::string help_message;
+        cli::options::positional_options_description pos_opts;
+        const char* help;
     };
 
     std::unordered_map<std::string, command_holder> commands;
@@ -54,6 +48,7 @@ struct CommandLine::implementation {
     bool handle(const char* cmd, int len);
     void run();
 };
+
 
 CommandLine::CommandLine()
     : m_impl(new implementation)
@@ -87,33 +82,84 @@ void CommandLine::init(Loader*, const Config& rootConfig)
 
 void CommandLine::register_builtins() {
     { // commands
-    cli::options::options_description desc("Show existing commands");
-    registerCommand("commands", std::move(desc), [=](auto vm) {
+    registerCommand("commands", [=](auto vm) {
+                std::vector<std::string> commands_name;
+                commands_name.reserve(m_impl->commands.size());
                 for (const auto& p : m_impl->commands) {
-                    std::cout << p.first << std::endl;
+                    commands_name.push_back(p.first);
                 }
-            });
+                std::sort(commands_name.begin(), commands_name.end());
+                for (const auto& name : commands_name) {
+                    std::cout << name << std::endl;
+                }
+            }, "List of commands");
     } // commands
+
     { // help
-        cli::options::options_description desc("Show help about command\n"
-                                               "Usage : help <command>");
+        cli::options::options_description desc;
         desc.add_options()
-            ("", cli::options::value<std::string>()->default_value("help"),
-             "command name");
-        registerCommand(
-                "help",
-                std::move(desc),
-                [=](const cli::options::variables_map& vm) {
-                    auto cmd = vm[""].as<std::string>();
-                    try {
-                        std::cout << m_impl->commands.at(cmd).opts;
-                    }
-                    catch (std::out_of_range& oo) {
-                        std::cout << "Unknown command : " << cmd << std::endl <<
-                                "Type \"commands\" for show existing commands";
-                    }
-            });
+             ("command-name", cli::options::value<std::string>(), "name of command");
+        cli::options::positional_options_description pos;
+        pos.add("command-name", 1)
+           .add("others", -1);
+        auto help_fn =
+            [=](const cli::options::variables_map& vm) {
+                auto arg = vm["command-name"];
+                std::string cmd_name =
+                    arg.empty() ? "help" : arg.as<std::string>();
+                try {
+                    std::cout << cmd_name  << ":" << std::endl << std::endl;
+                    const auto& cmd = m_impl->commands.at(cmd_name);
+                    std::cout << cmd.help;
+                    std::cout << std::endl;
+                    std::cout << cmd.opts;
+                    std::cout << std::endl;
+                }
+                catch (std::out_of_range& oor) {
+                    std::cout << "Unknown command : " << cmd_name << std::endl <<
+                            "Type \"commands\" for show existing commands"
+                            << std::endl;
+                }
+            };
+        registerCommand("help", std::move(desc), std::move(pos), std::move(help_fn),
+                "Help!!! I need somebody\n"
+                "Print help of command\n"
+                "Usage: help <command>\n"
+            );
     } // help
+
+    registerCommand("whoserules", [=](auto vm) {
+
+		const char* whoserules =
+"                                          `-.`'.-'                                         \n"
+"                                       `-.        .-'.                                     \n"
+"                                    `-.    -./\\.-    .-'                                   \n"
+"                                        -.  /_|\\  .-                                       \n"
+"                                    `-.   `/____\\'   .-'.                                  \n"
+"                                 `-.    -./.-\"\"-.\\.-      '                                \n"
+"                                    `-.  /<  (O) >\\  .-'                                   \n"
+"                                  -   .`/__`-..-'__\\'   .-                                 \n"
+"                                ,...`-./___|____|___\\.-'.,.                                \n"
+"                                   ,-'   ,` . . ',   `-,                                   \n"
+"                                ,-'   ________________  `-,                                \n"
+"                                   ,'/____|_____|_____\\                                    \n"
+"                                  / /__|_____|_____|___\\                                   \n"
+"                                 / /|_____|_____|_____|_\\                                  \n"
+"                                ' /____|_____|_____|_____\\                                 \n"
+"                              .' /__|_____|_____|_____|___\\                                \n"
+"                             ,' /|_____|_____|_____|_____|_\\                               \n"
+",,---''--...___...--'''--.. /../____|_____|_____|_____|_____\\ ..--```--...___...--``---,,  \n"
+"                           '../__|_____|_____|_____|_____|___\\                             \n"
+"      \\    )              '.:/|_____|_____|_____|_____|_____|_\\               (    /       \n"
+"      )\\  / )           ,':./____|_____|_____|_____|_____|_____\\             ( \\  /(       \n"
+"     / / ( (           /:../__|_____|_____|_____|_____|_____|___\\             ) ) \\ \\      \n"
+"    | |   \\ \\         /.../|_____|_____|_____|_____|_____|_____|_\\           / /   | |     \n"
+" .-.\\ \\    \\ \\       '..:/____|_____|_____|_____|_____|_____|_____\\         / /    / /.-.  \n"
+"(=  )\\ `._.' |       \\:./ _  _ ___  ____ ____ _    _ _ _ _ _  _ ___\\        | `._.' /(  =) \n"
+" \\ (_)       )       \\./              MY RUNOS MY RULES             \\       (       (_) /  \n"
+"  \\    `----'         \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"                     \n";
+			std::cout << whoserules;
+}, "");
 }
 
 void CommandLine::startUp(Loader*)
@@ -123,13 +169,52 @@ void CommandLine::startUp(Loader*)
 
 void CommandLine::registerCommand(
         cli::command_name&& spec,
-        cli::options::options_description&& opts,
-        cli::command&& fn
+        cli::command&& fn,
+        const char* help
     )
 {
-    implementation::command_holder holder {std::move(fn), std::move(opts), ""};
+    registerCommand(
+            std::move(spec),
+            cli::options::options_description{}, // empty description
+            cli::options::positional_options_description{}, // empty description
+            std::move(fn),
+            help
+        );
+}
+
+void CommandLine::registerCommand(
+        cli::command_name&& spec,
+        cli::options::options_description&& opts,
+        cli::command&& fn,
+        const char* help
+    )
+{
+    registerCommand(
+            std::move(spec),
+            std::move(opts),
+            cli::options::positional_options_description{}, // empty description
+            std::move(fn),
+            help
+        );
+}
+
+void CommandLine::registerCommand(
+        cli::command_name&& spec,
+        cli::options::options_description&& opts,
+        cli::options::positional_options_description&& pos_opts,
+        cli::command&& fn,
+        const char* help
+    )
+{
+    implementation::command_holder holder{
+            std::move(fn),
+            std::move(opts),
+            std::move(pos_opts),
+            help
+        };
     m_impl->commands.emplace(std::move(spec), std::move(holder));
 }
+
 
 void CommandLine::implementation::run()
 {
@@ -150,22 +235,26 @@ void CommandLine::implementation::run()
 
 bool CommandLine::implementation::handle(const char* line, int len)
 {
-    auto splitted = split(line, len);
-    auto cmd_name = splitted.first;
-    auto args = splitted.second;
-    try {
+    auto argv = split(line, len);
+    if (not argv.empty()) try {
         cli::options::variables_map vm;
-        auto& cmd = commands.at(cmd_name);
+        auto& cmd = commands.at(argv[0]);
+        argv.erase(argv.begin());
         auto parsed =
-            cli::options::command_line_parser(args).options(cmd.opts).run();
+            cli::options::command_line_parser(argv).
+            options(cmd.opts).
+            positional(cmd.pos_opts).
+            allow_unregistered().
+            run();
         cli::options::store(parsed, vm);
         cli::options::notify(vm);
         cmd.fn(vm);
     } catch (std::out_of_range& ex) {
-        std::cout << "Unknown command: \"" << cmd_name << '"' << std::endl <<
-            "Type \"commands\" for show existing commands";
+        std::cout << "Unknown command: \"" << argv[0] << '"' << std::endl <<
+            "Type \"commands\" for show existing commands" << std::endl;
     }
     catch (std::exception& ex) {
+        std::cout << "Unknown exception : " << ex.what() << std::endl;
     }
     return true;
 }
