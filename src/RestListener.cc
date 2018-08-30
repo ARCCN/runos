@@ -41,7 +41,7 @@ void RestListener::init(Loader *loader, const Config &config)
     web_dir = config_get(app_config, "web-dir", "./build/web");
 
     em = new EventManager;
-    server = new HttpServer(listen_port, 1);
+    server = new HttpServer(listen_port);
     cur_hash = 1;
 }
 
@@ -61,7 +61,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 #define REGISTER_HANDLER(method) \
-    server->resource[path][#method] = [handler] (HttpServer::Response& response, std::shared_ptr<HttpServer::Request> request) { \
+    server->resource[path][#method] = [handler] (std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) { \
         json11::Json res; \
         std::stringstream ss##method; \
         request->content >> ss##method.rdbuf(); \
@@ -69,7 +69,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
         params.erase(params.begin(), params.begin() + 3); \
         res = handler->handle##method(params, ss##method.str()); \
         std::string content = res.dump(); \
-        response << "HTTP/1.1 200 OK\r\nContent-Length: " << content.length() << "\r\n\r\n" << content; \
+        *response << "HTTP/1.1 200 OK\r\nContent-Length: " << content.length() << "\r\n\r\n" << content; \
     }
 
 void RestListener::startUp(Loader *loader)
@@ -99,18 +99,18 @@ void RestListener::startUp(Loader *loader)
     }
 
     // Non existed applications
-    /*server->resource["^/api/[a-zA-Z]+([a-zA-Z0-9-_/]+)/{0,1}$"]["GET"] = [this](HttpServer::Response& response, std::shared_ptr<HttpServer::Request> request) {
+    /*server->resource["^/api/[a-zA-Z]+([a-zA-Z0-9-_/]+)/{0,1}$"]["GET"] = [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
         std::string app = request->path;
         json11::Json error = json11::Json::object {
             {"error", "could not find application"},
             {"path", app}
         };
         std::string content = error.dump();
-        response << "HTTP/1.1 200 OK\r\nContent-Length: " << content.length() << "\r\n\r\n" << content;
+        *response << "HTTP/1.1 200 OK\r\nContent-Length: " << content.length() << "\r\n\r\n" << content;
     };*/
 
     // Application's list
-    server->resource["^/apps/{0,1}$"]["GET"] = [this](HttpServer::Response& response, std::shared_ptr<HttpServer::Request> request) {
+    server->resource["^/apps/{0,1}$"]["GET"] = [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
         std::map<std::string, std::map<std::string,std::string> > app_web_info;
         for (auto it : rest_handlers) {
             RestHandler* handler = it.second;
@@ -119,11 +119,11 @@ void RestListener::startUp(Loader *loader)
             app_web_info[handler->restName()]["type"] = (handler->type() == RestHandler::Application ? "Application" : (handler->type() == RestHandler::Service ? "Service" : "None"));
         }
         std::string content = json11::Json(app_web_info).dump();
-        response << "HTTP/1.1 200 OK\r\nContent-Length: " << content.length() << "\r\n\r\n" << content;
+        *response << "HTTP/1.1 200 OK\r\nContent-Length: " << content.length() << "\r\n\r\n" << content;
     };
 
     // Timeout handler
-    server->resource["^/timeout/([a-z&-]+)/([0-9]+)/{0,1}$"]["GET"] = [this](HttpServer::Response& response, std::shared_ptr<HttpServer::Request> request) {
+    server->resource["^/timeout/([a-z&-]+)/([0-9]+)/{0,1}$"]["GET"] = [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
         std::string param1 = request->path_match[1];
         std::string param2 = request->path_match[2];
         uint32_t last_event = atoi(param2.c_str());
@@ -147,11 +147,11 @@ void RestListener::startUp(Loader *loader)
 
         std::string resp = json11::Json(result).dump();
 
-        response << "HTTP/1.1 200 OK\r\nContent-Length: " << resp.length() << "\r\n\r\n" << resp;
+        *response << "HTTP/1.1 200 OK\r\nContent-Length: " << resp.length() << "\r\n\r\n" << resp;
     };
 
     // Get files and documents
-    server->default_resource["GET"] = [this](HttpServer::Response& response, std::shared_ptr<HttpServer::Request> request) {
+    server->default_resource["GET"] = [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
         std::string filename = web_dir;
         std::string path = request->path;
 
@@ -174,7 +174,7 @@ void RestListener::startUp(Loader *loader)
 
             ifs.seekg(0, std::ios::beg);
 
-            response << "HTTP/1.1 200 OK\r\nContent-Length: " << length << "\r\n\r\n";
+            *response << "HTTP/1.1 200 OK\r\nContent-Length: " << length << "\r\n\r\n";
 
             //read and send 128 KB at a time if file-size>buffer_size
             size_t buffer_size=131072;
@@ -182,22 +182,21 @@ void RestListener::startUp(Loader *loader)
                 std::vector<char> buffer(buffer_size);
                 size_t read_length;
                 while((read_length=ifs.read(&buffer[0], buffer_size).gcount())>0) {
-                    response.stream.write(&buffer[0], read_length);
-                    response << HttpServer::flush;
+                    response->write(&buffer[0], read_length);
                 }
             }
             else {
-                response << ifs.rdbuf();
+                *response << ifs.rdbuf();
             }
 
             ifs.close();
         }
         else {
             std::string content="Could not find " + path;
-            response << "HTTP/1.1 400 Bad Request\r\nContent-Length: " << content.length() << "\r\n\r\n" << content;
+            *response << "HTTP/1.1 400 Bad Request\r\nContent-Length: " << content.length() << "\r\n\r\n" << content;
         }
     };
-    
+
     // Starting and detaching thread
     std::thread server_thread([this](){
         server->start();

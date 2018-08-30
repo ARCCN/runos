@@ -16,8 +16,9 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "Rest.hh"
 #include "Application.hh"
@@ -50,6 +51,6 @@ private:
     std::unordered_map<std::string, RestHandler*> rest_handlers;
     uint32_t cur_hash;
 
-    int listen_port;
+    uint16_t listen_port;
     std::string web_dir;
 };
