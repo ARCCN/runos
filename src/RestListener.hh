@@ -16,8 +16,9 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "Rest.hh"
 #include "Application.hh"
@@ -46,10 +47,10 @@ public:
     void registerRestHandler(RestHandler* handler);
 private:
     EventManager* em;
-    HttpServer* server;
+    std::unique_ptr<HttpServer> server;
     std::unordered_map<std::string, RestHandler*> rest_handlers;
     uint32_t cur_hash;
 
-    int listen_port;
+    uint16_t listen_port;
     std::string web_dir;
 };

@@ -23,9 +23,9 @@
 
 #include "Event.hh"
 #include "json11.hpp"
+#include "WebServer.hh"
 
-#include "server_http.hpp"
-typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
+using HttpServer = web::Server;
 
 enum Method {
     GET = 1,
