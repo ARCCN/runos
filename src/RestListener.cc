@@ -41,7 +41,7 @@ void RestListener::init(Loader *loader, const Config &config)
     web_dir = config_get(app_config, "web-dir", "./build/web");
 
     em = new EventManager;
-    server = new HttpServer(listen_port);
+    server = std::make_unique<HttpServer>(listen_port);
     cur_hash = 1;
 }
 

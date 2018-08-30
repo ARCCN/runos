@@ -47,7 +47,7 @@ public:
     void registerRestHandler(RestHandler* handler);
 private:
     EventManager* em;
-    HttpServer* server;
+    std::unique_ptr<HttpServer> server;
     std::unordered_map<std::string, RestHandler*> rest_handlers;
     uint32_t cur_hash;
 
