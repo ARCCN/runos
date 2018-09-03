@@ -16,6 +16,47 @@
 
 #include "Config.hh"
 
+enum class settings : uint8_t {
+    black           =  30,
+    red             =  31,
+    green           =  32,
+    yellow          =  33,
+    blue            =  34,
+    magenta         =  35,
+    cyan            =  36,
+    white           =  37,
+    reset           =   0,
+    bold_bright     =   1,
+    underline       =   4,
+    inverse         =   7,
+    bold_bright_off =  21,
+    underline_off   =  24,
+    inverse_off     =  27,
+};
+
+class terminal_settings {
+public:
+    terminal_settings(std::ostream& out, std::vector<settings> setts)
+        : m_out(out), m_settings(setts)
+    {
+        m_out << "\033[";
+        for (auto i = m_settings.begin(); i != m_settings.end(); i++) {
+            m_out << static_cast<uint32_t>(*i);
+            if (i != m_settings.end()) {
+                m_out << ';';
+            }
+        }
+        m_out << 'm';
+    }
+    ~terminal_settings() {
+        m_out << "\033[0m";
+    }
+private:
+    std::ostream& m_out;
+    std::vector<settings> m_settings;
+};
+
+
 REGISTER_APPLICATION(CommandLine, {""})
 
 std::vector<std::string> split(const char* line, size_t len)
@@ -31,11 +72,28 @@ class cli::Outside::Backend {
 public:
     virtual ~Backend() = default;
     virtual void print(const std::string& msg) = 0;
+    virtual void echo(const std::string& msg) = 0;
+    virtual void warning(const std::string& msg) = 0;
+    virtual void error(const std::string& msg) = 0;
 };
 
 class Stdout : public cli::Outside::Backend {
-    void print(const std::string& word) override {
-        std::cout << word << std::endl;
+    void print(const std::string& msg) override
+    { std::cout << msg << std::endl; }
+
+    void echo(const std::string& msg) override
+    { std::cout << msg; }
+
+    void warning(const std::string& msg) override
+    {
+        //terminal_settings warning_colors(std::cout, {settings::red});
+        std::cout << "Warning: " <<  msg << std::endl;
+    }
+
+    void error(const std::string& msg) override
+    {
+        std::cout << msg;
+        throw cli::error();
     }
 };
 
@@ -45,6 +103,24 @@ void cli::Outside::print(fmt::string_view format_str, const Args&... args)
     // fmt::make_format_args is not working. I hope just `args...` deal with
     // forwarding argiments into format.
     m_backend.print(fmt::format(format_str, args...));
+}
+
+template<typename ...Args>
+void cli::Outside::echo(fmt::string_view format_str, const Args&... args)
+{
+    m_backend.echo(fmt::format(format_str, args...));
+}
+
+template<typename ...Args>
+void cli::Outside::warning(fmt::string_view format_str, const Args&... args)
+{
+    m_backend.warning(fmt::format(format_str, args...));
+}
+
+template<typename ...Args>
+void cli::Outside::error(fmt::string_view format_str, const Args&... args)
+{
+    m_backend.error(fmt::format(format_str, args...));
 }
 
 struct CommandLine::implementation {

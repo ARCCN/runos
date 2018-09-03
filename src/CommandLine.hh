@@ -24,25 +24,42 @@
 
 #include <boost/program_options.hpp>
 
+#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/printf.h>
-#include <fmt/core.h>
 
 #include "Application.hh"
 #include "Loader.hh"
-
+#include "types/exception.hh"
 
 namespace cli {
+
+    struct error : virtual runos::runtime_error { };
 
     class Outside {
         public:
             class Backend;
+
             Outside(Backend& backend)
                 : m_backend(backend)
             { }
+
+            // Print a message. Add newline at the end.
             template <typename ...Args>
                 void print(fmt::string_view format_str, const Args&... args);
+
+            // Print a message. Not add newline at the end.
+            template <typename ...Args>
+                void echo(fmt::string_view format_str, const Args&... args);
+
+            // Print a warning.
+            template <typename ...Args>
+                void warning(fmt::string_view format_str, const Args&... args);
+
+            // Error message. Funciton throws an exception.
+            template <typename ...Args>
+                void error(fmt::string_view format_str, const Args&... args);
         private:
             Backend& m_backend;
     };
