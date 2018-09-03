@@ -65,6 +65,7 @@ target_link_libraries(runos
     fluid_base
     libfluid_msg.a
     edit
+    fmt
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${Boost_COROUTINE_LIBRARY}
     ${GLOG_LIBRARIES}

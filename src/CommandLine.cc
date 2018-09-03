@@ -9,6 +9,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <QCoreApplication>
 #include <histedit.h>
@@ -24,6 +25,26 @@ std::vector<std::string> split(const char* line, size_t len)
     using str_it = std::istream_iterator<std::string>;
     std::vector<std::string> args{str_it{ss}, str_it{}};
     return args;
+}
+
+class cli::Outside::Backend {
+public:
+    virtual ~Backend() = default;
+    virtual void print(const std::string& msg) = 0;
+};
+
+class Stdout : public cli::Outside::Backend {
+    void print(const std::string& word) override {
+        std::cout << word << std::endl;
+    }
+};
+
+template<typename ...Args>
+void cli::Outside::print(fmt::string_view format_str, const Args&... args)
+{
+    // fmt::make_format_args is not working. I hope just `args...` deal with
+    // forwarding argiments into format.
+    m_backend.print(fmt::format(format_str, args...));
 }
 
 struct CommandLine::implementation {
@@ -82,7 +103,7 @@ void CommandLine::init(Loader*, const Config& rootConfig)
 
 void CommandLine::register_builtins() {
     { // commands
-    registerCommand("commands", [=](auto vm) {
+    registerCommand("commands", [=](auto vm, cli::Outside& out) {
                 std::vector<std::string> commands_name;
                 commands_name.reserve(m_impl->commands.size());
                 for (const auto& p : m_impl->commands) {
@@ -90,7 +111,7 @@ void CommandLine::register_builtins() {
                 }
                 std::sort(commands_name.begin(), commands_name.end());
                 for (const auto& name : commands_name) {
-                    std::cout << name << std::endl;
+                    out.print("{}", name);
                 }
             }, "List of commands");
     } // commands
@@ -103,19 +124,18 @@ void CommandLine::register_builtins() {
         pos.add("command-name", 1)
            .add("others", -1);
         auto help_fn =
-            [=](const cli::options::variables_map& vm) {
+            [=](const cli::options::variables_map& vm, cli::Outside& out) {
                 auto arg = vm["command-name"];
                 std::string cmd_name =
                     arg.empty() ? "help" : arg.as<std::string>();
                 try {
                     std::cout << cmd_name  << ":" << std::endl << std::endl;
                     const auto& cmd = m_impl->commands.at(cmd_name);
-                    std::cout << cmd.help;
-                    std::cout << std::endl;
-                    std::cout << cmd.opts;
-                    std::cout << std::endl;
+                    out.print("{}", cmd.help);
+                    out.print("{}", boost::lexical_cast<std::string>(cmd.opts));
                 }
                 catch (std::out_of_range& oor) {
+                    // TODO: move it in Outside class
                     std::cout << "Unknown command : " << cmd_name << std::endl <<
                             "Type \"commands\" for show existing commands"
                             << std::endl;
@@ -128,7 +148,7 @@ void CommandLine::register_builtins() {
             );
     } // help
 
-    registerCommand("whoserules", [=](auto vm) {
+    registerCommand("whoserules", [=](auto vm, cli::Outside& out) {
 
 		const char* whoserules =
 "                                                    \n"
@@ -158,7 +178,7 @@ void CommandLine::register_builtins() {
 "(\\:./ _  _ ___  ____ ____ _    _ _ _ _ _  _ ___\\  \n"
 " \\./              MY RUNOS MY RULES             \\ \n"
 "   \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"                     \n";
-			std::cout << whoserules;
+            out.print(whoserules);
 }, "");
 }
 
@@ -247,8 +267,10 @@ bool CommandLine::implementation::handle(const char* line, int len)
             allow_unregistered().
             run();
         cli::options::store(parsed, vm);
+        Stdout stream;
+        cli::Outside out(stream);
         cli::options::notify(vm);
-        cmd.fn(vm);
+        cmd.fn(vm, out);
     } catch (std::out_of_range& ex) {
         std::cout << "Unknown command: \"" << argv[0] << '"' << std::endl <<
             "Type \"commands\" for show existing commands" << std::endl;

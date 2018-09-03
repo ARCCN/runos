@@ -22,10 +22,12 @@
 #include <utility>
 #include <iostream>
 
-// #include <fmt/format.h>
-// #include <fmt/ostream.h>
-
 #include <boost/program_options.hpp>
+
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/printf.h>
+#include <fmt/core.h>
 
 #include "Application.hh"
 #include "Loader.hh"
@@ -33,27 +35,39 @@
 
 namespace cli {
 
+    class Outside {
+        public:
+            class Backend;
+            Outside(Backend& backend)
+                : m_backend(backend)
+            { }
+            template <typename ...Args>
+                void print(fmt::string_view format_str, const Args&... args);
+        private:
+            Backend& m_backend;
+    };
+
     using command_name = std::string;
     namespace options = boost::program_options;
-    using command = std::function<void(const options::variables_map& vm)>;
+    using command = std::function<void(const options::variables_map& vm, Outside& out)>;
 
 } // namespace cli
 
 class CommandLine : public Application {
     Q_OBJECT
-    SIMPLE_APPLICATION(CommandLine, "command-line-interface")
-public:
+        SIMPLE_APPLICATION(CommandLine, "command-line-interface")
+    public:
 
-    CommandLine();
-    ~CommandLine();
-    void init(Loader* loader, const Config& rootConfig) override;
-    void startUp(Loader *) override;
+        CommandLine();
+        ~CommandLine();
+        void init(Loader* loader, const Config& rootConfig) override;
+        void startUp(Loader *) override;
 
-    void registerCommand(
-            cli::command_name&& name,
-            cli::command&& fn,
-            const char* help
-        );
+        void registerCommand(
+                cli::command_name&& name,
+                cli::command&& fn,
+                const char* help
+                );
 
     void registerCommand(
             cli::command_name&& name,
