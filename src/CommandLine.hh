@@ -47,19 +47,19 @@ namespace cli {
 
             // Print a message. Add newline at the end.
             template <typename ...Args>
-                void print(fmt::string_view format_str, const Args&... args);
+            void print(fmt::string_view format_str, const Args&... args);
 
             // Print a message. Not add newline at the end.
             template <typename ...Args>
-                void echo(fmt::string_view format_str, const Args&... args);
+            void echo(fmt::string_view format_str, const Args&... args);
 
             // Print a warning.
             template <typename ...Args>
-                void warning(fmt::string_view format_str, const Args&... args);
+            void warning(fmt::string_view format_str, const Args&... args);
 
             // Error message. Funciton throws an exception.
             template <typename ...Args>
-                void error(fmt::string_view format_str, const Args&... args);
+            [[ noreturn ]] void error(fmt::string_view format_str, const Args&... args);
         private:
             Backend& m_backend;
     };
@@ -73,18 +73,18 @@ namespace cli {
 class CommandLine : public Application {
     Q_OBJECT
         SIMPLE_APPLICATION(CommandLine, "command-line-interface")
-    public:
+public:
 
-        CommandLine();
-        ~CommandLine();
-        void init(Loader* loader, const Config& rootConfig) override;
-        void startUp(Loader *) override;
+    CommandLine();
+    ~CommandLine();
+    void init(Loader* loader, const Config& rootConfig) override;
+    void startUp(Loader *) override;
 
-        void registerCommand(
-                cli::command_name&& name,
-                cli::command&& fn,
-                const char* help
-                );
+    void registerCommand(
+            cli::command_name&& name,
+            cli::command&& fn,
+            const char* help
+            );
 
     void registerCommand(
             cli::command_name&& name,
@@ -101,13 +101,6 @@ class CommandLine : public Application {
             const char* help
         );
 
-    /** Prints a stringto the user. No newline insterted */
-    void echo(const std::string& msg)
-    {
-        std::cout << msg;
-    }
-
-    // TODO[dshvetsov] : errors
 private:
 
     void register_builtins();

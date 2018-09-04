@@ -6,15 +6,19 @@
 #include <cstdio>
 #include <cctype> // isspace
 #include <unordered_map>
+#include <initializer_list>
 
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/exception/error_info.hpp>
+#include <boost/exception/info.hpp>
 
 #include <QCoreApplication>
 #include <histedit.h>
 
 #include "Config.hh"
+#include "types/exception.hh"
 
 enum class settings : uint8_t {
     black           =  30,
@@ -32,27 +36,39 @@ enum class settings : uint8_t {
     bold_bright_off =  21,
     underline_off   =  24,
     inverse_off     =  27,
+    blink           =   5,
 };
 
-class terminal_settings {
+class setup {
 public:
-    terminal_settings(std::ostream& out, std::vector<settings> setts)
-        : m_out(out), m_settings(setts)
-    {
-        m_out << "\033[";
-        for (auto i = m_settings.begin(); i != m_settings.end(); i++) {
-            m_out << static_cast<uint32_t>(*i);
-            if (i != m_settings.end()) {
-                m_out << ';';
-            }
+    setup(std::initializer_list<settings> setts)
+        : m_out(nullptr), m_settings(setts)
+    { }
+    ~setup() {
+        if (m_out) {
+            *m_out << "\033[0m";
         }
-        m_out << 'm';
     }
-    ~terminal_settings() {
-        m_out << "\033[0m";
+
+    struct double_setup_error : virtual runos::runtime_error { };
+
+    friend std::ostream& operator<<(std::ostream& out, setup&& s)
+    {
+        if (s.m_out != nullptr) {
+            RUNOS_THROW(double_setup_error()
+                    << runos::errinfo_msg("Try setup setting second time"));
+        }
+        s.m_out = &out;
+        out << "\033["; // start of manage commands
+        for (auto i = s.m_settings.begin(); i != s.m_settings.end(); i++) {
+            out << static_cast<uint32_t>(*i);
+            // separate or end commands
+            out << (i != s.m_settings.end() - 1 ? ';' : 'm');
+        }
+        return out;
     }
 private:
-    std::ostream& m_out;
+    std::ostream* m_out;
     std::vector<settings> m_settings;
 };
 
@@ -86,14 +102,13 @@ class Stdout : public cli::Outside::Backend {
 
     void warning(const std::string& msg) override
     {
-        //terminal_settings warning_colors(std::cout, {settings::red});
-        std::cout << "Warning: " <<  msg << std::endl;
+        std::cout << setup{settings::yellow} << "Warning: ";
+        std::cout << msg << std::endl;
     }
 
     void error(const std::string& msg) override
     {
-        std::cout << msg;
-        throw cli::error();
+        RUNOS_THROW( cli::error() << runos::errinfo_str(msg) );
     }
 };
 
@@ -332,8 +347,8 @@ void CommandLine::implementation::run()
 bool CommandLine::implementation::handle(const char* line, int len)
 {
     auto argv = split(line, len);
+    cli::options::variables_map vm;
     if (not argv.empty()) try {
-        cli::options::variables_map vm;
         auto& cmd = commands.at(argv[0]);
         argv.erase(argv.begin());
         auto parsed =
@@ -348,11 +363,18 @@ bool CommandLine::implementation::handle(const char* line, int len)
         cli::options::notify(vm);
         cmd.fn(vm, out);
     } catch (std::out_of_range& ex) {
-        std::cout << "Unknown command: \"" << argv[0] << '"' << std::endl <<
+        std::cout << setup{settings::yellow} <<
+            "Unknown command: \"" << argv[0] << '"' << std::endl <<
             "Type \"commands\" for show existing commands" << std::endl;
-    }
-    catch (std::exception& ex) {
-        std::cout << "Unknown exception : " << ex.what() << std::endl;
+    } catch (cli::error& ex) {
+        std::cout << setup{settings::red} << "Error: " << std::endl;
+        std::cout << setup{settings::yellow} << ex.what();
+    } catch (std::exception& ex) {
+        std::cout << setup{settings::red} <<
+            "Unknown error : " << ex.what() << std::endl;
+    } catch (...) {
+        std::cout << setup{settings::red} <<
+            "Unknown error";
     }
     return true;
 }
