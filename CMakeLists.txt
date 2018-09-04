@@ -13,7 +13,6 @@ find_package(Qt5Network)
 find_package(Boost REQUIRED COMPONENTS
     system thread unit_test_framework coroutine context program_options)
 find_package(PkgConfig)
-find_package(edit)
 pkg_check_modules(GLOG REQUIRED libglog)
 
 include_directories(SYSTEM
