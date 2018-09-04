@@ -41,6 +41,7 @@ set(SOURCES
     FlowManager.cc
     # Json
     json11.cpp
+    SwitchCli.cc
 )
 
 add_definitions(

@@ -14,7 +14,8 @@
         "rest-multipart",
         "maple",
         "command-line-interface",
-        "rest-flowmod"
+        "rest-flowmod",
+        "switch-manager-cli"
     ],
 
     "tables": {
