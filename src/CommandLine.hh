@@ -108,3 +108,38 @@ private:
     struct implementation;
     std::unique_ptr<implementation> m_impl;
 };
+
+class cli::Outside::Backend {
+public:
+    virtual ~Backend() = default;
+    virtual void print(const std::string& msg) = 0;
+    virtual void echo(const std::string& msg) = 0;
+    virtual void warning(const std::string& msg) = 0;
+    virtual void error(const std::string& msg) = 0;
+};
+
+template<typename ...Args>
+void cli::Outside::print(fmt::string_view format_str, const Args&... args)
+{
+    // fmt::make_format_args is not working. I hope just `args...` deal with
+    // forwarding argiments into format.
+    m_backend.print(fmt::format(format_str, args...));
+}
+
+template<typename ...Args>
+void cli::Outside::echo(fmt::string_view format_str, const Args&... args)
+{
+    m_backend.echo(fmt::format(format_str, args...));
+}
+
+template<typename ...Args>
+void cli::Outside::warning(fmt::string_view format_str, const Args&... args)
+{
+    m_backend.warning(fmt::format(format_str, args...));
+}
+
+template<typename ...Args>
+void cli::Outside::error(fmt::string_view format_str, const Args&... args)
+{
+    m_backend.error(fmt::format(format_str, args...));
+}

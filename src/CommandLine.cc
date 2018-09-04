@@ -84,14 +84,6 @@ std::vector<std::string> split(const char* line, size_t len)
     return args;
 }
 
-class cli::Outside::Backend {
-public:
-    virtual ~Backend() = default;
-    virtual void print(const std::string& msg) = 0;
-    virtual void echo(const std::string& msg) = 0;
-    virtual void warning(const std::string& msg) = 0;
-    virtual void error(const std::string& msg) = 0;
-};
 
 class Stdout : public cli::Outside::Backend {
     void print(const std::string& msg) override
@@ -111,32 +103,6 @@ class Stdout : public cli::Outside::Backend {
         RUNOS_THROW( cli::error() << runos::errinfo_str(msg) );
     }
 };
-
-template<typename ...Args>
-void cli::Outside::print(fmt::string_view format_str, const Args&... args)
-{
-    // fmt::make_format_args is not working. I hope just `args...` deal with
-    // forwarding argiments into format.
-    m_backend.print(fmt::format(format_str, args...));
-}
-
-template<typename ...Args>
-void cli::Outside::echo(fmt::string_view format_str, const Args&... args)
-{
-    m_backend.echo(fmt::format(format_str, args...));
-}
-
-template<typename ...Args>
-void cli::Outside::warning(fmt::string_view format_str, const Args&... args)
-{
-    m_backend.warning(fmt::format(format_str, args...));
-}
-
-template<typename ...Args>
-void cli::Outside::error(fmt::string_view format_str, const Args&... args)
-{
-    m_backend.error(fmt::format(format_str, args...));
-}
 
 struct CommandLine::implementation {
     std::unique_ptr<EditLine, decltype(&el_end)> el
