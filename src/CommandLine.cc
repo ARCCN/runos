@@ -370,15 +370,19 @@ bool CommandLine::implementation::handle(const char* line, int len)
         std::cout << setup{settings::yellow} <<
             "Unknown command: \"" << argv[0] << '"' << std::endl <<
             "Type \"commands\" for show existing commands" << std::endl;
+        return false;
     } catch (cli::error& ex) {
         std::cout << setup{settings::red} << "Error: " << std::endl;
         std::cout << setup{settings::yellow} << ex.what();
+        return false;
     } catch (std::exception& ex) {
         std::cout << setup{settings::red} <<
             "Unknown error : " << ex.what() << std::endl;
+        return false;
     } catch (...) {
         std::cout << setup{settings::red} <<
             "Unknown error";
+        return false;
     }
     return true;
 }
