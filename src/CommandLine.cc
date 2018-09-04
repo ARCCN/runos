@@ -11,12 +11,12 @@
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/exception/error_info.hpp>
 #include <boost/exception/info.hpp>
 
 #include <QCoreApplication>
 #include <histedit.h>
 
+#include "Common.hh"
 #include "Config.hh"
 #include "types/exception.hh"
 
@@ -271,6 +271,7 @@ void CommandLine::register_builtins() {
 "   \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"                     \n";
             out.print(whoserules);
 }, "");
+    LOG(INFO) << "Built-ins registered";
 }
 
 void CommandLine::startUp(Loader*)
@@ -317,6 +318,7 @@ void CommandLine::registerCommand(
         const char* help
     )
 {
+    auto cmd_name = spec;
     implementation::command_holder holder{
             std::move(fn),
             std::move(opts),
@@ -324,6 +326,7 @@ void CommandLine::registerCommand(
             help
         };
     m_impl->commands.emplace(std::move(spec), std::move(holder));
+    LOG(INFO) << "Command " << cmd_name << " registered";
 }
 
 
@@ -336,6 +339,7 @@ void CommandLine::implementation::run()
         if (line == nullptr)
             break;
 
+        DVLOG(30) << "Line read: " << line;
         if (handle(line, len)) {
             if (not std::isspace(*line)) {
                 history(hist.get(), &hev, H_ENTER, line);
