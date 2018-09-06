@@ -7,6 +7,8 @@
 
 #include "Common.hh"
 
+#include "TcpServer.hh"
+
 namespace telnet {
 
 using namespace boost::asio;
@@ -91,19 +93,40 @@ void handle_accept(ClientPtr client, const boost::system::error_code& err){
     auto new_client = makeClient(client->m_service, client->m_acc);
     client->m_acc.async_accept(new_client->socket(), std::bind(handle_accept, new_client, _1));
 }
+
+struct Tmp {
+    Tmp() {
+        LOG(INFO) << "First instance";
+    }
+    Tmp(const Tmp&)
+    {
+        LOG(INFO) << "New instances";
+    }
+    ~Tmp() {
+        LOG(INFO) << "Killed";
+    }
+
+    void on_read(unsigned char* buf) {
+        LOG(INFO) << "Read : " << buf;
+    }
+
+};
+
 struct Telnet::implementation {
 
     io_service service;
     ip::tcp::endpoint ep;
     ip::tcp::acceptor acc;
+    server::TcpServer<Tmp> server;
     implementation()
         : ep(ip::tcp::v4(), 2001)
         , acc(service, ep)
+        , server(service, acc, Tmp{})
     { }
     void run() {
-        auto client = makeClient(service, acc);
-        acc.async_accept(client->socket(), std::bind(handle_accept, client, _1));
-        service.run();
+//        auto client = makeClient(service, acc);
+//        acc.async_accept(client->socket(), std::bind(handle_accept, client, _1));
+//        service.run();
     }
 
 };
