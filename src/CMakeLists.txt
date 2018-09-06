@@ -42,6 +42,7 @@ set(SOURCES
     # Json
     json11.cpp
     SwitchCli.cc
+    Telnet.cc
 )
 
 add_definitions(

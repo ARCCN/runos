@@ -18,6 +18,7 @@
 
 #include "Common.hh"
 #include "Config.hh"
+#include "Telnet.hh"
 #include "types/exception.hh"
 
 enum class settings : uint8_t {
@@ -105,6 +106,7 @@ class Stdout : public cli::Outside::Backend {
 };
 
 struct CommandLine::implementation {
+    telnet::Telnet telnet;
     std::unique_ptr<EditLine, decltype(&el_end)> el
         { nullptr, &el_end };
 
