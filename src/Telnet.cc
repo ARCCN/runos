@@ -87,7 +87,6 @@ ClientPtr makeClient(Args&& ...args)
 // }
 
 
-void handle_accept(ClientPtr client, const boost::system::error_code& err);
 void handle_accept(ClientPtr client, const boost::system::error_code& err){
     client->start();
     auto new_client = makeClient(client->m_service, client->m_acc);
@@ -126,7 +125,8 @@ struct Telnet::implementation {
     void run() {
 //        auto client = makeClient(service, acc);
 //        acc.async_accept(client->socket(), std::bind(handle_accept, client, _1));
-//        service.run();
+        //auto lol = new server::TcpServer<Tmp>(service, acc, Tmp{});
+        service.run();
     }
 
 };
