@@ -25,6 +25,8 @@
 #include <fluid/of13msg.hh>
 using namespace fluid_msg;
 
+#define DEBUG_CODE(x) { x }
+
 Q_DECLARE_METATYPE(uint32_t)
 Q_DECLARE_METATYPE(uint64_t)
 Q_DECLARE_METATYPE(of13::FeaturesReply)
