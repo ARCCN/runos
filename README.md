@@ -29,8 +29,18 @@ $ sudo apt-get install build-essential cmake autoconf libtool \
     pkg-config libgoogle-glog-dev \
     libssl-dev qtbase5-dev libboost-graph-dev libboost-system-dev \
     libboost-thread-dev libboost-coroutine-dev libboost-context-dev \
-    libgoogle-perftools-dev curl nodejs npm \
+    libgoogle-perftools-dev curl nodejs npm libedit-dev \
 ```
+
+To install newest version of libfmt :
+```
+$ git clone https://github.com/fmtlib/fmt.git
+$ cd fmt
+$ mkdir build -p && cd build
+$ cmake .. && make
+$ sudo make install
+```
+
 To install libevent on Ubuntu 17.10+, just use
 ```
 $ sudo apt-get install libevent-dev

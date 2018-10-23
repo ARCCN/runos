@@ -18,6 +18,8 @@ set(SOURCES
     Topology.cc
     STP.cc
     Maple.cc
+    # Command Line Interface
+    CommandLine.cc
     # Apps
     SimpleLearningSwitch.cc
     LearningSwitch.cc
@@ -39,6 +41,7 @@ set(SOURCES
     FlowManager.cc
     # Json
     json11.cpp
+    SwitchCli.cc
 )
 
 add_definitions(
@@ -62,6 +65,8 @@ target_link_libraries(runos
     Qt5::Core
     fluid_base
     libfluid_msg.a
+    edit
+    fmt
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${Boost_COROUTINE_LIBRARY}
     ${GLOG_LIBRARIES}

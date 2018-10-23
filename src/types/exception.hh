@@ -9,6 +9,8 @@ namespace runos {
 
 typedef boost::error_info< struct tag_error_msg, const char* >
     errinfo_msg;
+typedef boost::error_info< struct tag_error_msg, std::string >
+    errinfo_str;
 
 #define RUNOS_THROW(x) BOOST_THROW_EXCEPTION(x)
 

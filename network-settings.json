@@ -12,8 +12,10 @@
         "stp",
         "flow-manager",
         "rest-multipart",
+        "maple",
+        "command-line-interface",
         "rest-flowmod",
-        "maple"
+        "switch-manager-cli"
     ],
 
     "tables": {
