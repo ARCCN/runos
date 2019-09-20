@@ -1,8 +1,0 @@
-build/
-build-*/
-build_*/
-.ycm_extra_conf*
-.idea
-.vimrc
-*.swp
-*.swo

@@ -1,9 +1,0 @@
-[submodule "third_party/libfluid_msg"]
-	path = third_party/libfluid_msg
-	url = https://github.com/ARCCN/libfluid_msg.git
-[submodule "third_party/libfluid_base"]
-	path = third_party/libfluid_base
-	url = https://github.com/ARCCN/libfluid_base.git
-[submodule "third_party/webserver"]
-	path = third_party/webserver
-	url = https://gitlab.com/eidheim/Simple-Web-Server.git
