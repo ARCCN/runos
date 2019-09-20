@@ -1,0 +1,86 @@
+{
+    "services": [
+        "of-server",
+        "of-server-cli",
+        "of-server-rest",
+        "controller",
+        "switch-manager",
+        "switch-manager-cli",
+        "switch-manager-rest",
+        "switch-ordering",
+        "link-discovery",
+        "link-discovery-cli",
+        "link-discovery-rest",
+        "recovery-manager",
+        "recovery-manager-rest",
+        "flow-entries-verifier",
+        "ofmsg-sender",
+        "stats-rules-manager",
+        "stats-rules-manager-rest",
+        "topology",
+        "topology-rest",
+        "stats-bucket-rest",
+        "dpid-checker",
+        "database-connector",
+        "flow-table-rest",
+        "group-table-rest",
+        "meter-table-rest",
+        "aux-devices-rest"
+    ],
+
+    "flow-entries-verifier": {
+      "active": false,
+      "poll-interval": 30000
+    },
+
+    "dpid-checker": {
+        "dpid-format": "dec",
+        "AR": ["1", "2", "3"],
+        "DR": ["4", "5", "6"]
+    },
+
+    "recovery-manager": {
+        "id": 1,
+        "status": "backup",
+        "hb-mode": "unicast",
+        "hb-address-primary": "127.0.0.1",
+        "hb-port-primary": 1234,
+        "hb-address-backup": "127.0.0.1",
+        "hb-port-backup": 1237,
+        "hb-port-broadcast": 50000,
+        "hb-address-multicast": "239.255.43.21",
+        "hb-port-multicast": 50000,
+        "hb-interval": 200,
+        "hb-primaryDeadInterval": 800,
+        "hb-backupDeadInterval": 1000,
+        "hb-primaryWaitingInterval": 600
+    },
+
+    "database-connector": {
+        "db-type": "redis",
+        "db-address": "127.0.0.1",
+        "db-port": 6379,
+        "db-pswd": ""
+    },
+
+    "link-discovery": {
+        "queue": 1,
+        "poll-interval": 5
+    },
+
+    "of-server": {
+        "address": "0.0.0.0",
+        "port" : 6653,
+        "nthreads": 4,
+        "echo-interval": 5,
+        "echo-attempts": 3,
+        "secure": false
+    },
+
+    "rest-listener": {
+        "address": "0.0.0.0",
+        "port": "8000"
+    }
+
+}
+

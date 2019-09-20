@@ -1,0 +1,72 @@
+<!--
+
+Copyright 2019 Applied Research Center for Computer Networks
+
+-->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title> RUNOS 2.0 | Monitor </title>
+        <link rel="shortcut icon" href="images/favicon.ico"/>
+        <link rel="stylesheet" type="text/css" href="arcui.css">
+        <link rel="stylesheet" type="text/css" href="info.css">
+    </head>
+
+    <body class="info">
+
+        <nav class="side--nav">
+            <a class="logo" href="#"><img class="ctrl-status ctrl-status_down" src="images/logo_eng.png"></a>
+            <br><button type="button" class="menu-nav-topology" onclick="javascript: location.href='/topology.html'">Topology</button>
+            <hr><button type="button" class="menu-nav-logout" onclick="javascript: location.href='/logout'">Logout</button>
+        </nav>
+
+        <main>
+            <h1> RUNOS MONITOR </h1>
+            <div id='ctrl_info' class='ctrl_info_container'></div>
+
+            <table align="left">
+
+                <tr height="400">
+                    <td>
+                        <div id='rx_chart' class='rx_chart'></div>
+                    </td>
+                </tr>
+
+                <tr height="20">
+                    <td>
+                    </td>
+                </tr>
+
+                <tr height="400">
+                    <td>
+                        <div id='tx_chart' class='tx_chart'></div>
+                   </td>
+                </tr>
+
+                <tr height="20">
+                    <td>
+                    </td>
+                </tr>
+
+                <!-- Control Traffic of Switches -->
+                <tr height="20">
+                    <td>
+                        <h1> Control Traffic Monitor for Switches </h1>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="left">
+                        <div id='switches_info' class='switches_info_container'> </div>
+                    </td>
+                </tr>
+            </table>
+
+        </main>
+
+
+        <script src="arcui.js"></script>
+    </body>
+</html>

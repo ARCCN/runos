@@ -1,0 +1,28 @@
+{
+    domain_stats_capable: false,
+    per_vlan_stats_capable: false,
+    inband_queue: 1,
+    lag: false,
+    local_port: 4294967294,
+    meter_capable: true,
+    meter_pkps: true,
+    dos_max_rate: 1000,
+    dos_mirror_max_rate: 1000,
+    mirror: true,
+    ofmsg_mult_ratio: 1,
+    ofmsg_add_ratio: 0,
+    none_vlan_bit_support: true,
+    has_empty_bucket: true,
+    tables.admission: 0,
+    tables.mirroring: 1,
+    tables.classifier: 2,
+    tables.forwarding: 3,
+    tables.learning: 4,
+    tables.output: 5
+}
+
+hwVersion ~ /Open vSwitch/ {
+    meter_capable: false,
+    use_flowmod_modify_command: true
+}
+

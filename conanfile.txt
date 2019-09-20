@@ -1,0 +1,5 @@
+[requires]
+#LearningSwitch/0.1@arccn/testing
+
+[imports]
+., * -> ../src/apps @folder=True

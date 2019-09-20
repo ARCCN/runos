@@ -1,0 +1,10 @@
+pcap/
+build/
+build-*/
+.idea
+.vimrc
+*.swp
+*.swo
+*.pyc
+network-settings-with-apps.json
+src/apps

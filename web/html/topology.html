@@ -1,0 +1,47 @@
+<!--
+
+Copyright 2019 Applied Research Center for Computer Networks
+
+-->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title> RUNOS 2.0 | Topology </title>
+        <link rel="shortcut icon" href="images/favicon.ico"/>
+        <link rel="stylesheet" href="arcui.css">
+    </head>
+    <body class="enterprise">
+    
+        <nav class="side--nav">
+            
+            <a class="logo" href="#"><img class="ctrl-status ctrl-status_down" src="images/logo_eng.png"></a>
+            
+            <br><button type="button" class="menu-nav-mirrors-pcap">Your Apps</button>
+            <hr><button type="button" class="menu-logger">Logger</button>
+            <hr><button type="button" class="menu-recovery">RUNOS Cluster</button>
+            <br><button type="button" class="menu-nav-logout" onclick="javascript: location.href='/info.html'">RUNOS Monitor</button>
+            <hr><button type="button" class="menu-nav-switch-roles">Switch Roles</button>
+            <br><button type="button" class="menu-nav-settings">Settings</button>
+            
+            <ul class="legend">
+                <h2>Link Load</h2>
+                <li class="l4">extreme (90%+)</li>
+                <li class="l3">high (50% - 90%)</li>
+                <li class="l2">medium (30% - 50%)</li>
+                <li class="l1">low (>0%)</li>
+                <li class="l0">none (0%)</li>
+            </ul>
+            <br>
+        </nav>
+        <main>
+            <canvas class="map"></canvas>
+            <span class="canvas--scale canvas--scale-up">+</span>
+            <span class="canvas--scale canvas--scale-down">&#8211;</span>
+            <ul class="menu"></ul>
+        </main>
+        <script src="arcui.js"></script>
+        
+    </body>
+</html>

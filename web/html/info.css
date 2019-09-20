@@ -1,0 +1,142 @@
+/*
+
+Copyright 2019 Applied Research Center for Computer Networks
+
+*/
+
+body.info button{
+    margin: 3px auto;
+    background:rgba(0,0,0,0.1);
+    border-radius:5px;
+    box-shadow:inset 0 0 3px rgba(0,0,0,0.25);
+    border:1px solid rgba(0,0,0,0.5);
+    padding:.3em
+}
+
+body.info nav button{
+    width:90%;
+}
+
+body.info button:hover{
+    background:rgba(0,0,0,0.05)
+}
+
+body.info button:active{
+    padding-top:.4em;
+    padding-bottom:.2em;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.25)
+}
+
+body.info main{
+    background:#FAFAFA;
+    border-radius:5px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.5);
+    margin-left:18.5rem;
+    padding:.5rem;
+    min-height:1000rem;
+    height:100%;
+    width:calc(100% - 18.5rem);
+    position:relative;
+    z-index:0
+}
+
+body.info h1 {
+    text-align:left;
+    font-family: Arial, serif;
+    font-size: 30px;
+    font-weight: bold;
+    padding-top: 10px;
+    padding-left: 10px;
+}
+
+body.info h2 {
+    text-align:left;
+    font-family: Arial, serif;
+    font-size: 20px;
+    padding-top: 10px;
+    padding-left: 10px;
+}
+
+body.info div.ctrl_info_container {
+    /*float: left;*/
+    /*margin: auto;  */
+    margin-top: 10px;
+    width: 60%;
+    font-size: 14px;
+    line-height: 1.2em;
+}
+
+body.info div.switches_info_container {
+    /*float: left;*/
+    /*margin: auto;  */
+    margin-top: 10px;
+    width: 65%;
+    font-size: 14px;
+    line-height: 1.2em;
+}
+
+body.info div.ctrl_rx_container {
+    /*float: left;*/
+    /*margin: auto;  */
+    margin-top: 10px;
+    width: 70%;
+    font-size: 14px;
+    line-height: 1.2em;
+}
+
+/* for tables  */
+body.info table.arccn{
+    margin:2%;
+    float:left;
+}
+body.info table.arccn th {
+    font-size:1.2em;
+    color: white;
+    text-align: left;
+    text-shadow: 0 1px 1px #2D2020;
+    padding: 5px 10px
+}
+body.info table.arccn > tbody > tr > td {
+    text-align: left;
+    padding: 5px 10px;
+    background: #E6E6FA
+}
+body.info table.arccn > thead > tr {
+    color: white;
+    background: linear-gradient(to right, rgba(186,85,211,0.7), rgba(0,0,128,0.7));
+}
+body.info table.arccn > thead > tr:first-child {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background: linear-gradient(to right, #BA55D3, #000080)
+}
+body.info table.arccn > tbody > tr:last-child > td:first-child {
+    border-radius: 0 0 0 10px
+}
+body.info table.arccn > tbody > tr:last-child > td:last-child {
+    border-radius: 0 0 10px 0
+}
+body.info table.arccn > tbody > tr:hover > td {
+    background:linear-gradient(#ADD8E6, #4682B4)
+}
+
+/* for charts  */
+body.info div.rx_chart{
+    float: left;
+    margin: auto;
+    width: 60%;
+    height: 400px
+}
+body.info div.tx_chart{
+    float: left;
+    margin: auto;
+    width: 60%;
+    height: 400px
+}
+body.info div.sw_chart{
+    padding-top: 25px;
+    float: left;
+    margin: auto;
+    width: 100%;
+    height: 400px
+}
