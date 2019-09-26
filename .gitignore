@@ -6,5 +6,5 @@ build-*/
 *.swp
 *.swo
 *.pyc
-network-settings-with-apps.json
+runos-settings.json
 src/apps
