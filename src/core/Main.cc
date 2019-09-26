@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
     options.add_options()
         ("c,conf", "Path to configuration file", cxxopts::value<std::string>()
-            ->default_value("network-settings.json"))
+            ->default_value("runos-settings.json"))
         ("tooldir", "Path to tools executables", cxxopts::value<std::string>())
         ("etcdir", "Path to etc dir", cxxopts::value<std::string>())
         ("dumpdir", "Path to crashdump dir", cxxopts::value<std::string>())
