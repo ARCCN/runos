@@ -3,10 +3,10 @@
 file(GLOB_RECURSE app_configs
     "*/settings.json"
 )
-set(main_json "${CMAKE_SOURCE_DIR}/network-settings.json")
-set(out_json "${CMAKE_SOURCE_DIR}/network-settings-with-apps.json")
-set(tmp_json "${CMAKE_SOURCE_DIR}/network-settings.tmp.json")
-execute_process( COMMAND bash -c "cp ${main_json} ${out_json}" )
+set(default_json "${CMAKE_SOURCE_DIR}/default-settings.json")
+set(out_json "${CMAKE_SOURCE_DIR}/runos-settings.json")
+set(tmp_json "${CMAKE_SOURCE_DIR}/runos-settings.tmp.json")
+execute_process( COMMAND bash -c "cp ${default_json} ${out_json}" )
 foreach( _config ${app_configs} )
     execute_process(
         COMMAND bash -c "jq -s '.[0].services = .[0].services + [.[1].name] | \
