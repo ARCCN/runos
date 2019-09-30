@@ -1,0 +1,463 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>RUNOS Developer Guide &mdash; RUNOS 2.0  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="RUNOS Contributor Guide" href="14_RUNOS_ContributorGuide.html" />
+    <link rel="prev" title="RUNOS Adminitrator Guide" href="12_RUNOS_UserGuide.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS 2.0
+          
+
+          
+            
+            <img src="_static/logo_runos_small2.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="00_RUNOS_Overview.html">RUNOS Overview</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="01_RUNOS_Downloads.html">RUNOS Downloads</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="11_RUNOS_InstallationGuide.html">RUNOS Installation Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="12_RUNOS_UserGuide.html">RUNOS Adminitrator Guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RUNOS Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements-to-runos-developer">Requirements to RUNOS developer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">RUNOS Core</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#application">Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#loader">Loader</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#runos-core-applications">RUNOS Core Applications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ofserver">OFServer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#controller">Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dpidchecker">DpidChecker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#switch-manager">Switch Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#switch-ordering">Switch Ordering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#link-discovery">Link Discovery</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#topology">Topology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recovery-manager">Recovery Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#database-connector">Database Connector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flow-entries-verifier">Flow Entries Verifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#openflow-message-sender">OpenFlow Message Sender</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stats-bucket-manager">Stats Bucket Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stats-rules-manager">Stats Rules Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rest-listiner">Rest-Listiner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#command-line">Command Line</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#runos-application-development">RUNOS Application Development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#structure-of-application">Structure of Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extract-data-from-configuration-file">Extract Data from Configuration File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flow-tables">Flow Tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#signals">Signals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#openflow-message-sending">OpenFlow Message Sending</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-cli-to-application">Add CLI to Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-rest-to-application">Add REST to Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#matching-fields">Matching Fields</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="14_RUNOS_ContributorGuide.html">RUNOS Contributor Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="31_tutorial_01.html">Tutorial 1: L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32_tutorial_02.html">Tutorial 2: L2 Learning Switch with CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33_tutorial_03.html">Tutorial 3: L2 Learning Switch with REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="34_tutorial_04.html">Tutorial 4: Distributed L2 Learning Switch</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Available Applications</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="41_LearningSwitch.html">L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="42_HostManager.html">Host Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_AppTemplate.html">Application Template</a></li>
+</ul>
+<p class="caption"><span class="caption-text">OTHER DOCUMENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="51_RUNOS_REST_API.html">RUNOS REST API 2.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="52_RUNOS_CLI.html">RUNOS CLI 2.0</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RUNOS 2.0</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>RUNOS Developer Guide</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/13_RUNOS_DeveloperGuide.rst.txt" rel="nofollow"> </a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="runos-developer-guide">
+<h1>RUNOS Developer Guide<a class="headerlink" href="#runos-developer-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="requirements-to-runos-developer">
+<span id="runos-core"></span><h2>Requirements to RUNOS developer<a class="headerlink" href="#requirements-to-runos-developer" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Linux operating system skills</li>
+<li>C++17 skills</li>
+<li>QT skills</li>
+<li>CMake skills</li>
+<li>SDN skills</li>
+<li>knowledge of the <a class="reference external" href="https://www.opennetworking.org/wp-content/uploads/2014/10/openflow-spec-v1.3.0.pdf">OpenFlow specification 1.3</a></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="id1">
+<h2>RUNOS Core<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Application Class</li>
+<li>Loader Class</li>
+<li>Logger Class</li>
+</ul>
+</div></blockquote>
+<div class="section" id="application">
+<h3>Application<a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>Application can have one of the following states:</dt>
+<dd><ul class="first last simple">
+<li>APP_REGISTERED,</li>
+<li>APP_INITIALIZING,</li>
+<li>APP_INITIALIZED,</li>
+<li>APP_STARTED.</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="loader">
+<h3>Loader<a class="headerlink" href="#loader" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>Loader states:</dt>
+<dd><ul class="first last simple">
+<li>INITIALIZING,</li>
+<li>STARTING,</li>
+<li>RUNNING.</li>
+</ul>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="runos-core-applications">
+<h2>RUNOS Core Applications<a class="headerlink" href="#runos-core-applications" title="Permalink to this headline">¶</a></h2>
+<p>RUNOS Core consists from the following core applications:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><a class="reference internal" href="#of-server"><span class="std std-ref">OFServer</span></a></li>
+<li><a class="reference internal" href="#controller"><span class="std std-ref">Controller</span></a></li>
+<li><a class="reference internal" href="#dpid-checker"><span class="std std-ref">DpidChecker</span></a></li>
+<li><a class="reference internal" href="#switch-manager"><span class="std std-ref">Switch Manager</span></a></li>
+<li><a class="reference internal" href="#switch-ordering"><span class="std std-ref">Switch Ordering</span></a></li>
+<li><a class="reference internal" href="#link-discovery"><span class="std std-ref">Link Discovery</span></a></li>
+<li><a class="reference internal" href="#topology"><span class="std std-ref">Topology</span></a></li>
+<li><a class="reference internal" href="#database-connector"><span class="std std-ref">Database Connector</span></a></li>
+<li><a class="reference internal" href="#recovery"><span class="std std-ref">Recovery Manager</span></a></li>
+<li><a class="reference internal" href="#flow-entries-verifier"><span class="std std-ref">Flow Entries Verifier</span></a></li>
+<li><a class="reference internal" href="#ofmsg-sender"><span class="std std-ref">OpenFlow Message Sender</span></a></li>
+<li><a class="reference internal" href="#stats-bucket-manager"><span class="std std-ref">Stats Bucket Manager</span></a></li>
+<li><a class="reference internal" href="#stats-rules-manager"><span class="std std-ref">Stats Rules Manager</span></a></li>
+<li><a class="reference internal" href="#rest-listener"><span class="std std-ref">Rest-Listiner</span></a></li>
+<li><a class="reference internal" href="#command-line"><span class="std std-ref">Command Line</span></a></li>
+</ol>
+</div></blockquote>
+<div class="section" id="ofserver">
+<span id="of-server"></span><h3>OFServer<a class="headerlink" href="#ofserver" title="Permalink to this headline">¶</a></h3>
+<p>OFServer supports OpenFlow connections with switches and it processes received OpenFlow messages.</p>
+<p><strong>Dependencies:</strong> <a class="reference internal" href="#dpid-checker"><span class="std std-ref">DpidChecker</span></a></p>
+<p><strong>Files:</strong> OFServer.hpp, OFServer.cc,</p>
+</div>
+<div class="section" id="controller">
+<span id="id2"></span><h3>Controller<a class="headerlink" href="#controller" title="Permalink to this headline">¶</a></h3>
+<p>Controller is …</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> Controller.hpp, Controller.cc</p>
+</div>
+<div class="section" id="dpidchecker">
+<span id="dpid-checker"></span><h3>DpidChecker<a class="headerlink" href="#dpidchecker" title="Permalink to this headline">¶</a></h3>
+<p>DpidChecker is …</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> DpidChecker.hpp, DpidChecker.cc</p>
+</div>
+<div class="section" id="switch-manager">
+<span id="id3"></span><h3>Switch Manager<a class="headerlink" href="#switch-manager" title="Permalink to this headline">¶</a></h3>
+<p>Switch Manager provides switch discovery and controls switch state in the network topology.</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> SwitchManager.hpp, SwitchManager.cc</p>
+</div>
+<div class="section" id="switch-ordering">
+<span id="id4"></span><h3>Switch Ordering<a class="headerlink" href="#switch-ordering" title="Permalink to this headline">¶</a></h3>
+<p>Switch Ordering provides …</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> SwitchOrdering.hpp, SwitchOrdering.cc</p>
+</div>
+<div class="section" id="link-discovery">
+<span id="id5"></span><h3>Link Discovery<a class="headerlink" href="#link-discovery" title="Permalink to this headline">¶</a></h3>
+<p>Link Discovery provides link discovery and controls link state in the network topology using LLDP.</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> LinkDiscovery.hpp, LinkDiscovery.cc</p>
+</div>
+<div class="section" id="topology">
+<span id="id6"></span><h3>Topology<a class="headerlink" href="#topology" title="Permalink to this headline">¶</a></h3>
+<p>Topology provides topology discovery and controls network topology state in the real time.</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> Topology.hpp, Topology.cc</p>
+</div>
+<div class="section" id="recovery-manager">
+<span id="recovery"></span><h3>Recovery Manager<a class="headerlink" href="#recovery-manager" title="Permalink to this headline">¶</a></h3>
+<p>Recovery Manager provides active/standby reservation</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> RecoveryManager.hpp, RecoveryManager.cc</p>
+</div>
+<div class="section" id="database-connector">
+<span id="id7"></span><h3>Database Connector<a class="headerlink" href="#database-connector" title="Permalink to this headline">¶</a></h3>
+<p>Database Connector provides controller connection to Redis in-memory data store.</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> DataBaseConnector.hpp, DataBaseConnector.cc</p>
+</div>
+<div class="section" id="flow-entries-verifier">
+<span id="id8"></span><h3>Flow Entries Verifier<a class="headerlink" href="#flow-entries-verifier" title="Permalink to this headline">¶</a></h3>
+<p>Flow Entries Verifier provides …</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> FlowEntriesVerifier.hpp, FlowEntriesVerifier.cc</p>
+</div>
+<div class="section" id="openflow-message-sender">
+<span id="ofmsg-sender"></span><h3>OpenFlow Message Sender<a class="headerlink" href="#openflow-message-sender" title="Permalink to this headline">¶</a></h3>
+<p>OpenFlow Message Sender provides sending OpenFlow messages to switches.</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> OFMsg-Sender.hpp, OFMsg-Sender.cc</p>
+</div>
+<div class="section" id="stats-bucket-manager">
+<span id="id9"></span><h3>Stats Bucket Manager<a class="headerlink" href="#stats-bucket-manager" title="Permalink to this headline">¶</a></h3>
+<p>Stats Bucket Manager …</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> StatsBucketManager.hpp, StatsBucketManager.cc</p>
+</div>
+<div class="section" id="stats-rules-manager">
+<span id="id10"></span><h3>Stats Rules Manager<a class="headerlink" href="#stats-rules-manager" title="Permalink to this headline">¶</a></h3>
+<p>Stats Rules Manager provides …</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> StatsRulesManager.hpp, StatsRulesManager.cc</p>
+</div>
+<div class="section" id="rest-listiner">
+<span id="rest-listener"></span><h3>Rest-Listiner<a class="headerlink" href="#rest-listiner" title="Permalink to this headline">¶</a></h3>
+<p>Rest-Listiner provides REST access to controller applications.</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> Rest-Listiner.hpp, Rest-Listiner.cc</p>
+</div>
+<div class="section" id="command-line">
+<span id="id11"></span><h3>Command Line<a class="headerlink" href="#command-line" title="Permalink to this headline">¶</a></h3>
+<p>Command Line provides CLI access to controller applications.</p>
+<p><strong>Dependencies:</strong></p>
+<p><strong>Files:</strong> Command-Line.hpp, Command-Line.cc</p>
+</div>
+</div>
+<div class="section" id="runos-application-development">
+<h2>RUNOS Application Development<a class="headerlink" href="#runos-application-development" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="structure-of-application">
+<h3>Structure of Application<a class="headerlink" href="#structure-of-application" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="extract-data-from-configuration-file">
+<h3>Extract Data from Configuration File<a class="headerlink" href="#extract-data-from-configuration-file" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="flow-tables">
+<h3>Flow Tables<a class="headerlink" href="#flow-tables" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="signals">
+<h3>Signals<a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="openflow-message-sending">
+<h3>OpenFlow Message Sending<a class="headerlink" href="#openflow-message-sending" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="add-cli-to-application">
+<h3>Add CLI to Application<a class="headerlink" href="#add-cli-to-application" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="add-rest-to-application">
+<h3>Add REST to Application<a class="headerlink" href="#add-rest-to-application" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="matching-fields">
+<h3>Matching Fields<a class="headerlink" href="#matching-fields" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="14_RUNOS_ContributorGuide.html" class="btn btn-neutral float-right" title="RUNOS Contributor Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="12_RUNOS_UserGuide.html" class="btn btn-neutral float-left" title="RUNOS Adminitrator Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, ARCCN
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

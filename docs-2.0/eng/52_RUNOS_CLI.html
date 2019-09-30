@@ -1,0 +1,493 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>RUNOS CLI 2.0 &mdash; RUNOS 2.0  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="RUNOS REST API 2.0" href="51_RUNOS_REST_API.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS 2.0
+          
+
+          
+            
+            <img src="_static/logo_runos_small2.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="00_RUNOS_Overview.html">RUNOS Overview</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="01_RUNOS_Downloads.html">RUNOS Downloads</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="11_RUNOS_InstallationGuide.html">RUNOS Installation Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="12_RUNOS_UserGuide.html">RUNOS Adminitrator Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="13_RUNOS_DeveloperGuide.html">RUNOS Developer Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="14_RUNOS_ContributorGuide.html">RUNOS Contributor Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="31_tutorial_01.html">Tutorial 1: L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32_tutorial_02.html">Tutorial 2: L2 Learning Switch with CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33_tutorial_03.html">Tutorial 3: L2 Learning Switch with REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="34_tutorial_04.html">Tutorial 4: Distributed L2 Learning Switch</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Available Applications</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="41_LearningSwitch.html">L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="42_HostManager.html">Host Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_AppTemplate.html">Application Template</a></li>
+</ul>
+<p class="caption"><span class="caption-text">OTHER DOCUMENTATION</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="51_RUNOS_REST_API.html">RUNOS REST API 2.0</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RUNOS CLI 2.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#runos-core-cli">RUNOS Core CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#show-info">show info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#connectioin-list">connectioin list</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#switch-info">switch info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#switch-list">switch list</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#link-list">link list</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#runos-applications-cli">RUNOS Applications CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#l2-switch">l2-switch</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RUNOS 2.0</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>RUNOS CLI 2.0</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/52_RUNOS_CLI.rst.txt" rel="nofollow"> </a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="runos-cli-2-0">
+<h1>RUNOS CLI 2.0<a class="headerlink" href="#runos-cli-2-0" title="Permalink to this headline">¶</a></h1>
+<p>To enter to RUNOS command line interface, press the “Enter” key in your console after RUNOS running. And you should see <code class="docutils literal notranslate"><span class="pre">`runos&gt;</span>&#160;&#160; <span class="pre">`</span></code> in the command line.</p>
+<a class="reference internal image-reference" href="_images/cli.png"><img alt="_images/cli.png" src="_images/cli.png" style="width: 600px;" /></a>
+<div class="section" id="runos-core-cli">
+<h2>RUNOS Core CLI<a class="headerlink" href="#runos-core-cli" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="show-info">
+<h3>show info<a class="headerlink" href="#show-info" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Command</strong></td>
+<td>show info</td>
+</tr>
+<tr class="row-even"><td><strong>Returns</strong></td>
+<td><dl class="first last docutils">
+<dt><strong>Controller info:</strong></dt>
+<dd><ul class="first last simple">
+<li>number of switches</li>
+<li>controller start time</li>
+<li>controller uptime</li>
+</ul>
+</dd>
+<dt><strong>OpenFlow message statistics:</strong></dt>
+<dd><ul class="first last simple">
+<li>total number of received messages(rx packets)</li>
+<li>total number of received packet-in messages(packet-in packets)</li>
+<li>total number of transmitted messages(tx packets)</li>
+<li>rx, tx, packet-in frequency per second</li>
+<li>rx, tx, packet-in frequency per switch per second</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-odd"><td><strong>Arguments</strong></td>
+<td><ul class="first last simple">
+<li>no</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><strong>Example</strong></td>
+<td>runos&gt; show info</td>
+</tr>
+<tr class="row-odd"><td><strong>Application</strong></td>
+<td><a class="reference internal" href="13_RUNOS_DeveloperGuide.html#of-server"><span class="std std-ref">OFServer</span></a></td>
+</tr>
+<tr class="row-even"><td><strong>File</strong></td>
+<td>src/core/OFServerCli.cc</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="connectioin-list">
+<h3>connectioin list<a class="headerlink" href="#connectioin-list" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Command</strong></td>
+<td>connection list</td>
+</tr>
+<tr class="row-even"><td><strong>Returns</strong></td>
+<td><dl class="first last docutils">
+<dt>Returns list of connections and statistics:</dt>
+<dd><ul class="first last simple">
+<li>switch DPID</li>
+<li>connection status (UP/DOWN)</li>
+<li>IP address and port</li>
+<li>start time</li>
+<li>uptime</li>
+<li>number of rx, packet-in, tx, packets for each connections</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-odd"><td><strong>Arguments</strong></td>
+<td><ul class="first last simple">
+<li>no</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><strong>Example</strong></td>
+<td>runos&gt; connection list</td>
+</tr>
+<tr class="row-odd"><td><strong>Application</strong></td>
+<td><a class="reference internal" href="13_RUNOS_DeveloperGuide.html#of-server"><span class="std std-ref">OFServer</span></a></td>
+</tr>
+<tr class="row-even"><td><strong>File</strong></td>
+<td>src/core/OFServerCli.cc</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="switch-info">
+<h3>switch info<a class="headerlink" href="#switch-info" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Command</strong></td>
+<td>switch info &lt;dpid&gt;</td>
+</tr>
+<tr class="row-even"><td><strong>Returns</strong></td>
+<td><div class="first last line-block">
+<div class="line">Returns detailed information about switch with &lt;dpid&gt;</div>
+<div class="line">(manufacturer, hardware and software, number of flow</div>
+<div class="line">tables, interfaces and its status and the others.</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><strong>Arguments</strong></td>
+<td><ul class="first last simple">
+<li>&lt;dpid&gt; - switch DPID</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><strong>Example</strong></td>
+<td>runos&gt; switch info 1</td>
+</tr>
+<tr class="row-odd"><td><strong>Application</strong></td>
+<td><a class="reference internal" href="13_RUNOS_DeveloperGuide.html#switch-manager"><span class="std std-ref">Switch Manager</span></a></td>
+</tr>
+<tr class="row-even"><td><strong>File</strong></td>
+<td>src/core/SwitchManagerCli.cc</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="switch-list">
+<h3>switch list<a class="headerlink" href="#switch-list" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Command</strong></td>
+<td>switch list</td>
+</tr>
+<tr class="row-even"><td><strong>Returns</strong></td>
+<td><div class="first last line-block">
+<div class="line">Return list of connected switches (DPID, hardware and</div>
+<div class="line">description)</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><strong>Arguments</strong></td>
+<td><ul class="first last simple">
+<li>no</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><strong>Example</strong></td>
+<td>runos&gt; switch list</td>
+</tr>
+<tr class="row-odd"><td><strong>Application</strong></td>
+<td><a class="reference internal" href="13_RUNOS_DeveloperGuide.html#switch-manager"><span class="std std-ref">Switch Manager</span></a></td>
+</tr>
+<tr class="row-even"><td><strong>File</strong></td>
+<td>src/core/SwitchManagerCli.cc</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="link-list">
+<h3>link list<a class="headerlink" href="#link-list" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Command</strong></td>
+<td>link list</td>
+</tr>
+<tr class="row-even"><td><strong>Returns</strong></td>
+<td><div class="first last line-block">
+<div class="line">Returns number of links, its status, and pairs &lt;DPID,</div>
+<div class="line">port&gt; for each link.</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><strong>Arguments</strong></td>
+<td><ul class="first last simple">
+<li>no</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><strong>Example</strong></td>
+<td>runos&gt; link list</td>
+</tr>
+<tr class="row-odd"><td><strong>Application</strong></td>
+<td><a class="reference internal" href="13_RUNOS_DeveloperGuide.html#link-discovery"><span class="std std-ref">Link Discovery</span></a></td>
+</tr>
+<tr class="row-even"><td><strong>File</strong></td>
+<td>src/core/LinkDiscoveryCli.cc</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="runos-applications-cli">
+<h2>RUNOS Applications CLI<a class="headerlink" href="#runos-applications-cli" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="l2-switch">
+<h3>l2-switch<a class="headerlink" href="#l2-switch" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Command</strong></td>
+<td>l2-switch</td>
+</tr>
+<tr class="row-even"><td><strong>Returns</strong></td>
+<td>Returns list of pairs &lt;MAC, port&gt;</td>
+</tr>
+<tr class="row-odd"><td><strong>Arguments</strong></td>
+<td><ul class="first last simple">
+<li>no</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><strong>Example</strong></td>
+<td>runos&gt; l2-switch</td>
+</tr>
+<tr class="row-odd"><td><strong>Application</strong></td>
+<td><a class="reference internal" href="41_LearningSwitch.html#l2sw"><span class="std std-ref">L2 Learning Switch</span></a></td>
+</tr>
+<tr class="row-even"><td><strong>File</strong></td>
+<td>src/core/L2-LearningSwitchCli.cc</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="51_RUNOS_REST_API.html" class="btn btn-neutral float-left" title="RUNOS REST API 2.0" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, ARCCN
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

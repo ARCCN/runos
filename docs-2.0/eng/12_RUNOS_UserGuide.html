@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>RUNOS Adminitrator Guide &mdash; RUNOS 2.0  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="RUNOS Developer Guide" href="13_RUNOS_DeveloperGuide.html" />
+    <link rel="prev" title="RUNOS Installation Guide" href="11_RUNOS_InstallationGuide.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS 2.0
+          
+
+          
+            
+            <img src="_static/logo_runos_small2.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="00_RUNOS_Overview.html">RUNOS Overview</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="01_RUNOS_Downloads.html">RUNOS Downloads</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="11_RUNOS_InstallationGuide.html">RUNOS Installation Guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RUNOS Adminitrator Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#runos-configuration">RUNOS Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#default-configuration-file">Default Configuration File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#application-configuration-file">Application Configuration File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#runos-configuration-file">RUNOS Configuration File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-your-configuration-file">Make Your Configuration File</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#runos-web-user-interface">RUNOS Web User Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-plane-monitoring">Data Plane Monitoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#control-plane-monitoring">Control Plane Monitoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#runos-cluster">RUNOS Cluster</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="13_RUNOS_DeveloperGuide.html">RUNOS Developer Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="14_RUNOS_ContributorGuide.html">RUNOS Contributor Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="31_tutorial_01.html">Tutorial 1: L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32_tutorial_02.html">Tutorial 2: L2 Learning Switch with CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33_tutorial_03.html">Tutorial 3: L2 Learning Switch with REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="34_tutorial_04.html">Tutorial 4: Distributed L2 Learning Switch</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Available Applications</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="41_LearningSwitch.html">L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="42_HostManager.html">Host Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_AppTemplate.html">Application Template</a></li>
+</ul>
+<p class="caption"><span class="caption-text">OTHER DOCUMENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="51_RUNOS_REST_API.html">RUNOS REST API 2.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="52_RUNOS_CLI.html">RUNOS CLI 2.0</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RUNOS 2.0</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>RUNOS Adminitrator Guide</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/12_RUNOS_UserGuide.rst.txt" rel="nofollow"> </a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="runos-adminitrator-guide">
+<h1>RUNOS Adminitrator Guide<a class="headerlink" href="#runos-adminitrator-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="runos-configuration">
+<h2>RUNOS Configuration<a class="headerlink" href="#runos-configuration" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="default-configuration-file">
+<h3>Default Configuration File<a class="headerlink" href="#default-configuration-file" title="Permalink to this headline">¶</a></h3>
+<p>Default RUNOS core configuration is described in default-settings.json file (path: runos/default-settings.json).</p>
+</div>
+<div class="section" id="application-configuration-file">
+<h3>Application Configuration File<a class="headerlink" href="#application-configuration-file" title="Permalink to this headline">¶</a></h3>
+<p>Default configuration of each application is described in settings.json file from app sources (path: runos/src/apps/&lt;APP NAME&gt;/settings.json).</p>
+</div>
+<div class="section" id="runos-configuration-file">
+<h3>RUNOS Configuration File<a class="headerlink" href="#runos-configuration-file" title="Permalink to this headline">¶</a></h3>
+<p>Total RUNOS configuration with all apps is automaticaly generated.</p>
+<p>The general configuration of the RUNOS controller with all applications is automatically generated in the runos-settings.json file (path: runos/runos-settings.json)</p>
+<p>After each rebuilding RUNOS with apps, runos-settings.json is updated.</p>
+</div>
+<div class="section" id="make-your-configuration-file">
+<h3>Make Your Configuration File<a class="headerlink" href="#make-your-configuration-file" title="Permalink to this headline">¶</a></h3>
+<p>After first building you can change runos-settings.json file, save with new name (for example: new-runos-settings.json).</p>
+<p>Then you can start RUNOS with this settings file using the following command with option <code class="docutils literal notranslate"><span class="pre">`-c`</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">build</span><span class="o">/</span><span class="n">runos</span> <span class="o">-</span><span class="n">c</span> <span class="n">new</span><span class="o">-</span><span class="n">runos</span><span class="o">-</span><span class="n">settings</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>or you can specify the full path to the configuration file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">build</span><span class="o">/</span><span class="n">runos</span> <span class="o">-</span><span class="n">c</span> <span class="o">/&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">new</span> <span class="n">settings</span> <span class="n">file</span><span class="o">&gt;/</span><span class="n">new</span><span class="o">-</span><span class="n">runos</span><span class="o">-</span><span class="n">settings</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="runos-web-user-interface">
+<h2>RUNOS Web User Interface<a class="headerlink" href="#runos-web-user-interface" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="_images/webui.png"><img alt="_images/webui.png" src="_images/webui.png" style="width: 600px;" /></a>
+</div>
+<div class="section" id="data-plane-monitoring">
+<h2>Data Plane Monitoring<a class="headerlink" href="#data-plane-monitoring" title="Permalink to this headline">¶</a></h2>
+<p>You can see settings of each switch:</p>
+<a class="reference internal image-reference" href="_images/router-settings.png"><img alt="_images/router-settings.png" src="_images/router-settings.png" style="width: 600px;" /></a>
+<p>You can see settings of each port:</p>
+<a class="reference internal image-reference" href="_images/port-settings.png"><img alt="_images/port-settings.png" src="_images/port-settings.png" style="width: 600px;" /></a>
+<p>Port statistics:</p>
+<a class="reference internal image-reference" href="_images/port-statistic.png"><img alt="_images/port-statistic.png" src="_images/port-statistic.png" style="width: 600px;" /></a>
+<p>You can see flow tables, group table and meter table of each switch:</p>
+<a class="reference internal image-reference" href="_images/tables.png"><img alt="_images/tables.png" src="_images/tables.png" style="width: 150px;" /></a>
+<p>Flow table:</p>
+<a class="reference internal image-reference" href="_images/flow-table.png"><img alt="_images/flow-table.png" src="_images/flow-table.png" style="width: 600px;" /></a>
+</div>
+<div class="section" id="control-plane-monitoring">
+<h2>Control Plane Monitoring<a class="headerlink" href="#control-plane-monitoring" title="Permalink to this headline">¶</a></h2>
+<p>You can see statistics of cotrol OpenFlow traffic:</p>
+<a class="reference internal image-reference" href="_images/monitor.png"><img alt="_images/monitor.png" src="_images/monitor.png" style="width: 600px;" /></a>
+<p>Statistics of cotrol OpenFlow traffic for each switch:</p>
+<a class="reference internal image-reference" href="_images/control-traffic.png"><img alt="_images/control-traffic.png" src="_images/control-traffic.png" style="width: 600px;" /></a>
+</div>
+<div class="section" id="runos-cluster">
+<h2>RUNOS Cluster<a class="headerlink" href="#runos-cluster" title="Permalink to this headline">¶</a></h2>
+<p>Current state of RUNOS Cluster:</p>
+<a class="reference internal image-reference" href="_images/cluster.png"><img alt="_images/cluster.png" src="_images/cluster.png" style="width: 600px;" /></a>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="13_RUNOS_DeveloperGuide.html" class="btn btn-neutral float-right" title="RUNOS Developer Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="11_RUNOS_InstallationGuide.html" class="btn btn-neutral float-left" title="RUNOS Installation Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, ARCCN
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

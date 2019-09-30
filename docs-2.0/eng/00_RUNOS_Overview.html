@@ -1,0 +1,265 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>RUNOS Overview &mdash; RUNOS 2.0  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="RUNOS Downloads" href="01_RUNOS_Downloads.html" />
+    <link rel="prev" title="RUNOS 2.0 Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS 2.0
+          
+
+          
+            
+            <img src="_static/logo_runos_small2.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RUNOS Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#key-features">Key Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-overview">Architecture Overview</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="01_RUNOS_Downloads.html">RUNOS Downloads</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="11_RUNOS_InstallationGuide.html">RUNOS Installation Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="12_RUNOS_UserGuide.html">RUNOS Adminitrator Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="13_RUNOS_DeveloperGuide.html">RUNOS Developer Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="14_RUNOS_ContributorGuide.html">RUNOS Contributor Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="31_tutorial_01.html">Tutorial 1: L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32_tutorial_02.html">Tutorial 2: L2 Learning Switch with CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33_tutorial_03.html">Tutorial 3: L2 Learning Switch with REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="34_tutorial_04.html">Tutorial 4: Distributed L2 Learning Switch</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Available Applications</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="41_LearningSwitch.html">L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="42_HostManager.html">Host Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_AppTemplate.html">Application Template</a></li>
+</ul>
+<p class="caption"><span class="caption-text">OTHER DOCUMENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="51_RUNOS_REST_API.html">RUNOS REST API 2.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="52_RUNOS_CLI.html">RUNOS CLI 2.0</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RUNOS 2.0</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>RUNOS Overview</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/00_RUNOS_Overview.rst.txt" rel="nofollow"> </a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="runos-overview">
+<h1>RUNOS Overview<a class="headerlink" href="#runos-overview" title="Permalink to this headline">¶</a></h1>
+<p>RUNOS is an open-source distributed SDN/OpenFlow controller for enterprise software-defined networks, datacenter and career grade SDN networks.
+RUNOS is developed by <a class="reference external" href="http://en.arccn.ru/">Applied Research Center of Computer Networks</a> from Russia.</p>
+<div class="section" id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>High performance and scalability is ensured by implementation in C++17 and and the using of multithreading</li>
+<li>High Availability (Active/Standby)</li>
+<li>Modularity</li>
+<li>Extensibility of functionality</li>
+<li>REST API for external applications</li>
+<li>Monitoring tools (port statistics, control traffic statistics)</li>
+<li>Supports  <a class="reference external" href="https://www.opennetworking.org/wp-content/uploads/2014/10/openflow-spec-v1.3.0.pdf">OpenFlow version 1.3</a></li>
+<li>Supports CLI for debugging</li>
+<li>Supports Web UI: visualization of the entire network topology and detailed information about individual elements</li>
+<li>Documentation and support</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="_images/arch.png"><img alt="_images/arch.png" src="_images/arch.png" style="width: 600px;" /></a>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="01_RUNOS_Downloads.html" class="btn btn-neutral float-right" title="RUNOS Downloads" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="RUNOS 2.0 Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, ARCCN
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

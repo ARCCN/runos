@@ -1,0 +1,604 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>RUNOS REST API 2.0 &mdash; RUNOS 2.0  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="RUNOS CLI 2.0" href="52_RUNOS_CLI.html" />
+    <link rel="prev" title="Application Template" href="40_AppTemplate.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> RUNOS 2.0
+          
+
+          
+            
+            <img src="_static/logo_runos_small2.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="00_RUNOS_Overview.html">RUNOS Overview</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="01_RUNOS_Downloads.html">RUNOS Downloads</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="11_RUNOS_InstallationGuide.html">RUNOS Installation Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="12_RUNOS_UserGuide.html">RUNOS Adminitrator Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="13_RUNOS_DeveloperGuide.html">RUNOS Developer Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="14_RUNOS_ContributorGuide.html">RUNOS Contributor Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="31_tutorial_01.html">Tutorial 1: L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32_tutorial_02.html">Tutorial 2: L2 Learning Switch with CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33_tutorial_03.html">Tutorial 3: L2 Learning Switch with REST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="34_tutorial_04.html">Tutorial 4: Distributed L2 Learning Switch</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Available Applications</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="41_LearningSwitch.html">L2 Learning Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="42_HostManager.html">Host Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="40_AppTemplate.html">Application Template</a></li>
+</ul>
+<p class="caption"><span class="caption-text">OTHER DOCUMENTATION</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RUNOS REST API 2.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#runos-core-api-s">RUNOS Core API’s</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#switches-apis">Switches APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flow-tables-apis">Flow Tables APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#links-apis">Links APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recovery-manager-apis">Recovery Manager APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#statistics-apis">Statistics APIs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#runos-applications-api-s">RUNOS Applications API’s</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#l2-learningswitch-rest">L2-LearningSwitch REST</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#host-manager-rest">Host Manager REST</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="52_RUNOS_CLI.html">RUNOS CLI 2.0</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RUNOS 2.0</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>RUNOS REST API 2.0</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/51_RUNOS_REST_API.rst.txt" rel="nofollow"> </a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="runos-rest-api-2-0">
+<h1>RUNOS REST API 2.0<a class="headerlink" href="#runos-rest-api-2-0" title="Permalink to this headline">¶</a></h1>
+<p>Common REST call:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">http</span><span class="p">:</span><span class="o">//&lt;</span><span class="n">IP_runos</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">port_runos</span><span class="o">&gt;/&lt;</span><span class="n">REST</span> <span class="n">Command</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Default RUNOS port for REST is 8000.</p>
+<p>An example of REST call:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="p">:</span><span class="mi">8000</span><span class="o">/</span><span class="n">switchesview</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>An example of REST call using curl:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="o">-</span><span class="n">X</span> <span class="n">GET</span> <span class="s1">&#39;http://&lt;IP_runos&gt;:&lt;port_runos&gt;/switchesview/&#39;</span>
+</pre></div>
+</div>
+<div class="section" id="runos-core-api-s">
+<h2>RUNOS Core API’s<a class="headerlink" href="#runos-core-api-s" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="switches-apis">
+<h3>Switches APIs<a class="headerlink" href="#switches-apis" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="2%" />
+<col width="27%" />
+<col width="7%" />
+<col width="43%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">#</th>
+<th class="head">URI</th>
+<th class="head">Method</th>
+<th class="head">Description</th>
+<th class="head">Arguments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>/switch_type/&lt;dpid&gt;/</td>
+<td>GET</td>
+<td>Returns type of switch</td>
+<td>Switch DPID</td>
+</tr>
+<tr class="row-odd"><td>2</td>
+<td>/switches/</td>
+<td>GET</td>
+<td>Returns list of connected switches</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>3</td>
+<td>/switches/&lt;dpid&gt;/</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns detailed information</div>
+<div class="line">about switch with DPID &lt;dpid&gt;</div>
+</div>
+</td>
+<td>Switch DPID</td>
+</tr>
+<tr class="row-odd"><td>4</td>
+<td><div class="first last line-block">
+<div class="line">/switches/&lt;dpid&gt;/</div>
+<div class="line">ports/&lt;portid&gt;/</div>
+</div>
+</td>
+<td>GET</td>
+<td>Returns port settings</td>
+<td><div class="first last line-block">
+<div class="line">Switch DPID</div>
+<div class="line">Port ID</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>5</td>
+<td><div class="first last line-block">
+<div class="line">/switches/&lt;dpid&gt;/</div>
+<div class="line">ports/&lt;portid&gt;/</div>
+<div class="line">queues/&lt;queueid&gt;/</div>
+<div class="line">stats/</div>
+</div>
+</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns queue &lt;queueid&gt;</div>
+<div class="line">statistics of port &lt;portid&gt;</div>
+<div class="line">of switch &lt;dpid&gt;</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Switch DPID</div>
+<div class="line">Port ID</div>
+<div class="line">Queue ID</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="flow-tables-apis">
+<h3>Flow Tables APIs<a class="headerlink" href="#flow-tables-apis" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="2%" />
+<col width="27%" />
+<col width="7%" />
+<col width="43%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">#</th>
+<th class="head">URI</th>
+<th class="head">Method</th>
+<th class="head">Description</th>
+<th class="head">Arguments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td><div class="first last line-block">
+<div class="line">/switches/&lt;dpid&gt;/</div>
+<div class="line">flow-tables/</div>
+</div>
+</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns rules of flow tables for</div>
+<div class="line">switch with DPID</div>
+</div>
+</td>
+<td>Switch DPID</td>
+</tr>
+<tr class="row-odd"><td>2</td>
+<td><div class="first last line-block">
+<div class="line">/switches/&lt;dpid&gt;/</div>
+<div class="line">group-desc/</div>
+</div>
+</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns rules of group table for</div>
+<div class="line">switch with DPID</div>
+</div>
+</td>
+<td>Switch DPID</td>
+</tr>
+<tr class="row-even"><td>3</td>
+<td><div class="first last line-block">
+<div class="line">/switches/&lt;dpid&gt;/</div>
+<div class="line">group-stat/</div>
+</div>
+</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns rules statistics of group</div>
+<div class="line">tables for switch with DPID</div>
+</div>
+</td>
+<td>Switch DPID</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="links-apis">
+<h3>Links APIs<a class="headerlink" href="#links-apis" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="2%" />
+<col width="27%" />
+<col width="7%" />
+<col width="43%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">#</th>
+<th class="head">URI</th>
+<th class="head">Method</th>
+<th class="head">Description</th>
+<th class="head">Arguments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>/links/</td>
+<td>GET</td>
+<td>Returns list all links</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="recovery-manager-apis">
+<h3>Recovery Manager APIs<a class="headerlink" href="#recovery-manager-apis" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="2%" />
+<col width="27%" />
+<col width="7%" />
+<col width="43%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">#</th>
+<th class="head">URI</th>
+<th class="head">Method</th>
+<th class="head">Description</th>
+<th class="head">Arguments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>/switchesview/</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns list of switches and its</div>
+<div class="line">roles to each controller</div>
+</div>
+</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>2</td>
+<td>/masterview/</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns list of controllers and</div>
+<div class="line">its role for each switch</div>
+</div>
+</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>3</td>
+<td>/recovery/</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns Recovery Manager state</div>
+<div class="line">and settings</div>
+</div>
+</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="statistics-apis">
+<h3>Statistics APIs<a class="headerlink" href="#statistics-apis" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="2%" />
+<col width="27%" />
+<col width="7%" />
+<col width="43%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">#</th>
+<th class="head">URI</th>
+<th class="head">Method</th>
+<th class="head">Description</th>
+<th class="head">Arguments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>/switches/ports/stats/</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Returns port statistics of all</div>
+<div class="line">switches</div>
+</div>
+</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>2</td>
+<td><div class="first last line-block">
+<div class="line">/switches/&lt;dpid&gt;/</div>
+<div class="line">ports/&lt;portid&gt;/</div>
+<div class="line">stats/</div>
+</div>
+</td>
+<td>GET</td>
+<td><div class="first last line-block">
+<div class="line">Return statistic of port with</div>
+<div class="line">&lt;portid&gt; of switch with &lt;dpid&gt;</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Switch DPID</div>
+<div class="line">Port ID</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="runos-applications-api-s">
+<h2>RUNOS Applications API’s<a class="headerlink" href="#runos-applications-api-s" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="l2-learningswitch-rest">
+<h3>L2-LearningSwitch REST<a class="headerlink" href="#l2-learningswitch-rest" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="2%" />
+<col width="27%" />
+<col width="7%" />
+<col width="43%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">#</th>
+<th class="head">URI</th>
+<th class="head">Method</th>
+<th class="head">Description</th>
+<th class="head">Arguments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>/l2switch/</td>
+<td>GET</td>
+<td>Returns list of pairs &lt;MAC, port&gt;</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="host-manager-rest">
+<h3>Host Manager REST<a class="headerlink" href="#host-manager-rest" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="2%" />
+<col width="27%" />
+<col width="7%" />
+<col width="43%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">#</th>
+<th class="head">URI</th>
+<th class="head">Method</th>
+<th class="head">Description</th>
+<th class="head">Arguments</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>/hosts/</td>
+<td>GET</td>
+<td>Returns list of hosts</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="52_RUNOS_CLI.html" class="btn btn-neutral float-right" title="RUNOS CLI 2.0" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="40_AppTemplate.html" class="btn btn-neutral float-left" title="Application Template" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, ARCCN
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
