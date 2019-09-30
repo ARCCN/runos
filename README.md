@@ -3,7 +3,7 @@
 ## What is RUNOS?
 
 RUNOS is an open-source distributed SDN/OpenFlow controller for enterprise software-defined networks, datacenter and career grade SDN networks.
-RUNOS is developed by [Applied Research Center of Computer Networks](http://en.arccn.ru/) from Russia.
+RUNOS is developed by [Applied Research Center for Computer Networks (ARCCN)](http://en.arccn.ru/) from Russia.
 
 
 ## RUNOS Key Features
