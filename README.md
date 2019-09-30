@@ -68,26 +68,30 @@ cd ..
 
 ### Install Application from Source
 1. Go to the apps folder::
-
-    cd /runos/src/apps
+```
+cd /runos/src/apps
+```
 
 2. Getting application sources::
-	
-	git clone http://<application repository path>/app.git
+```
+git clone http://<application repository path>/app.git
+```
 
 3. If it is necessary, edit application's configuration file (settings.json) inside application directory.
     
 4. Run `nix-shell` inside runos directory::
-
-	cd ../..
-	nix-shell
+```
+cd ../..
+nix-shell
+```
 
 5. Rebuild RUNOS with application inside build directory::
-
-	cd build
-	cmake ..
-	make
-	cd ..
+```
+cd build
+cmake ..
+make
+cd ..
+```
 
 ### Start RUNOS
 * Start RUNOS with default RUNOS settings file (runos-settings.json):
