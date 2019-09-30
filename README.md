@@ -2,7 +2,9 @@
 
 ## What is RUNOS?
 
-RUNOS is a SDN/OpenFlow controller for enterprise software-defined networks, datacenter and career grade SDN networks. 
+RUNOS is an open-source distributed SDN/OpenFlow controller for enterprise software-defined networks, datacenter and career grade SDN networks.
+RUNOS is developed by [Applied Research Center of Computer Networks](http://en.arccn.ru/) from Russia.
+
 
 ## RUNOS Key Features
 
@@ -12,7 +14,7 @@ RUNOS is a SDN/OpenFlow controller for enterprise software-defined networks, dat
 * Extensibility of functionality
 * REST API for external applications
 * Monitoring tools (port statistics, control traffic statistics)
-* Support OpenFlow version 1.3 [1]
+* Support [OpenFlow version 1.3](https://www.opennetworking.org/wp-content/uploads/2014/10/openflow-spec-v1.3.0.pdf)
 * Support CLI for debugging
 * Support Web UI: visualization of the entire network topology and detailed information about individual elements
 * Documentation and support
@@ -28,21 +30,20 @@ RUNOS is a SDN/OpenFlow controller for enterprise software-defined networks, dat
 ### Dependencies
 
 
-1. Install Nix package manager [2]:
+1. Install curl and [Nix package manager](https://nixos.org/nix/manual/):
 ``` 
+sudo apt-get install curl
 curl https://nixos.org/nix/install | sh 
 ```
 
-2. Install Redis in-memory data store [3]:
+2. Install [Redis in-memory data store](https://redis.io/):
 ```
 sudo apt install redis-server
 ```
-3. Install nginx server [4]:
+3. Install [nginx server](https://nginx.org/en/):
 ```
 sudo apt install nginx
 ```
-
-
 
 ### Build RUNOS from Source
 1. Getting sources:
@@ -65,19 +66,41 @@ make
 cd ..
 ```
 
+### Install Application from Source
+1. Go to the apps folder::
+
+    cd /runos/src/apps
+
+2. Getting application sources::
+	
+	git clone http://<application repository path>/app.git
+
+3. If it is necessary, edit application's configuration file (settings.json) inside application directory.
+    
+4. Run `nix-shell` inside runos directory::
+
+	cd ../..
+	nix-shell
+
+5. Rebuild RUNOS with application inside build directory::
+
+	cd build
+	cmake ..
+	make
+	cd ..
+
 ### Start RUNOS
-* Start RUNOS with default network settings file (network-settings-with-apps.json):
+* Start RUNOS with default RUNOS settings file (runos-settings.json):
 ```
 ./build/runos
 ```
 
-* Start RUNOS with your network settings file (your_network_settings.json):
+* Start RUNOS with your settings file (your_runos_settings.json):
 ```
-./build/runos -c /path_to_file/your_network_settings.json
+./build/runos -c /path_to_file/your_runos_settings.json
 ```
 
-### Interacting with RUNOS via WebUI
-
+### RUNOS Web UI Configuring
 
 1. Configure nginx server (edit nginx.conf):
 ```
@@ -111,7 +134,7 @@ http://$CONTROLLER_IP:8080/topology.html
 
 ## Quick RUNOS Test Using Mininet
 
-1. Install Mininet network emulator [5]:
+1. Install [Mininet network emulator](http://mininet.org/):
 ```
 git clone git://github.com/mininet/mininet
 cd mininet
@@ -136,13 +159,11 @@ sudo mn --topo linear,4 --switch ovsk,protocols=OpenFlow13 --controller remote,i
 
 ## Documentation
 
-* Install RUNOS using virtual machine:
+* Install RUNOS using virtual machine: [Installation guide](http://arccn.github.io/runos/docs-2.0/eng/11_RUNOS_InstallationGuide.html#installation-with-virtual-machine-image)
 
-* Install RUNOS using docker:
+* Install RUNOS using docker: [Installation guide](http://arccn.github.io/runos/docs-2.0/eng/11_RUNOS_InstallationGuide.html#installation-with-docker)
 
-* English user's and developer's guide:
-
-* Russian user's and developer's guide:
+* English user's and developer's guide: [RUNOS Documentation 2.0](http://arccn.github.io/runos/docs-2.0/eng/index.html)
 
 
 ## Support
@@ -158,15 +179,3 @@ sudo mn --topo linear,4 --switch ovsk,protocols=OpenFlow13 --controller remote,i
 ## License
 
 RUNOS SDN/OpenFlow controller is published under Apache License 2.0
-
-## References
-
-[1]: ONF. OpenFlow Switch Specification. Version 1.3.0 (Wire Protocol 0x04)
-
-[2]: Nix Package Manager Guide. https://nixos.org/nix/manual/
-
-[3]: Redis. https://redis.io/
-
-[4]: Nginx. https://nginx.org/en/
-
-[5]: Mininet. http://mininet.org/
