@@ -8,16 +8,16 @@ RUNOS is developed by [Applied Research Center for Computer Networks (ARCCN)](ht
 
 ## RUNOS Key Features
 
-* High performance and scalability is ensured by implementation in C++17 and and the using of multithreading 
-* High Availability (Active/Standby)
-* Modularity
-* Extensibility of functionality
-* REST API for external applications
-* Monitoring tools (port statistics, control traffic statistics)
-* Support [OpenFlow version 1.3](https://www.opennetworking.org/wp-content/uploads/2014/10/openflow-spec-v1.3.0.pdf)
-* Support CLI for debugging
-* Support Web UI: visualization of the entire network topology and detailed information about individual elements
-* Documentation and support
+* High performance and scalability is ensured by implementation in C++17 and and the using of multithreading.
+* High Availability (Active/Standby).
+* Modularity.
+* Extensibility of functionality.
+* [REST API](http://arccn.github.io/runos/docs-2.0/eng/51_RUNOS_REST_API.html) for external applications.
+* Monitoring tools (port statistics, control traffic statistics).
+* Support [OpenFlow version 1.3](https://www.opennetworking.org/wp-content/uploads/2014/10/openflow-spec-v1.3.0.pdf).
+* Support CLI for debugging.
+* Support Web UI: visualization of the entire network topology and detailed information about individual elements(switches, ports, links, hosts).
+* [Documentation](http://arccn.github.io/runos/docs-2.0/eng/index.html) and support.
 
 ## Getting Started
 
@@ -167,7 +167,9 @@ sudo mn --topo linear,4 --switch ovsk,protocols=OpenFlow13 --controller remote,i
 
 * Install RUNOS using docker: [Installation guide](http://arccn.github.io/runos/docs-2.0/eng/11_RUNOS_InstallationGuide.html#installation-with-docker)
 
-* English user's and developer's guide: [RUNOS Documentation 2.0](http://arccn.github.io/runos/docs-2.0/eng/index.html)
+* User's and developer's guide: [RUNOS Documentation 2.0](http://arccn.github.io/runos/docs-2.0/eng/index.html)
+
+* REST API description: [RUNOS REST API](http://arccn.github.io/runos/docs-2.0/eng/51_RUNOS_REST_API.html)
 
 
 ## Support
