@@ -108,15 +108,16 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#logging">Logging</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#extract-data-from-configuration-file">Extract Data from Configuration File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extract-settings-from-configuration-file">Extract Settings from Configuration File</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#flow-tables">Flow Tables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#signals">Signals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#packet-parsing">Packet Parsing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#openflow-message-sending">OpenFlow Message Sending</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#matching-fields">Matching Fields</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#packet-parsing">Packet Parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Packet Parsing</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">RUNOS Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">RUNOS Core</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#application">Application</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#loader">Loader</a></li>
 </ul>
@@ -361,8 +362,8 @@ REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot
 </pre></div>
 </div>
 </div>
-<div class="section" id="extract-data-from-configuration-file">
-<h3>Extract Data from Configuration File<a class="headerlink" href="#extract-data-from-configuration-file" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="extract-settings-from-configuration-file">
+<h3>Extract Settings from Configuration File<a class="headerlink" href="#extract-settings-from-configuration-file" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="flow-tables">
 <h3>Flow Tables<a class="headerlink" href="#flow-tables" title="Permalink to this headline">¶</a></h3>
@@ -370,19 +371,148 @@ REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot
 <div class="section" id="signals">
 <h3>Signals<a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h3>
 </div>
+<div class="section" id="packet-parsing">
+<h3>Packet Parsing<a class="headerlink" href="#packet-parsing" title="Permalink to this headline">¶</a></h3>
+</div>
 <div class="section" id="openflow-message-sending">
 <h3>OpenFlow Message Sending<a class="headerlink" href="#openflow-message-sending" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="matching-fields">
 <h3>Matching Fields<a class="headerlink" href="#matching-fields" title="Permalink to this headline">¶</a></h3>
+<p>RUNOS::OXM support the following Match fields from <a class="reference external" href="https://www.opennetworking.org/wp-content/uploads/2014/10/openflow-spec-v1.3.0.pdf">OpenFlow 1.3 protocol</a> .</p>
+<p>Depending on fields such as the MAC address and IP address, you can further specify the mask.</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="50%" />
+<col width="16%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Field</th>
+<th class="head">Description</th>
+<th class="head">Basic Type</th>
+<th class="head">Mask Support</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>in_port</td>
+<td>Port number of receiving port</td>
+<td>uint8_t</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>eth_type</td>
+<td>Frame type of Ethernet</td>
+<td>uint16_t</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>eth_src</td>
+<td>Source MAC address of Ethernet</td>
+<td>ethernet</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>eth_dst</td>
+<td>Destination MAC address of Ethernet</td>
+<td>ethernet</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>ip_proto</td>
+<td>Protocol type of IP</td>
+<td>uint8_t</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>ipv4_src</td>
+<td>Source IP address of IPv4</td>
+<td>uint32_t</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>ipv4_dst</td>
+<td>Destination IP address of IPv4</td>
+<td>uint32_t</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>tcp_src</td>
+<td>Source port number of TCP</td>
+<td>uint16_t</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>tcp_dst</td>
+<td>Destination port number of TCP</td>
+<td>uint16_t</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>udp_src</td>
+<td>Source port number of UDP</td>
+<td>uint16_t</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>udp_dst</td>
+<td>Destination port number of UDP</td>
+<td>uint16_t</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>arp_spa</td>
+<td>Source IP address of ARP</td>
+<td>uint32_t</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>arp_tpa</td>
+<td>Target IP address of ARP</td>
+<td>uint32_t</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>arp_sha</td>
+<td>Source MAC address of ARP</td>
+<td>uint32_t</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>arp_tha</td>
+<td>Target MAC address of ARP</td>
+<td>uint32_t</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>arp_op</td>
+<td>Operation code of ARP</td>
+<td>uint16_t</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>vlan_vid</td>
+<td>VLAN identificator</td>
+<td>uint16_t</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>ipv6_src</td>
+<td>Source IP address of IPv6</td>
+<td>IPv6Addr</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>ipv6_dst</td>
+<td>Destination IP address of IPv6</td>
+<td>IPv6Addr</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>icmp_type</td>
+<td>Type of ICMP</td>
+<td>uint8_t</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>icmp_code</td>
+<td>Code of ICMP</td>
+<td>uint8_t</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
 </div>
-<div class="section" id="packet-parsing">
-<h3>Packet Parsing<a class="headerlink" href="#packet-parsing" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id1">
+<h3>Packet Parsing<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <hr class="docutils" />
-<div class="section" id="id1">
-<h2>RUNOS Core<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h2>RUNOS Core<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li>Application Class</li>
@@ -446,7 +576,7 @@ REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot
 <p><strong>Files:</strong> OFServer.hpp, OFServer.cc,</p>
 </div>
 <div class="section" id="controller">
-<span id="id2"></span><h3>Controller<a class="headerlink" href="#controller" title="Permalink to this headline">¶</a></h3>
+<span id="id3"></span><h3>Controller<a class="headerlink" href="#controller" title="Permalink to this headline">¶</a></h3>
 <p>Controller is …</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> Controller.hpp, Controller.cc</p>
@@ -458,25 +588,25 @@ REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot
 <p><strong>Files:</strong> DpidChecker.hpp, DpidChecker.cc</p>
 </div>
 <div class="section" id="switch-manager">
-<span id="id3"></span><h3>Switch Manager<a class="headerlink" href="#switch-manager" title="Permalink to this headline">¶</a></h3>
+<span id="id4"></span><h3>Switch Manager<a class="headerlink" href="#switch-manager" title="Permalink to this headline">¶</a></h3>
 <p>Switch Manager provides switch discovery and controls switch state in the network topology.</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> SwitchManager.hpp, SwitchManager.cc</p>
 </div>
 <div class="section" id="switch-ordering">
-<span id="id4"></span><h3>Switch Ordering<a class="headerlink" href="#switch-ordering" title="Permalink to this headline">¶</a></h3>
+<span id="id5"></span><h3>Switch Ordering<a class="headerlink" href="#switch-ordering" title="Permalink to this headline">¶</a></h3>
 <p>Switch Ordering provides …</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> SwitchOrdering.hpp, SwitchOrdering.cc</p>
 </div>
 <div class="section" id="link-discovery">
-<span id="id5"></span><h3>Link Discovery<a class="headerlink" href="#link-discovery" title="Permalink to this headline">¶</a></h3>
+<span id="id6"></span><h3>Link Discovery<a class="headerlink" href="#link-discovery" title="Permalink to this headline">¶</a></h3>
 <p>Link Discovery provides link discovery and controls link state in the network topology using LLDP.</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> LinkDiscovery.hpp, LinkDiscovery.cc</p>
 </div>
 <div class="section" id="topology">
-<span id="id6"></span><h3>Topology<a class="headerlink" href="#topology" title="Permalink to this headline">¶</a></h3>
+<span id="id7"></span><h3>Topology<a class="headerlink" href="#topology" title="Permalink to this headline">¶</a></h3>
 <p>Topology provides topology discovery and controls network topology state in the real time.</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> Topology.hpp, Topology.cc</p>
@@ -488,13 +618,13 @@ REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot
 <p><strong>Files:</strong> RecoveryManager.hpp, RecoveryManager.cc</p>
 </div>
 <div class="section" id="database-connector">
-<span id="id7"></span><h3>Database Connector<a class="headerlink" href="#database-connector" title="Permalink to this headline">¶</a></h3>
+<span id="id8"></span><h3>Database Connector<a class="headerlink" href="#database-connector" title="Permalink to this headline">¶</a></h3>
 <p>Database Connector provides controller connection to Redis in-memory data store.</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> DataBaseConnector.hpp, DataBaseConnector.cc</p>
 </div>
 <div class="section" id="flow-entries-verifier">
-<span id="id8"></span><h3>Flow Entries Verifier<a class="headerlink" href="#flow-entries-verifier" title="Permalink to this headline">¶</a></h3>
+<span id="id9"></span><h3>Flow Entries Verifier<a class="headerlink" href="#flow-entries-verifier" title="Permalink to this headline">¶</a></h3>
 <p>Flow Entries Verifier provides …</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> FlowEntriesVerifier.hpp, FlowEntriesVerifier.cc</p>
@@ -506,13 +636,13 @@ REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot
 <p><strong>Files:</strong> OFMsg-Sender.hpp, OFMsg-Sender.cc</p>
 </div>
 <div class="section" id="stats-bucket-manager">
-<span id="id9"></span><h3>Stats Bucket Manager<a class="headerlink" href="#stats-bucket-manager" title="Permalink to this headline">¶</a></h3>
+<span id="id10"></span><h3>Stats Bucket Manager<a class="headerlink" href="#stats-bucket-manager" title="Permalink to this headline">¶</a></h3>
 <p>Stats Bucket Manager …</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> StatsBucketManager.hpp, StatsBucketManager.cc</p>
 </div>
 <div class="section" id="stats-rules-manager">
-<span id="id10"></span><h3>Stats Rules Manager<a class="headerlink" href="#stats-rules-manager" title="Permalink to this headline">¶</a></h3>
+<span id="id11"></span><h3>Stats Rules Manager<a class="headerlink" href="#stats-rules-manager" title="Permalink to this headline">¶</a></h3>
 <p>Stats Rules Manager provides …</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> StatsRulesManager.hpp, StatsRulesManager.cc</p>
@@ -524,7 +654,7 @@ REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot
 <p><strong>Files:</strong> Rest-Listiner.hpp, Rest-Listiner.cc</p>
 </div>
 <div class="section" id="command-line">
-<span id="id11"></span><h3>Command Line<a class="headerlink" href="#command-line" title="Permalink to this headline">¶</a></h3>
+<span id="id12"></span><h3>Command Line<a class="headerlink" href="#command-line" title="Permalink to this headline">¶</a></h3>
 <p>Command Line provides CLI access to controller applications.</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> Command-Line.hpp, Command-Line.cc</p>
