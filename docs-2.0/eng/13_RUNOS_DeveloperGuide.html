@@ -99,6 +99,23 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">RUNOS Developer Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#requirements-to-runos-developer">Requirements to RUNOS developer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#runos-application-development">RUNOS Application Development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#structure-of-application">Structure of Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#basic-methods-of-application">Basic Methods of Application</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#registration-of-application">Registration of Application</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#init-application">Init Application</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#start-application">Start Application</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extract-data-from-configuration-file">Extract Data from Configuration File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flow-tables">Flow Tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#signals">Signals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#openflow-message-sending">OpenFlow Message Sending</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#matching-fields">Matching Fields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#packet-parsing">Packet Parsing</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">RUNOS Core</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#application">Application</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#loader">Loader</a></li>
@@ -120,24 +137,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#stats-rules-manager">Stats Rules Manager</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rest-listiner">Rest-Listiner</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#command-line">Command Line</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#runos-application-development">RUNOS Application Development</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#structure-of-application">Structure of Application</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#basic-methods-of-application">Basic Methods of Application</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#init-application">Init Application</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#start-application">Start Application</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#logging">Logging</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#extract-data-from-configuration-file">Extract Data from Configuration File</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#flow-tables">Flow Tables</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#signals">Signals</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#openflow-message-sending">OpenFlow Message Sending</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#matching-fields">Matching Fields</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#packet-parsing">Packet Parsing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#add-cli-to-application">Add CLI to Application</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#add-rest-to-application">Add REST to Application</a></li>
 </ul>
 </li>
 </ul>
@@ -242,6 +241,146 @@
 </ul>
 </div></blockquote>
 </div>
+<hr class="docutils" />
+<div class="section" id="runos-application-development">
+<h2>RUNOS Application Development<a class="headerlink" href="#runos-application-development" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="structure-of-application">
+<h3>Structure of Application<a class="headerlink" href="#structure-of-application" title="Permalink to this headline">¶</a></h3>
+<p>Each user application for RUNOS have the following structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">docs</span>
+  <span class="o">|--</span><span class="n">app</span><span class="o">.</span><span class="n">rst</span>
+<span class="o">--</span><span class="n">include</span>
+  <span class="o">|--</span><span class="n">App</span><span class="o">.</span><span class="n">hpp</span>
+<span class="o">--</span><span class="n">src</span>
+  <span class="o">|--</span><span class="n">App</span><span class="o">.</span><span class="n">cc</span>
+<span class="o">--</span><span class="n">CMakeLists</span><span class="o">.</span><span class="n">txt</span>
+<span class="o">--</span><span class="n">conanfile</span><span class="o">.</span><span class="n">py</span>
+<span class="o">--</span><span class="n">README</span><span class="o">.</span><span class="n">md</span>
+<span class="o">--</span><span class="n">settings</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+<p>Folder docs contains app.rst file for automatic generation of documentation in the Sphinx.</p>
+<p>Src and include folders contains sources of your application.</p>
+</div>
+<div class="section" id="basic-methods-of-application">
+<h3>Basic Methods of Application<a class="headerlink" href="#basic-methods-of-application" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="registration-of-application">
+<h4>Registration of Application<a class="headerlink" href="#registration-of-application" title="Permalink to this headline">¶</a></h4>
+<dl class="function">
+<dt id="_CPPv420REGISTER_APPLICATION10your_class18list_of_dependeces">
+<span id="_CPPv320REGISTER_APPLICATION10your_class18list_of_dependeces"></span><span id="_CPPv220REGISTER_APPLICATION10your_class18list_of_dependeces"></span><span id="REGISTER_APPLICATION__your_class.list_of_dependeces"></span><code class="descname">REGISTER_APPLICATION</code><span class="sig-paren">(</span>your_class, list_of_dependeces<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420REGISTER_APPLICATION10your_class18list_of_dependeces" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="docutils">
+<dt>where:</dt>
+<dd><ul class="first last simple">
+<li>your_class - name of your application class;</li>
+<li>list_of_dependeces - list of applications on which your application depends.</li>
+</ul>
+</dd>
+</dl>
+<p>Example of YourApp registration:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>namespace runos {
+
+REGISTER_APPLICATION(YourApp, {&quot;controller&quot;, &quot;switch-manager&quot;,
+                                &quot;topology&quot;, &quot;&quot;})
+
+// Methods implementation of YourApp class
+
+} // namespace runos
+</pre></div>
+</div>
+</div>
+<div class="section" id="init-application">
+<h4>Init Application<a class="headerlink" href="#init-application" title="Permalink to this headline">¶</a></h4>
+<p>To init your application you must define <cite>init</cite> method in your application:</p>
+<dl class="function">
+<dt id="_CPPv44initP6LoaderRK6Config">
+<span id="_CPPv34initP6LoaderRK6Config"></span><span id="_CPPv24initP6LoaderRK6Config"></span><span id="init__LoaderP.ConfigCR"></span>void <code class="descname">init</code><span class="sig-paren">(</span>Loader *<em>loader</em>, <em class="property">const</em> Config &amp;<em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv44initP6LoaderRK6Config" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<p>In implementation of this method:</p>
+<ul class="simple">
+<li>you can extract settings from RUNOS configuration file (runos-settings.json);</li>
+<li>you can define dependencies on the other applications;</li>
+<li>you can define handlers;</li>
+<li>you can defines connects &lt;signal to slot&gt; between applications.</li>
+</ul>
+<p>Example of <cite>init</cite> method implementation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">//</span> <span class="n">YourApp</span><span class="o">.</span><span class="n">hpp</span>
+<span class="c1">#include &quot;Application.hpp&quot;</span>
+<span class="c1">#include &quot;Loader.hpp&quot;</span>
+
+<span class="n">namespace</span> <span class="n">runos</span> <span class="p">{</span>
+
+<span class="k">class</span> <span class="nc">YourApp</span> <span class="p">:</span> <span class="n">public</span> <span class="n">Application</span>
+<span class="p">{</span>
+    <span class="n">Q_OBJECT</span>
+    <span class="n">SIMPLE_APPLICATION</span><span class="p">(</span><span class="n">YourApp</span><span class="p">,</span> <span class="s2">&quot;your-app&quot;</span><span class="p">)</span>
+<span class="n">public</span><span class="p">:</span>
+    <span class="n">void</span> <span class="n">init</span><span class="p">(</span><span class="n">Loader</span><span class="o">*</span> <span class="n">loader</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="n">config</span><span class="p">)</span> <span class="n">override</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">}</span> <span class="o">//</span> <span class="n">namespace</span> <span class="n">runos</span>
+
+<span class="o">//</span> <span class="n">YourApp</span><span class="o">.</span><span class="n">cc</span>
+<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;init YourApp ... &quot;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="start-application">
+<h4>Start Application<a class="headerlink" href="#start-application" title="Permalink to this headline">¶</a></h4>
+<dl class="function">
+<dt id="_CPPv47startUpP6Loader">
+<span id="_CPPv37startUpP6Loader"></span><span id="_CPPv27startUpP6Loader"></span><span id="startUp__LoaderP"></span>void <code class="descname">startUp</code><span class="sig-paren">(</span><em class="property">class</em> Loader *<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv47startUpP6Loader" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<p><cite>Startup</cite> methods are launched after all applications are initialized.</p>
+<p>Example of <cite>startUp</cite> method implementation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Application.hpp&quot;</span>
+<span class="c1">#include &quot;Loader.hpp&quot;</span>
+
+<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">startUp</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;All services inited&quot;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="logging">
+<h3>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
+<p>You can use logging of different levels: INFO, WARNING, ERROR.</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Information message&quot;</span><span class="p">;</span>
+<span class="n">LOG</span><span class="p">(</span><span class="n">WARNING</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Warning&quot;</span><span class="p">;</span>
+<span class="n">LOG</span><span class="p">(</span><span class="n">ERROR</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Error&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="extract-data-from-configuration-file">
+<h3>Extract Data from Configuration File<a class="headerlink" href="#extract-data-from-configuration-file" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="flow-tables">
+<h3>Flow Tables<a class="headerlink" href="#flow-tables" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="signals">
+<h3>Signals<a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="openflow-message-sending">
+<h3>OpenFlow Message Sending<a class="headerlink" href="#openflow-message-sending" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="matching-fields">
+<h3>Matching Fields<a class="headerlink" href="#matching-fields" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="packet-parsing">
+<h3>Packet Parsing<a class="headerlink" href="#packet-parsing" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<hr class="docutils" />
 <div class="section" id="id1">
 <h2>RUNOS Core<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <blockquote>
@@ -277,6 +416,7 @@
 </dl>
 </div>
 </div>
+<hr class="docutils" />
 <div class="section" id="runos-core-applications">
 <h2>RUNOS Core Applications<a class="headerlink" href="#runos-core-applications" title="Permalink to this headline">¶</a></h2>
 <p>RUNOS Core consists from the following core applications:</p>
@@ -388,109 +528,6 @@
 <p>Command Line provides CLI access to controller applications.</p>
 <p><strong>Dependencies:</strong></p>
 <p><strong>Files:</strong> Command-Line.hpp, Command-Line.cc</p>
-</div>
-</div>
-<div class="section" id="runos-application-development">
-<h2>RUNOS Application Development<a class="headerlink" href="#runos-application-development" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="structure-of-application">
-<h3>Structure of Application<a class="headerlink" href="#structure-of-application" title="Permalink to this headline">¶</a></h3>
-<p>Each user application for RUNOS have the following structure:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">docs</span>
-  <span class="o">|--</span><span class="n">app</span><span class="o">.</span><span class="n">rst</span>
-<span class="o">--</span><span class="n">include</span>
-  <span class="o">|--</span><span class="n">App</span><span class="o">.</span><span class="n">hpp</span>
-<span class="o">--</span><span class="n">src</span>
-  <span class="o">|--</span><span class="n">App</span><span class="o">.</span><span class="n">cc</span>
-<span class="o">--</span><span class="n">CMakeLists</span><span class="o">.</span><span class="n">txt</span>
-<span class="o">--</span><span class="n">conanfile</span><span class="o">.</span><span class="n">py</span>
-<span class="o">--</span><span class="n">README</span><span class="o">.</span><span class="n">md</span>
-<span class="o">--</span><span class="n">settings</span><span class="o">.</span><span class="n">json</span>
-</pre></div>
-</div>
-<p>Folder docs contains app.rst file for automatic generation of documentation in the Sphinx.</p>
-<p>Src and include folders contains sources of your application.</p>
-</div>
-<div class="section" id="basic-methods-of-application">
-<h3>Basic Methods of Application<a class="headerlink" href="#basic-methods-of-application" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="init-application">
-<h4>Init Application<a class="headerlink" href="#init-application" title="Permalink to this headline">¶</a></h4>
-<p>To init your application you must define <cite>init</cite> method in your application:</p>
-<dl class="function">
-<dt id="_CPPv44initP6LoaderRK6Config">
-<span id="_CPPv34initP6LoaderRK6Config"></span><span id="_CPPv24initP6LoaderRK6Config"></span><span id="init__LoaderP.ConfigCR"></span>void <code class="descname">init</code><span class="sig-paren">(</span>Loader *<em>loader</em>, <em class="property">const</em> Config &amp;<em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv44initP6LoaderRK6Config" title="Permalink to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<p>In implementation of this method:</p>
-<ul class="simple">
-<li>you can extract settings from RUNOS configuration file (runos-settings.json);</li>
-<li>you can define dependencies on the other applications;</li>
-<li>you can define handlers;</li>
-<li>you can defines connects &lt;signal to slot&gt; between applications.</li>
-</ul>
-<p>Example of <cite>init</cite> method implementation:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Application.hpp&quot;</span>
-<span class="c1">#include &quot;Loader.hpp&quot;</span>
-
-<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">init</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="p">,</span> <span class="n">const</span> <span class="n">Config</span><span class="o">&amp;</span> <span class="p">)</span>
-<span class="p">{</span>
-    <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;init YourApp ... &quot;</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="start-application">
-<h4>Start Application<a class="headerlink" href="#start-application" title="Permalink to this headline">¶</a></h4>
-<dl class="function">
-<dt id="_CPPv47startUpP6Loader">
-<span id="_CPPv37startUpP6Loader"></span><span id="_CPPv27startUpP6Loader"></span><span id="startUp__LoaderP"></span>void <code class="descname">startUp</code><span class="sig-paren">(</span><em class="property">class</em> Loader *<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv47startUpP6Loader" title="Permalink to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<p><cite>Startup</cite> methods are launched after all applications are initialized.</p>
-<p>Example of <cite>startUp</cite> method implementation:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &quot;Application.hpp&quot;</span>
-<span class="c1">#include &quot;Loader.hpp&quot;</span>
-
-<span class="n">void</span> <span class="n">YourApp</span><span class="p">::</span><span class="n">startUp</span><span class="p">(</span><span class="n">Loader</span> <span class="o">*</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;All services inited&quot;</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="section" id="logging">
-<h3>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
-<p>You can use logging of different levels: INFO, WARNING, ERROR.</p>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LOG</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Information message&quot;</span><span class="p">;</span>
-<span class="n">LOG</span><span class="p">(</span><span class="n">WARNING</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Warning&quot;</span><span class="p">;</span>
-<span class="n">LOG</span><span class="p">(</span><span class="n">ERROR</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;Error&quot;</span><span class="p">;</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="extract-data-from-configuration-file">
-<h3>Extract Data from Configuration File<a class="headerlink" href="#extract-data-from-configuration-file" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="flow-tables">
-<h3>Flow Tables<a class="headerlink" href="#flow-tables" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="signals">
-<h3>Signals<a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="openflow-message-sending">
-<h3>OpenFlow Message Sending<a class="headerlink" href="#openflow-message-sending" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="matching-fields">
-<h3>Matching Fields<a class="headerlink" href="#matching-fields" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="packet-parsing">
-<h3>Packet Parsing<a class="headerlink" href="#packet-parsing" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="add-cli-to-application">
-<h3>Add CLI to Application<a class="headerlink" href="#add-cli-to-application" title="Permalink to this headline">¶</a></h3>
-</div>
-<div class="section" id="add-rest-to-application">
-<h3>Add REST to Application<a class="headerlink" href="#add-rest-to-application" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 </div>
