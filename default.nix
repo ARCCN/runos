@@ -26,7 +26,7 @@ in rec {
     # Derivations built for the build system (native builds).
     # Needed for the cross-build.
     nativeBuildInputs = [
-      pkgs.gcc7
+      pkgs.gcc9
       pkgs.cmake
       pkgs.pkgconfig
       pkgs.nodePackages.uglify-js
@@ -54,7 +54,7 @@ in rec {
       libtins
       range-v3
       tiny-process
-      pkgs.qt59.qtbase
+      pkgs.qt5Full
       pkgs.jq
     ]
       # Qt build is broken on OS X. Use system Qt instead.
