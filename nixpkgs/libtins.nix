@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, cmake, boost164, libpcap }:
+{ stdenv, fetchFromGitHub, cmake, boost165, libpcap }:
 
 stdenv.mkDerivation rec {
   name = "libtins-${version}";
@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
   ];
 
   nativeBuildInputs = [ cmake ];
-  buildInputs = [ boost164 libpcap ];
+  buildInputs = [ boost165 libpcap ];
 
   enableParallelBuilding = true;
 }

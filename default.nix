@@ -38,7 +38,7 @@ in rec {
       pkgs.python3 # For tools
       pkgs.pythonPackages.pyparsing
       fmtlib # String Formatting
-      pkgs.boost164
+      pkgs.boost165
       boost-hana # Metaprogramming
       #mettle # Unit Testing
       #breakpad # Crash reporting

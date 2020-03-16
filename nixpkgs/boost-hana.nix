@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, cmake, boost164 }:
+{ stdenv, fetchFromGitHub, cmake, boost165 }:
 
 stdenv.mkDerivation rec {
   name = "boost-hana-${version}";
@@ -12,7 +12,7 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [ cmake ];
-  buildInputs = [ boost164 ];
+  buildInputs = [ boost165 ];
 
   doCheck = if stdenv.cc.isGNU then false else true;
   enableParallelBuilding = true;

@@ -1,4 +1,4 @@
-{ stdenv, boost164, cmake, fetchFromGitHub }:
+{ stdenv, boost165, cmake, fetchFromGitHub }:
 
 stdenv.mkDerivation rec {
   name = "cpp-netlib-0.13-release";
@@ -16,5 +16,5 @@ stdenv.mkDerivation rec {
 
   cmakeFlags = [ "-DCPP-NETLIB_BUILD_TESTS=OFF -DCPP-NETLIB_BUILD_EXAMPLES=OFF" ];
   nativeBuildInputs = [ cmake ];
-  buildInputs = [ boost164 ];
+  buildInputs = [ boost165 ];
 }

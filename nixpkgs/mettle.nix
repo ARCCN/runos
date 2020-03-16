@@ -1,6 +1,6 @@
 { stdenv, fetchFromGitHub, pythonPackages,
   pkgconfig, ninja, which, patchelf,
-  boost164
+  boost165
 }:
 
 stdenv.mkDerivation rec {
@@ -89,15 +89,15 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [ pkgconfig bfg9000 ];
-  buildInputs = [ boost164 ];
+  buildInputs = [ boost165 ];
 
   patchPhase = ''
     cp -a ${bencode}/include/bencode.hpp include
   '';
   configurePhase = ''
     export INSTALL=install
-    export BOOST_INCLUDEDIR=${boost164.dev}/include
-    export BOOST_LIBRARYDIR=${boost164.out}/lib
+    export BOOST_INCLUDEDIR=${boost165.dev}/include
+    export BOOST_LIBRARYDIR=${boost165.out}/lib
     9k --prefix $prefix build
   '';
   buildPhase = ''
@@ -112,9 +112,9 @@ stdenv.mkDerivation rec {
 
   fixupPhase = ''
     stdlib=$(cat ${stdenv.cc}/nix-support/cc-ldflags | sed 's/^ -L//')
-    patchelf --set-rpath $stdlib:${boost164.out}/lib:$out/lib \
+    patchelf --set-rpath $stdlib:${boost165.out}/lib:$out/lib \
              $out/bin/mettle
-    patchelf --set-rpath $stdlib:${boost164.out}/lib \
+    patchelf --set-rpath $stdlib:${boost165.out}/lib \
              $out/lib/libmettle.so
   '';
 
