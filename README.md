@@ -33,7 +33,7 @@ RUNOS is developed by [Applied Research Center for Computer Networks (ARCCN)](ht
 1. Install curl and [Nix package manager](https://nixos.org/nix/manual/):
 ``` 
 sudo apt-get install curl
-curl https://nixos.org/nix/install | sh 
+curl -L https://nixos.org/nix/install | sh 
 ```
 
 2. Install [Redis in-memory data store](https://redis.io/):
