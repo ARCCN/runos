@@ -60,7 +60,7 @@ in rec {
       # Qt build is broken on OS X. Use system Qt instead.
       # ++ stdenv.lib.optional stdenv.isLinux pkgs.qt55.qtbase
       # Fix linkage when sanitizers enabled
-      ++ stdenv.lib.optional stdenv.isDarwin pkgs.libcxxabi;
+      ++ pkgs.lib.optional stdenv.isDarwin pkgs.libcxxabi;
 
     NIX_QT5_TMP=true;
 
@@ -68,7 +68,7 @@ in rec {
       export RANGE_V3_INCLUDE_DIRS="${range-v3}"
       export GLOG_logtostderr=1
       export GLOG_colorlogtostderr=1
-    ''] ++ stdenv.lib.optional stdenv.isDarwin [''
+    ''] ++ pkgs.lib.optional stdenv.isDarwin [''
       export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH":/usr/local/opt/qt5
     ''];
   };

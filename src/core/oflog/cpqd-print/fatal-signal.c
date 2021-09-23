@@ -180,7 +180,7 @@ call_hooks(int sig_nr)
         }
     }
 }
-
+
 static char **files;
 static size_t n_files, max_files;
 
@@ -239,7 +239,7 @@ do_unlink_files(void)
         unlink(files[i]);
     }
 }
-
+
 /* Disables the fatal signal hook mechanism.  Following a fork, one of the
  * resulting processes can call this function to allow it to terminate without
  * triggering fatal signal processing or removing files.  Fatal signal
@@ -258,7 +258,7 @@ fatal_signal_fork(void)
         }
     }
 }
-
+
 static void
 call_sigprocmask(int how, sigset_t* new_set, sigset_t* old_set)
 {

@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, flex, bison }:
+{ stdenv, lib, fetchurl, flex, bison }:
 
 stdenv.mkDerivation rec {
   name = "libpcap-1.7.4";
@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
     else if stdenv.isDarwin then [ "--with-pcap=bpf" ]
     else [];
 
-  prePatch = stdenv.lib.optionalString stdenv.isDarwin ''
+  prePatch = lib.optionalString stdenv.isDarwin ''
     substituteInPlace configure --replace " -arch i386" ""
   '';
 
@@ -26,6 +26,6 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://www.tcpdump.org;
     description = "Packet Capture Library";
-    platforms = stdenv.lib.platforms.unix;
+    platforms = lib.platforms.unix;
   };
 }
