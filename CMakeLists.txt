@@ -93,7 +93,15 @@ else()
     message(STATUS "Your operating system is not supported")
 endif()
 
-target_link_libraries(runos-bin runos ${RUNOS_CLI} ${RUNOS_REST})
+# target_link_libraries(runos-bin runos ${RUNOS_CLI} ${RUNOS_REST})
+execute_process(
+    COMMAND bash -c "find /nix -name 'libstdc++.so.6' | grep gcc-11.3.0-lib"
+    OUTPUT_VARIABLE PATH_LIBSTDC
+)
+
+string(STRIP ${PATH_LIBSTDC} PATH_LIBSTDC_SO)
+target_link_libraries(runos-bin runos ${RUNOS_CLI} ${RUNOS_REST} ${PATH_LIBSTDC_SO})
+
 
 set_target_properties(runos-bin PROPERTIES OUTPUT_NAME runos)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})

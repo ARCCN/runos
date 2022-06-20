@@ -1,17 +1,17 @@
-{ stdenv, fetchurl, cmake, unzip }:
+{ stdenv, fetchFromGitHub, cmake, unzip }:
 
 stdenv.mkDerivation rec {
-  version = "3.0.1";
+  version = "6.1.2";
   name = "fmt-${version}";
-  src = fetchurl {
-    url = "https://github.com/fmtlib/fmt/releases/download/${version}/${name}.zip";
-    sha256 = "0l4514mk83cjimynci3ghrfdchjy8cya1qa45c1fg2lsj7fg16jc";
+  src = fetchFromGitHub {
+    owner = "fmtlib";
+    repo = "fmt";
+    rev = "398343897f98b88ade80bbebdcbe82a36c65a980";
+    sha256 = "0fzqfvwq98ir1mgmggm82xl673s1nbywn8mna50qjiqm71wqq09a";
   };
 
-  preFixup = ''
-    rm $out/include/fmt/{format,ostream}.cc
-  '';
 
-  nativeBuildInputs = [ cmake unzip ];
+
+  nativeBuildInputs = [ cmake ];
   enableParallelBuilding = true;
 }
