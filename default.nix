@@ -18,6 +18,7 @@ let
   #mettle = callPackage ./nixpkgs/mettle.nix { };
   range-v3 = callPackage ./nixpkgs/range-v3.nix { };
   tiny-process = callPackage ./nixpkgs/tiny-process-library.nix { };
+  gtest = callPackage ./nixpkgs/gtest.nix { };
 
 in rec {
   runosEnv = stdenv.mkDerivation {
@@ -26,7 +27,7 @@ in rec {
     # Derivations built for the build system (native builds).
     # Needed for the cross-build.
     nativeBuildInputs = [
-      pkgs.gcc9
+      pkgs.gcc11
       pkgs.cmake
       pkgs.pkgconfig
       pkgs.nodePackages.uglify-js
@@ -55,6 +56,7 @@ in rec {
       tiny-process
       pkgs.libsForQt514.qtbase
       pkgs.jq
+      gtest
     ]
       # Qt build is broken on OS X. Use system Qt instead.
       # ++ stdenv.lib.optional stdenv.isLinux pkgs.qt55.qtbase

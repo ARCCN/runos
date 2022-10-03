@@ -26,7 +26,7 @@ endif()
 # Options
 ################################################################################
 option(RUNOS_ENABLE_MEMCHECK "Run tests under valgrind" OFF)
-option(RUNOS_ENABLE_TESTSING "Enable unit tests" OFF)
+option(RUNOS_ENABLE_TESTING "Enable unit tests" ON)
 option(RUNOS_ENABLE_REST_API "Enable REST API" ON)
 option(RUNOS_ENABLE_CLI "Enable command line interface" ON)
 option(RUNOS_ENABLE_CRASH_REPORTER "Enable crash reporter" ON)
@@ -41,8 +41,7 @@ option(RUNOS_DISABLE_EXPRESSION_DECOMPOSER "Don't decompose expressions in asser
 include(CheckIncludeFileCXX)
 
 option(RUNOS_USE_STD_EXPERIMENTAL_SOURCE_LOCATION "Use std::experimental::source_location if available" OFF)
-CHECK_INCLUDE_FILE_CXX(experimental/source_location RUNOS_HAVE_STD_EXPERIMENTAL_SOURCE_LOCATION)
-CHECK_INCLUDE_FILE_CXX(source_location RUNOS_HAVE_STD_SOURCE_LOCATION)
+option(RUNOS_HAVE_STD_SOURCE_LOCATION "std::source_location is not supported" OFF)
 
 configure_file(${CMAKE_MODULE_PATH}/build-config.hpp.in
                ${CMAKE_BINARY_DIR}/include/runos/build-config.hpp)
@@ -69,6 +68,10 @@ endif()
 ################################################################################
 add_subdirectory(src)
 add_subdirectory(web)
+if(RUNOS_ENABLE_TESTING)
+    enable_testing()
+    add_subdirectory(new_tests)
+endif()
 
 ################################################################################
 # Target
