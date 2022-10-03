@@ -4,10 +4,10 @@ stdenv.mkDerivation rec {
   name = "glog";
 
   src = fetchFromGitHub {
-    owner = "google";
+    owner = "DubHokku";
     repo = "glog";
-    rev = "96a2f23dca4cc7180821ca5f32e526314395d26a";
-    sha256 = "1xd3maiipfbxmhc9rrblc5x52nxvkwxp14npg31y5njqvkvzax9b";
+    rev = "367373d25d44a72bb7d3d72f5464a8ae537b7b75";
+    sha256 = "0b04jpmpjir72a38vdyay81m0x9islghcf8620y780838pav7n5c";
   };
 
   nativeBuildInputs = [ autoconf automake libtool ];

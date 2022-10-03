@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchurl, findutils, fixDarwinDylibNames
+{ pkgs, stdenv, fetchurl, findutils, fixDarwinDylibNames
 , sslSupport? true, openssl
 }:
 
@@ -16,22 +16,22 @@ stdenv.mkDerivation rec {
   # libevent_openssl is moved into its own output, so that openssl isn't present
   # in the default closure.
   outputs = [ "out" "dev" ]
-    ++ lib.optional sslSupport "openssl"
+    ++ pkgs.lib.optional sslSupport "openssl"
     ;
   outputBin = "dev";
   propagatedBuildOutputs = [ "out" ]
-    ++ lib.optional sslSupport "openssl"
+    ++ pkgs.lib.optional sslSupport "openssl"
     ;
 
   buildInputs = []
-    ++ lib.optional sslSupport openssl
-    ++ lib.optional stdenv.isCygwin findutils
-    ++ lib.optional stdenv.isDarwin fixDarwinDylibNames
+    ++ pkgs.lib.optional sslSupport openssl
+    ++ pkgs.lib.optional stdenv.isCygwin findutils
+    ++ pkgs.lib.optional stdenv.isDarwin fixDarwinDylibNames
     ;
 
   doCheck = false; # needs the net
 
-  postInstall = lib.optionalString sslSupport ''
+  postInstall = pkgs.lib.optionalString sslSupport ''
     moveToOutput "lib/libevent_openssl*" "$openssl"
     substituteInPlace "$dev/lib/pkgconfig/libevent_openssl.pc" \
       --replace "$out" "$openssl"
@@ -40,7 +40,7 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  meta = with lib; {
+  meta = with pkgs.lib; {
     description = "Event notification library";
     longDescription = ''
       The libevent API provides a mechanism to execute a callback function

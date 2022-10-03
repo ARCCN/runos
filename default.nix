@@ -32,7 +32,6 @@ in rec {
       pkgs.nodePackages.uglify-js
     ];
 
-
     # Target platform build dependencies.
     buildInputs = [
       pkgs.python3 # For tools

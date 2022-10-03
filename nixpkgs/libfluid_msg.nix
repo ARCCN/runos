@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, autoconf, automake, libtool, pkgconfig }:
+{ pkgs, stdenv, fetchFromGitHub, autoconf, automake, libtool, pkgconfig }:
 
 stdenv.mkDerivation rec {
   name = "libfluid_msg";
@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
   '';
 
   CXXFLAGS = ["-std=c++11"]
-    ++ lib.optional stdenv.isDarwin "-DIFHWADDRLEN=6";
+    ++ pkgs.lib.optional stdenv.isDarwin "-DIFHWADDRLEN=6";
 
   enableParallelBuilding = true;
 }

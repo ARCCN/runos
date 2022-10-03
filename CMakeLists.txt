@@ -95,7 +95,7 @@ endif()
 
 # target_link_libraries(runos-bin runos ${RUNOS_CLI} ${RUNOS_REST})
 execute_process(
-    COMMAND bash -c "find /nix -name 'libstdc++.so.6' | grep gcc-11.3.0-lib"
+    COMMAND bash -c "find /nix -name 'libstdc++.so.6' | grep gcc-11.3.0-lib | head -n 1"
     OUTPUT_VARIABLE PATH_LIBSTDC
 )
 

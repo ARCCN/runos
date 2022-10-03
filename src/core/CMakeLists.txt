@@ -42,7 +42,7 @@ add_library(runos STATIC
     lib/action_parsing.hpp
     lib/poller.cc
     lib/poller.hpp
-    
+
     LinkDiscoveryDriver.cc
     LinkDiscoveryDriver.hpp
     Logger.cc
