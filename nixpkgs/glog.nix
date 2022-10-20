@@ -1,4 +1,4 @@
-{ stdenv, autoconf, automake, libtool, fetchFromGitHub, google-gflags }:
+{ stdenv, autoconf, automake, libtool, fetchFromGitHub, gflags }:
 
 stdenv.mkDerivation rec {
   name = "glog";
@@ -11,7 +11,7 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [ autoconf automake libtool ];
-  buildInputs = [ google-gflags ];
+  buildInputs = [ gflags ];
 
   preConfigure = ''
     ./autogen.sh
