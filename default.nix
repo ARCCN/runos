@@ -28,7 +28,7 @@ in rec {
     nativeBuildInputs = [
       pkgs.gcc9
       pkgs.cmake
-      pkgs.pkgconfig
+      pkgs.pkg-config
       pkgs.nodePackages.uglify-js
     ];
 
@@ -45,7 +45,7 @@ in rec {
       pkgs.libedit # CLI
       cpp-netlib # REST
       conan
-      pkgs.google-gflags
+      pkgs.gflags
       glog # Logging
       libevent
       libfluid_base

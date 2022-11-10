@@ -1,5 +1,5 @@
 { stdenv, fetchFromGitHub, pythonPackages,
-  pkgconfig, ninja, which, patchelf,
+  pkg-config, ninja, which, patchelf,
   boost165
 }:
 
@@ -88,7 +88,7 @@ stdenv.mkDerivation rec {
     doCheck = false;
   };
 
-  nativeBuildInputs = [ pkgconfig bfg9000 ];
+  nativeBuildInputs = [ pkg-config bfg9000 ];
   buildInputs = [ boost165 ];
 
   patchPhase = ''
