@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, autoconf, automake, libtool, pkgconfig, openssl, libevent }:
+{ stdenv, fetchFromGitHub, autoconf, automake, libtool, pkg-config, openssl, libevent }:
 
 stdenv.mkDerivation rec {
   name = "libfluid_base";
@@ -10,7 +10,7 @@ stdenv.mkDerivation rec {
     sha256 = "0zhzh417vcxqyf6mhyg8ra01ax24gk39a8ddhr94ar6llfy2wrly";
   };
 
-  nativeBuildInputs = [ autoconf automake libtool pkgconfig ];
+  nativeBuildInputs = [ autoconf automake libtool pkg-config ];
   buildInputs = [ openssl ];
   propagatedBuildInputs = [ libevent ];
   CXXFLAGS = ["-std=c++11"];

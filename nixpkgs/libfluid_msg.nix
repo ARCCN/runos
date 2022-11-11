@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, autoconf, automake, libtool, pkgconfig }:
+{ stdenv, lib, fetchFromGitHub, autoconf, automake, libtool, pkg-config }:
 
 stdenv.mkDerivation rec {
   name = "libfluid_msg";
@@ -10,7 +10,7 @@ stdenv.mkDerivation rec {
     sha256 = "0k3gxrkj9fxbwpbrf8a65m9akjxqfc1ah40f9g51fclln06d3wcy";
   };
 
-  nativeBuildInputs = [ autoconf automake libtool pkgconfig ];
+  nativeBuildInputs = [ autoconf automake libtool pkg-config ];
   buildInputs = [ ];
 
   preConfigure = ''
