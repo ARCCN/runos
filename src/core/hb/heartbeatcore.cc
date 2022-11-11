@@ -347,8 +347,8 @@ void HeartbeatCore::prepare_connection(CommunicationType type,
                                impl_->settings.multicast_port);
         break;
     case CommunicationType::UNICAST:
-        connection = qMakePair(impl_->settings.unicast_host,
-                               impl_->settings.unicast_port);
+        connection = qMakePair(impl_->settings.unicast_host_send_to,
+                               impl_->settings.unicast_port_send_to);
         break;
     default:
         CHECK(false);
