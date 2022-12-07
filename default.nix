@@ -54,7 +54,7 @@ in rec {
       libtins
       range-v3
       tiny-process
-      pkgs.libsForQt514.qtbase
+      pkgs.libsForQt515.qtbase
       pkgs.jq
     ]
       # Qt build is broken on OS X. Use system Qt instead.
