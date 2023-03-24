@@ -36,7 +36,7 @@ in rec {
     # Target platform build dependencies.
     buildInputs = [
       pkgs.python3 # For tools
-      pkgs.pythonPackages.pyparsing
+      pkgs.python310Packages.pyparsing
       fmtlib # String Formatting
       pkgs.boost165
       boost-hana # Metaprogramming
@@ -44,7 +44,7 @@ in rec {
       #breakpad # Crash reporting
       pkgs.libedit # CLI
       cpp-netlib # REST
-      conan
+      #conan
       pkgs.gflags
       glog # Logging
       libevent
@@ -56,6 +56,7 @@ in rec {
       tiny-process
       pkgs.libsForQt515.qtbase
       pkgs.jq
+      pkgs.gcc12
     ]
       # Qt build is broken on OS X. Use system Qt instead.
       # ++ stdenv.lib.optional stdenv.isLinux pkgs.qt55.qtbase
