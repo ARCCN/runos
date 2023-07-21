@@ -4,17 +4,18 @@ let
   callPackage = pkgs.callPackage;
 
   # Keep this list sorted
-  boost-hana = callPackage ./nixpkgs/boost-hana.nix { };
+  boost165 = callPackage ./nixpkgs/boost.nix { };
+  boost-hana = callPackage ./nixpkgs/boost-hana.nix { boost165 = boost165; };
   #breakpad = callPackage ./nixpkgs/breakpad.nix { };
   conan = callPackage ./nixpkgs/conan.nix { };
-  cpp-netlib = callPackage ./nixpkgs/cpp-netlib.nix { };
+  cpp-netlib = callPackage ./nixpkgs/cpp-netlib.nix { boost165 = boost165; };
   fmtlib = callPackage ./nixpkgs/fmtlib.nix { };
   glog = callPackage ./nixpkgs/glog.nix { };
   libevent = callPackage ./nixpkgs/libevent.nix { };
   libfluid_base = callPackage ./nixpkgs/libfluid_base.nix { libevent = libevent; };
   libfluid_msg = callPackage ./nixpkgs/libfluid_msg.nix { };
   libpcap = callPackage ./nixpkgs/libpcap.nix { };
-  libtins = callPackage ./nixpkgs/libtins.nix { };
+  libtins = callPackage ./nixpkgs/libtins.nix { boost165 = boost165; };
   #mettle = callPackage ./nixpkgs/mettle.nix { };
   range-v3 = callPackage ./nixpkgs/range-v3.nix { };
   tiny-process = callPackage ./nixpkgs/tiny-process-library.nix { };
@@ -38,8 +39,8 @@ in rec {
       pkgs.python3 # For tools
       pkgs.python310Packages.pyparsing
       fmtlib # String Formatting
-      pkgs.boost165
-      boost-hana # Metaprogramming
+      boost165
+      ## boost-hana # Metaprogramming
       #mettle # Unit Testing
       #breakpad # Crash reporting
       pkgs.libedit # CLI
