@@ -27,7 +27,7 @@ template<class ... Args>
 std::string nothrow_format(const char* format_str, Args const& ... args) noexcept
 try {
     return fmt::format(format_str, args...);
-} catch (fmt::FormatError& ex) {
+} catch (fmt::format_error& ex) {
     try {
         return fmt::format("{} (FormatError: {})", format_str, ex.what());
     } catch (std::bad_alloc&) {

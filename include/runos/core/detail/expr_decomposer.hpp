@@ -48,19 +48,27 @@ namespace hana = boost::hana;
 template<class Tag, typename = hana::when<true>>
 struct dump_value_impl
 {
-    static void apply( fmt::Writer& out, std::nullptr_t ) { out << "nullptr"; }
-    static void apply( fmt::Writer& out, std::string const & x ) { out << '\"' << x << "\"s" ; }
-    static void apply( fmt::Writer& out, const char * x ) { out << '\"' << x << '\"' ; }
-    static void apply( fmt::Writer& out, char         x ) { out << '\'' << x << '\'' ; }
-    static void apply( fmt::Writer& out, bool         x ) { out << (x ? "true" : "false"); }
+    static void apply( fmt::memory_buffer& out, std::nullptr_t ) { fmt::format_to( std::back_inserter( out ), "{}", "nullptr" ); }
+    static void apply( fmt::memory_buffer& out, std::string const & x ) 
+      { fmt::format_to( std::back_inserter( out ), "\"{} \"s", x ); }
+    static void apply( fmt::memory_buffer& out, const char * x ) 
+      { fmt::format_to( std::back_inserter( out ),"\"{}\"", x ); }
+    static void apply( fmt::memory_buffer& out, char         x ) 
+      { fmt::format_to( std::back_inserter( out ), "\'{}\'", x ); }
+
+    static void apply( fmt::memory_buffer& out, bool         x ) 
+      { fmt::format_to( std::back_inserter( out ), "{}", ( x ? "true" : "false" )); }
+
 
     template<class T>
-    static void apply( fmt::Writer& out, T const& ) { out << demangle(typeid(T).name()) << "{...}"; }
+    static void apply( fmt::memory_buffer& out, T const& ) 
+      { fmt::format_to( std::back_inserter( out ), "{}{}", demangle(typeid(T).name()), "{...}" ); }
+
 };
 
 struct dump_value_t {
     template<class X>
-    void operator()( fmt::Writer& out, X const& x ) const
+    void operator()( fmt::memory_buffer& out, X const& x ) const
     {
         using Tag = hana::tag_of_t<X>;
         dump_value_impl<Tag>::apply(out, x);
@@ -73,7 +81,9 @@ struct dump_value_impl<X, hana::when< std::is_arithmetic<X>::value &&
                                     ! std::is_same<X, bool>::value &&
                                     ! std::is_same<X, char>::value >>
 {
-    static void apply( fmt::Writer& out, X x ) { out.write("{}", x); }
+    static void apply( fmt::memory_buffer& out, X x ) 
+      { fmt::format_to_n( std::back_inserter( out ), x, "{}", "{}" ); }
+
 };
 
 template<typename T>
@@ -91,9 +101,10 @@ struct is_container
 template<class X>
 struct dump_value_impl<X, hana::when< is_container<X>::value >>
 {
-    static void apply( fmt::Writer& out, X const& x )
+    static void apply( fmt::memory_buffer& out, X const& x )
     {
-        out << "{";
+        fmt::format_to( std::back_inserter( out ), "{" );
+
         // Dump first element
         auto it = x.begin();
         if (it != x.end()) {
@@ -101,14 +112,15 @@ struct dump_value_impl<X, hana::when< is_container<X>::value >>
         }
         // Dump other up to 10 elements
         for (int i = 0; i < 10 && it != x.end(); ++i, ++it) {
-            out.write(", ");
+            fmt::format_to( std::back_inserter( out ), ", " );
             dump_value(out, *it);
         }
         // Dump number of not printed elements in tail
         if (it != x.end()) {
-            out.write(", ... [{} more]", std::distance(it, x.end()));
+            fmt::format_to( std::back_inserter( out ), ", ... [{} more]", std::distance(it, x.end()));
         }
-        out << "}";
+        fmt::format_to( std::back_inserter( out ), "}" );
+
     }
 };
 
@@ -127,13 +139,13 @@ struct is_pair
 template<class X>
 struct dump_value_impl<X, hana::when< is_pair<X>::value >>
 {
-    static void apply( fmt::Writer& out, X const& x )
+    static void apply( fmt::memory_buffer& out, X const& x )
     {
-        out << "(";
+        fmt::format_to( std::back_inserter( out ), "(" );
         dump_value(out, x.first);
-        out << ", ";
+        fmt::format_to( std::back_inserter( out ), ", " );
         dump_value(out, x.second);
-        out << ")";
+        fmt::format_to( std::back_inserter( out ),  ")" );
     }
 };
 
@@ -182,9 +194,10 @@ struct expr
     
     std::string decompose() const
     try {
-        fmt::MemoryWriter ret;
+        fmt::memory_buffer ret;
         self()->eval(ret);
-        return ret.str();
+        return std::string( ret.data());
+
     } catch (std::bad_alloc&) {
         return std::string();
     }
@@ -229,7 +242,7 @@ struct value_expr : expr< value_expr<L> >
         return lhs;
     }
 
-    decltype(auto) eval( fmt::Writer& out ) const
+    decltype(auto) eval( fmt::memory_buffer& out ) const
     {
         dump_value(out, lhs);
         return lhs;
@@ -258,10 +271,10 @@ struct binary_expr : expr< binary_expr<L, Op, R> >
         return Op()(lhs.eval(), rhs.eval());
     }
 
-    auto eval( fmt::Writer& out ) const
+    auto eval( fmt::memory_buffer& out ) const
     {
         auto l = lhs.eval(out);
-        out << op;
+        fmt::format_to( std::back_inserter( out ), "{}", op );
         auto r = rhs.eval(out);
         return Op()(std::move(l), std::move(r));
     }

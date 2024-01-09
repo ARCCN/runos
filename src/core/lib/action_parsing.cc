@@ -27,7 +27,7 @@ namespace of13 = fluid_msg::of13;
 namespace rest {
   
 std::string ip_to_string(uint32_t ip) {
-    return "{:d}.{:d}.{:d}.{:d}"_format(
+    return fmt::format(FMT_STRING("{:d}.{:d}.{:d}.{:d}"),
             (ip >> 0) & 0xFF,
             (ip >> 8) & 0xFF,
             (ip >> 16) & 0xFF,
@@ -104,7 +104,7 @@ void parsingAction(fluid_msg::Action* act, std::string prefix, rest::ptree& pt,
         pt.put(prefix + ".set_queue.queue_id", ((of13::SetQueueAction*)act)->queue_id());
         break;
     case of13::OFPAT_SET_FIELD:
-        parsingSetField(((of13::SetFieldAction*)act)->field(), prefix, pt);
+        parsingSetField(const_cast<of13::OXMTLV*>(((of13::SetFieldAction*)act)->field()), prefix, pt);
         break;
     default:
         LOG(ERROR) << "Unhandled action type: " ;//<< act->type();

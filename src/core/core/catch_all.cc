@@ -49,7 +49,7 @@ static auto make_with( extended_exception const& e )
 {
     std::forward_list<std::string> ret;
     for (auto& p : e.with()) {
-        ret.push_front("{} = {}"_format(p.first, p.second));
+        ret.push_front(fmt::format(FMT_STRING("{} = {}"), p.first, p.second));
     }
     return ret;
 }
@@ -69,7 +69,7 @@ diagnostic_information::diagnostic_information( extended_exception const& e)
                                     , e.where().line()))
     , exception_type(demangle(e.type().name()))
     , condition((strlen(e.condition()) != 0)
-                ? "{} [{}]"_format(e.condition(), e.condition_explained())
+                ? fmt::format(FMT_STRING("{} [{}]"), e.condition(), e.condition_explained())
                 : std::string())
     , with( make_with(e) )
     , nested( from_nested(e) )
@@ -122,16 +122,16 @@ static auto with_from_boost_errinfo( boost::exception const& e )
     std::forward_list<std::string> ret;
 
     auto api_function = boost::get_error_info<boost::errinfo_api_function>(e);
-    if (api_function) ret.push_front("api_function = {}"_format(*api_function));
+    if (api_function) ret.push_front(fmt::format(FMT_STRING("api_function = {}"), *api_function));
 
     auto at_line = boost::get_error_info<boost::errinfo_at_line>(e);
-    if (at_line) ret.push_front("at_line = {}"_format(*at_line));
+    if (at_line) ret.push_front(fmt::format(FMT_STRING("at_line = {}"), *at_line));
 
     auto file_name = boost::get_error_info<boost::errinfo_file_name>(e);
-    if (file_name) ret.push_front("file_name = {}"_format(*file_name));
+    if (file_name) ret.push_front(fmt::format(FMT_STRING("file_name = {}"), *file_name));
 
     auto file_open_mode = boost::get_error_info<boost::errinfo_file_open_mode>(e);
-    if (file_open_mode) ret.push_front("file_open_mode = {}"_format(*file_open_mode));
+    if (file_open_mode) ret.push_front(fmt::format(FMT_STRING("file_open_mode = {}"), *file_open_mode ));
 
     return ret;
 }
