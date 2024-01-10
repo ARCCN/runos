@@ -55,15 +55,12 @@ struct dump_value_impl
       { fmt::format_to( std::back_inserter( out ),"\"{}\"", x ); }
     static void apply( fmt::memory_buffer& out, char         x ) 
       { fmt::format_to( std::back_inserter( out ), "\'{}\'", x ); }
-
     static void apply( fmt::memory_buffer& out, bool         x ) 
       { fmt::format_to( std::back_inserter( out ), "{}", ( x ? "true" : "false" )); }
-
 
     template<class T>
     static void apply( fmt::memory_buffer& out, T const& ) 
       { fmt::format_to( std::back_inserter( out ), "{}{}", demangle(typeid(T).name()), "{...}" ); }
-
 };
 
 struct dump_value_t {
@@ -83,7 +80,6 @@ struct dump_value_impl<X, hana::when< std::is_arithmetic<X>::value &&
 {
     static void apply( fmt::memory_buffer& out, X x ) 
       { fmt::format_to_n( std::back_inserter( out ), x, "{}", "{}" ); }
-
 };
 
 template<typename T>
@@ -104,7 +100,6 @@ struct dump_value_impl<X, hana::when< is_container<X>::value >>
     static void apply( fmt::memory_buffer& out, X const& x )
     {
         fmt::format_to( std::back_inserter( out ), "{" );
-
         // Dump first element
         auto it = x.begin();
         if (it != x.end()) {
@@ -120,7 +115,6 @@ struct dump_value_impl<X, hana::when< is_container<X>::value >>
             fmt::format_to( std::back_inserter( out ), ", ... [{} more]", std::distance(it, x.end()));
         }
         fmt::format_to( std::back_inserter( out ), "}" );
-
     }
 };
 
@@ -197,7 +191,6 @@ struct expr
         fmt::memory_buffer ret;
         self()->eval(ret);
         return std::string( ret.data());
-
     } catch (std::bad_alloc&) {
         return std::string();
     }

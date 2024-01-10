@@ -104,7 +104,7 @@ void parsingAction(fluid_msg::Action* act, std::string prefix, rest::ptree& pt,
         pt.put(prefix + ".set_queue.queue_id", ((of13::SetQueueAction*)act)->queue_id());
         break;
     case of13::OFPAT_SET_FIELD:
-        parsingSetField(const_cast<of13::OXMTLV*>(((of13::SetFieldAction*)act)->field()), prefix, pt);
+        parsingSetField(((of13::SetFieldAction*)act)->field(), prefix, pt);
         break;
     default:
         LOG(ERROR) << "Unhandled action type: " ;//<< act->type();
