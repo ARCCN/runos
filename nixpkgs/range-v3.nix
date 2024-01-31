@@ -13,7 +13,7 @@ stdenv.mkDerivation rec {
   };
 
   dontBuild = true;
-  installPhase = ''
+  configurePhase = ''
     cp -r "$src"/include "$prefix"
   '';
 }
