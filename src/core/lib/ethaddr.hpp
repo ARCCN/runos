@@ -111,3 +111,16 @@ inline ethaddr bit_cast(const bits<48> from)
 { return ethaddr(from); }
 
 }  // namespace runos
+
+template<>
+struct fmt::formatter<runos::ethaddr> : fmt::formatter<std::string>
+{
+    auto format(runos::ethaddr addr, format_context &ctx) const -> decltype(ctx.out())
+    {
+        const auto& data = addr.to_octets();
+        return format_to( ctx.out(), "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}", 
+        ( unsigned )data[0], ( unsigned )data[1], ( unsigned )data[2],
+        ( unsigned )data[3], ( unsigned )data[4], ( unsigned )data[5] );
+    }
+};
+

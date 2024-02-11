@@ -17,6 +17,7 @@
 #pragma once
 
 #include <tuple>
+#include <fmt/core.h>
 
 namespace runos {
 
@@ -51,3 +52,12 @@ namespace std {
         }
     };
 }
+
+template<>
+struct fmt::formatter<runos::switch_and_port> : fmt::formatter<std::string>
+{
+    auto format(runos::switch_and_port sw, format_context &ctx) const -> decltype(ctx.out())
+    {
+        return format_to( ctx.out(), "{}:{}", sw.dpid, sw.port );
+    }
+};
