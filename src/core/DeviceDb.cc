@@ -29,6 +29,8 @@
 #include <map>
 #include <sstream>
 
+namespace json11 {
+  auto format_as(Json::Type f) { return fmt::underlying(f); }} // json11
 namespace fs = boost::filesystem;
 
 namespace runos {
@@ -108,7 +110,7 @@ try {
 } catch (UtilityError const& e) {
     THROW_WITH_NESTED(devicedb::LoadError(), "Can't preprocess props file");
 } catch (devicedb::LoadError& e) {
-    e.with("file", fmt::StringRef(filename.data(), filename.size()));
+    e.with("file", std::string_view(filename.data(), filename.size()));
     throw;
 }
 
@@ -131,7 +133,7 @@ try {
 } catch (ResourceNotFoundError const& e) {
     THROW_WITH_NESTED(devicedb::LoadError(), "Resource not found");
 } catch (devicedb::LoadError& e) {
-    e.with("file", fmt::StringRef(filepath.data(), filepath.size()));
+    e.with("file", std::string_view(filepath.data(), filepath.size()));
     throw;
 }
 

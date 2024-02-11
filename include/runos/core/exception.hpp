@@ -66,7 +66,7 @@ protected:
     void with(const char* name, T const& info, const char* format = "{}") noexcept
     try {
         with_.emplace_front(name, fmt::format(format, info));
-    } catch (fmt::FormatError& e) {
+    } catch (fmt::format_error& e) {
         try {
             with_.emplace_front(name, fmt::format("FormatError: {}", e.what()));
         } catch (std::bad_alloc&) { }

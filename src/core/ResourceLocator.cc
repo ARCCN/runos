@@ -97,7 +97,7 @@ struct ResourceLocatorImpl final : ResourceLocator
         path p = expand(res);
         if (not fs::is_regular_file(p)) {
             THROW(ResourceNotFoundError(res), "Can't find resource file: {}",
-                  fmt::StringRef(res.data(), res.size()));
+                  std::string_view(res.data(), res.size()));
         }
         return p;
     }
@@ -112,7 +112,7 @@ struct ResourceLocatorImpl final : ResourceLocator
         path p = expand(res);
         if (not fs::is_directory(p)) {
             THROW(ResourceNotFoundError(res), "Can't find resource dir: {}",
-                  fmt::StringRef(res.data(), res.size()));
+                  std::string_view(res.data(), res.size()));
         }
         return p;
     }

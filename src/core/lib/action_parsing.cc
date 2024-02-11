@@ -27,7 +27,7 @@ namespace of13 = fluid_msg::of13;
 namespace rest {
   
 std::string ip_to_string(uint32_t ip) {
-    return "{:d}.{:d}.{:d}.{:d}"_format(
+    return fmt::format(FMT_STRING("{:d}.{:d}.{:d}.{:d}"),
             (ip >> 0) & 0xFF,
             (ip >> 8) & 0xFF,
             (ip >> 16) & 0xFF,

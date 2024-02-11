@@ -52,7 +52,7 @@ public:
      * Prints formatted message to the user and inserts newline.
      */
     template<class... Args>
-    void print(fmt::CStringRef fmt, Args&& ... args)
+    void print(std::string_view fmt, Args&& ... args)
     {
         fmt::print(std::cout, fmt, std::forward<Args>(args)...);
         std::cout << std::endl;
@@ -71,7 +71,7 @@ public:
      * @throws Implementation-specific exception containing error message.
      */
     template<class... Args>
-    [[ noreturn ]] void error(fmt::CStringRef fmt, Args&& ... args)
+    [[ noreturn ]] void error(std::string_view fmt, Args&& ... args)
     {
         error_impl(fmt::format(fmt, std::forward<Args>(args)...));
     }
