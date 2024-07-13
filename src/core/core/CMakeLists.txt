@@ -1,6 +1,5 @@
 # Find dependencies
 find_package(PkgConfig REQUIRED)
-find_package(fmt 3.0.1 REQUIRED)
 find_package(Boost 1.64 REQUIRED COMPONENTS thread filesystem)
 set(BOOST_THREAD_CONFIG
     BOOST_THREAD_PROVIDES_FUTURE
