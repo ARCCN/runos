@@ -5,6 +5,7 @@ find_package(Qt5Core REQUIRED)
 find_package(cppnetlib 0.12 EXACT REQUIRED)
 find_package(libtins REQUIRED)
 find_package(TinyProcess REQUIRED)
+find_package(fmt 10.0.0 REQUIRED)
 
 pkg_check_modules(FLUID_BASE REQUIRED libfluid_base)
 pkg_check_modules(FLUID_MSG REQUIRED libfluid_msg)
@@ -129,6 +130,7 @@ target_include_directories(runos SYSTEM
     PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR} # for Qt-generated moc files
       ${GLOG_INCLUDE_DIRS}
+      ${fmt_INCLUDE_DIRS}
       ${LIBTINS_INCLUDE_DIRS}
     )
 
