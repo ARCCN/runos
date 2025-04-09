@@ -58,7 +58,7 @@ in rec {
       tiny-process
       pkgs.libsForQt515.qtbase
       pkgs.jq
-      pkgs.gcc13
+      pkgs.gcc14
     ]
       # Qt build is broken on OS X. Use system Qt instead.
       # ++ stdenv.lib.optional stdenv.isLinux pkgs.qt55.qtbase

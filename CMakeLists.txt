@@ -37,6 +37,11 @@ option(RUNOS_DISABLE_EXPRESSION_DECOMPOSER "Don't decompose expressions in asser
 ################################################################################
 # Build config
 ################################################################################
+find_package(Boost)
+include_directories(
+      ${Boost_INCLUDE_DIR}
+    )
+
 
 include(CheckIncludeFileCXX)
 
@@ -95,7 +100,7 @@ endif()
 
 # target_link_libraries(runos-bin runos ${RUNOS_CLI} ${RUNOS_REST})
 execute_process(
-    COMMAND bash -c "find /nix -name 'libstdc++.so.6' | grep gcc-13 | head -n 1"
+    COMMAND bash -c "find /nix -name 'libstdc++.so.6' | grep gcc-14 | head -n 1"
     OUTPUT_VARIABLE PATH_LIBSTDC
 )
 

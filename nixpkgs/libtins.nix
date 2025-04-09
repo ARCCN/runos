@@ -14,6 +14,7 @@ stdenv.mkDerivation rec {
   cmakeFlags = [
     "-DLIBTINS_ENABLE_CXX11=1"
     "-DLIBTINS_ENABLE_WPA2=0"
+    "-DLIBTINS_ENABLE_ACK_TRACKER=0"
   ];
 
   nativeBuildInputs = [ cmake ];
