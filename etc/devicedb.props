@@ -23,6 +23,7 @@
 
 hwVersion ~ /Open vSwitch/ {
     meter_capable: false,
-    use_flowmod_modify_command: true
+    use_flowmod_modify_command: true,
+    outofband_port: 4294967294
 }
 
