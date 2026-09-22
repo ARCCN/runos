@@ -130,7 +130,6 @@ target_include_directories(runos SYSTEM
     PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR} # for Qt-generated moc files
       ${GLOG_INCLUDE_DIRS}
-      ${fmt_INCLUDE_DIRS}
       ${LIBTINS_INCLUDE_DIRS}
     )
 
@@ -168,6 +167,7 @@ target_link_libraries(runos
       heartbeatcore
       redisdb
       cpqd_print
+      oxm
     )
 
 target_link_libraries(runos_cli
@@ -190,3 +190,4 @@ set_target_properties(runos PROPERTIES
 add_subdirectory(hb)
 add_subdirectory(redisdb)
 add_subdirectory(oflog)
+add_subdirectory(oxm)
