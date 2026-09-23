@@ -462,7 +462,7 @@ auto OFAgentImpl::request(Message& msg)
         THROW(request_error(dpid(), xid), "Request to offline switch");
     }
 
-    return std::move(fut);
+    return fut;
 }
 
 template<class... Visitors>
