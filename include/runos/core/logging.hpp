@@ -14,33 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef _LOGGING_H_
-#include <glog/logging.h>
-#undef CHECK
-#define CHECK RUNOS_CHECK
-#endif // _LOGGING_H_
 
-#define USE_SYSLOG true
 
-#if USE_SYSLOG
-#define VSYSLOG(verboselevel) SYSLOG_IF(INFO, VLOG_IS_ON(verboselevel))
-#ifndef NDEBUG
-#define DSYSLOG(severity) SYSLOG(severity)
-#define DVSYSLOG(verboselevel) VSYSLOG(verboselevel)
-#else // NDEBUG
-#define DSYSLOG(severity) \
-    true ? (void) 0 : @ac_google_namespace@::LogMessageVoidify() & SYSLOG(severity)
-#define DVSYSLOG(verboselevel) \
-    (true || !VLOG_IS_ON(verboselevel)) ?\
-        (void) 0 : @ac_google_namespace@::LogMessageVoidify() & SYSLOG(INFO)
-#endif // NDEBUG
+/* remove all statements with lower level at compile time
+ * https://github.com/gabime/spdlog/wiki/0.-FAQ#how-to-remove-all-debug-statements-at-compile-time- */
 
-#undef LOG
-#define LOG SYSLOG
-#undef VLOG
-#define VLOG VSYSLOG
-#undef DLOG
-#define DLOG DSYSLOG
-#undef DVLOG
-#define DVLOG DVSYSLOG
-#endif // USE_SYSLOG
+#ifndef SPDLOG_ACTIVE_LEVEL
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#endif
+
+#include <spdlog/spdlog.h>
+
+#define LOG_TRACE SPDLOG_TRACE
+#define LOG_DEBUG SPDLOG_DEBUG
+#define LOG_INFO SPDLOG_INFO
+#define LOG_WARN SPDLOG_WARN
+#define LOG_ERROR SPDLOG_ERROR
+#define LOG_FATAL SPDLOG_CRITICAL

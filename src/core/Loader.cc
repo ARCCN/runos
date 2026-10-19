@@ -16,6 +16,7 @@
 
 #include "Loader.hpp"
 
+#include "Logger.hpp"
 #include "Application.hpp"
 #include "Config.hpp"
 #include <runos/core/logging.hpp>
@@ -146,19 +147,18 @@ Application* Loader::app(std::string interface) const {
 void Loader::startAll()
 {
     for (auto app : *ApplicationRegistry().registry) {
-        DLOG(INFO) << "Registering interface " << app->provides();
+        LOG_INFO( "Registering interface {}", app->provides());
         if (!m->apps.insert({app->provides(), app}).second) {
-            LOG(DFATAL) << "Trying to register already known interface (" <<
-                    app->provides() << ")";
+            LOG_FATAL( "Trying to register already known interface ({})", app->provides());
         }
     }
 
-    LOG(INFO) << "Initializing...";
+    LOG_INFO( "Initializing..." );
     auto services = m->config.at("services");
     for (auto& serviceName : services.array_items())
         m->initialize(serviceName.string_value());
 
-    LOG(INFO) << "Starting...";
+    LOG_INFO( "Starting..." );
     m->state = STARTING;
     for (auto& servicePair : m->apps) {
         auto& info = servicePair.second;
@@ -166,7 +166,7 @@ void Loader::startAll()
             continue;
         
         try {
-            LOG(INFO) << "  startUp(" << servicePair.first << ")";
+            LOG_INFO( "  startUp( {} )", servicePair.first );
             AppThread* app_thread = qobject_cast<AppThread*>(info.app->thread());
             std::mutex start_mutex;
             start_mutex.lock();
@@ -174,19 +174,19 @@ void Loader::startAll()
             start_mutex.lock();
             info.state = APP_STARTED;
         } catch(...) {
-            LOG(FATAL) << "Failed to start " << servicePair.first;
+            LOG_FATAL( "Failed to start {}", servicePair.first );
         }
     }
 
     m->state = RUNNING;
-    LOG(INFO) << "Controller is up!";
+    LOG_INFO( "Controller is up!" );
 }
 
 AppInfo* LoaderImpl::initialize(std::string serviceId)
 {
     auto app_it = apps.find(serviceId);
     if (app_it == apps.end()) {
-        LOG(ERROR) << "Can't find application " << serviceId;
+        LOG_ERROR( "Can't find application {}", serviceId );
         return nullptr;
     }
 
@@ -206,7 +206,7 @@ AppInfo* LoaderImpl::initialize(std::string serviceId)
             return nullptr;
         }
         if (dependency->state == APP_INITIALIZING) {
-            LOG(FATAL) << "Cyclic dependencies detected";
+            LOG_FATAL( "Cyclic dependencies detected" );
             // TODO: print cycle to log
         }
     }
@@ -218,19 +218,19 @@ AppInfo* LoaderImpl::initialize(std::string serviceId)
     if (specific_thread >= 0 && (size_t) specific_thread < thread.size()) {
         app_thread = thread[specific_thread];
 
-        VLOG(2) << "  moveToThread(" << app->provides() 
-            << ", " << specific_thread << ':' << app_thread << ")";
+        LOG_TRACE( "  moveToThread({}, {}:{})", app->provides(), 
+            last_thread, app_thread->currentThreadId());
     } else {
         app_thread = thread[last_thread];
         if (++last_thread == thread.size())
             last_thread = 0;
 
-        VLOG(2) << "  moveToThread(" << app->provides() 
-            << ", " << last_thread << ':' << app_thread << ")";
+        LOG_TRACE( "  moveToThread({}, {}:{})", app->provides(), 
+            last_thread, app_thread->currentThreadId());
     }
 
 
-    LOG(INFO) << "  init(" << serviceId << ")";
+    LOG_INFO( "  init({})", serviceId );
     app->moveToThread(app_thread);
 
     std::mutex init_mutex;

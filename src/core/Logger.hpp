@@ -14,6 +14,24 @@
  * limitations under the License.
  */
 
-#include <runos/core/logging.hpp>
 
-void MessageHandle(const char* data, int size);
+
+#include "Config.hpp"
+#include <runos/core/logging.hpp>
+#include <spdlog/spdlog.h>
+
+#define LOG_TRACE SPDLOG_TRACE
+#define LOG_DEBUG SPDLOG_DEBUG
+#define LOG_INFO SPDLOG_INFO
+#define LOG_WARN SPDLOG_WARN
+#define LOG_ERROR SPDLOG_ERROR
+#define LOG_FATAL SPDLOG_CRITICAL
+
+
+void MessageHandle( int sig );
+
+namespace runos
+{
+    void spdlog_init( const Config& config );
+
+} // namespace runos

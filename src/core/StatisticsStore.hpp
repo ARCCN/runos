@@ -109,7 +109,7 @@ private:
         ranges::copy( view::zip_with(std::minus<uint64_t>{}, curr_, prev_)
                     | view::transform([=](uint64_t s) { return s / delta; })
                     , ret.begin());
-        return std::move(ret);
+        return ret;
     }
 };
 

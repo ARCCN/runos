@@ -33,6 +33,7 @@ endmacro()
 #Get all subdirectories (applications)
 SUBDIRLIST(apps_dir_list ${CMAKE_CURRENT_SOURCE_DIR})
 #list(FILTER apps_dir_list EXCLUDE REGEX "include")
+list(FILTER apps_dir_list EXCLUDE REGEX "CMakeFiles")
 
 #process all applications: if there is CMakeLists.txt then include it, or add files to current build
 foreach(app_dir ${apps_dir_list})

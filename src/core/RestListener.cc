@@ -169,6 +169,17 @@ struct RestHandler {
         : dispatcher_(dispatcher)
     { }
 
+    auto get_access_control_headers(const std::vector<request::header_type> &headers) -> std::vector<std::pair<std::string, std::string>>  {
+        auto result = std::vector<std::pair<std::string, std::string>>();
+        auto access_control_header_regex = std::regex(std::string("Access-Control[a-z,A-Z,-]*"));
+        for (const auto &h : headers){
+            if (std::regex_match(h.name, access_control_header_regex)){
+                result.emplace_back(h.name, h.value);
+            }
+        }
+        return result;
+    }
+
     size_t get_content_length(request const& req)
     {
         auto content_len_it = boost::find_if(req.headers,
@@ -337,11 +348,49 @@ struct RestHandler {
             });
             
             respond(req, connection, resp);
+        } else if (req.method == "OPTIONS") {
+            rest::ptree resp;
+            options_respond(req, connection);
         } else {
             THROW(rest::http_error(405), "Unknown method: {}", req.method);
         }
     }
     EXCEPTION_GUARD_END
+
+    void options_respond(
+        const request &req 
+      , connection_ptr connection
+      , connection::status_t status = connection::no_content
+    ) try {
+        std::string resp_str;
+
+        try {
+            connection->set_status(status);
+        } catch (json_parser_error& e) {
+            std::ostringstream ss;
+            ss << R"({ "error": {)"
+                  R"(  "type": "write_json_error",)"
+                  R"(  "msg": )" << '"' << e.what() << '"' << "} }";
+            resp_str = ss.str();
+            connection->set_status(connection::internal_server_error);
+        }
+
+        std::vector<rest_server::response_header> headers; //TODO - look on request headers and copy all Access-Control-Allow-Origin-* headers here
+        // auto access_control_headers = get_access_control_headers(req.headers);
+        // for (auto &[h_name, h_val] : access_control_headers){
+        //     headers.push_back({h_name, h_val});
+        // }
+        headers.push_back({"Access-Control-Allow-Origin", "*"});
+        headers.push_back({"Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE, PUT"});
+        headers.push_back({"Access-Control-Allow-Headers", "*"});
+        connection->set_headers(headers);
+        //connection->write( std::move(resp_str) );
+
+    } catch (boost::system::system_error const& e) {
+        LOG_ERROR( "Rest handler failed: {}", e.what());
+    } catch (...) {
+        LOG_ERROR( "Rest handler failed" );
+    }
 
     void respond(
         request const&
@@ -379,19 +428,22 @@ struct RestHandler {
             headers.push_back(
                     {"Content-Type", "application/x-resource+json"});
         }
+        headers.push_back({"Access-Control-Allow-Origin", "*"});
+        headers.push_back({"Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE, PUT"});
+        headers.push_back({"Access-Control-Allow-Headers", "*"});
 
         connection->set_headers(headers);
         connection->write( std::move(resp_str) );
 
     } catch (boost::system::system_error const& e) {
-        LOG(ERROR) << "Rest handler failed: " << e.what();
+        LOG_ERROR( "Rest handler failed: {}", e.what());
     } catch (...) {
-        LOG(ERROR) << "Rest handler failed";
+        LOG_ERROR( "Rest handler failed" );
     }
 
     void error(boost::system::error_code const& ec)
     {
-        LOG(ERROR) << "Rest error: " << ec.message();
+        LOG_ERROR( "Rest error: {}", ec.message());
     }
 
 protected:

@@ -70,7 +70,29 @@ Rc<ResourceLocator> ResourceLocator::get() { return resource_locator; }
 int main(int argc, char* argv[]) {
     using namespace runos;
 
-    signal(SIGPIPE, SIG_IGN);
+    signal( SIGPIPE, SIG_IGN );
+    signal( SIGSEGV, MessageHandle );
+    signal( SIGILL, MessageHandle );
+    signal( SIGFPE, MessageHandle );
+    signal( SIGABRT, MessageHandle );
+    signal( SIGBUS, MessageHandle );
+    signal( SIGTERM, MessageHandle );
+    /* excluding SIGINT becase call exit() by singal return fault with message:
+
+     * QObject::~QObject: Timers cannot be stopped from another thread
+     * QObject::killTimer: Timers cannot be stopped from another thread
+     * QSocketNotifier: Socket notifiers cannot be enabled or disabled from another thread
+     * QThread: Destroyed while thread is still running 
+     * pure virtual method called
+     * terminate called without an active exception
+     * terminate called recursively
+     * QSocketNotifier: Invalid socket 30 and type 'Read', disabling... 
+
+     * terminate called after throwing an instance of 'boost::wrapexcept<boost::system::system_error>'
+     * what():  non_blocking: Bad file descriptor
+     * QSocketNotifier: Invalid socket 32 with type Read, disabling...
+
+    signal( SIGINT, MessageHandle ); */
 
     initQtMetaTypes();
 
@@ -97,14 +119,10 @@ int main(int argc, char* argv[]) {
     resource_locator = ResourceLocator::make(options["etcdir"].as<std::string>(),
                                              options["tooldir"].as<std::string>());
 
-    google::InitGoogleLogging(argv[0]);
-    google::InstallFailureSignalHandler();
-    google::InstallFailureWriter(&MessageHandle);
-    //crash_reporter::setup(options["dumpdir"].as<std::string>().c_str());
-
     RunosApplication app(argc, argv);
 
     Config config = loadConfig(options["conf"].as<std::string>());
+    spdlog_init( config );
     Loader loader(config);
     loader.startAll();
 

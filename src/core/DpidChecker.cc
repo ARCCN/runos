@@ -37,9 +37,8 @@ void DpidChecker::init(Loader *loader, const Config& rootConfig)
     auto config = config_cd(rootConfig, "dpid-checker");
     std::string format = config_get(config, "dpid-format", "dec");
     if (format != "dec" && format != "hex") {
-        LOG(FATAL) << "[DpidChecker] Reading from network-setting.json - "
-                  "Incorrect 'format' value in 'dpid-checker' in settings file: "
-                   << format;
+        LOG_FATAL( "[DpidChecker] Reading from network-setting.json - "
+                  "Incorrect 'format' value in 'dpid-checker' in settings file: {}", format );
     }
 
     switches_.emplace((+SwitchRole::AR)._to_integral(), SwitchList());
@@ -56,8 +55,7 @@ void DpidChecker::init(Loader *loader, const Config& rootConfig)
                                          NULL,
                                          (format == "hex" ? 16 : 10));
                 if (dpid == 0) {
-                    LOG(ERROR) << "[DpidChecker] Incorrect DPID: "
-                               << sw.string_value();
+                    LOG_ERROR( "[DpidChecker] Incorrect DPID: {}", sw.string_value());
                 } else {
                     lock_t l(switch_list_map_mutex_);
                     auto& switch_list = switch_list_ref(role);
@@ -102,8 +100,7 @@ void DpidChecker::addSwitch(uint64_t dpid, SwitchRole role)
     CHECK(+SwitchRole::UNDEFINED != role);
 
     if (this->isRegistered(dpid)) {
-        LOG(WARNING) << "[DpidChecker] Dpid=" << dpid
-                     <<  " is already registered";
+        LOG_WARN( "[DpidChecker] Dpid={}  is already registered", dpid );
         return;
     }
 
@@ -111,9 +108,9 @@ void DpidChecker::addSwitch(uint64_t dpid, SwitchRole role)
     lock_t l(switch_list_map_mutex_);
     auto& list = switch_list_ref(role);
     list.push_back(dpid);
-    VLOG(30) << "[DpidChecker] Dpid=" << dpid
-             << " was successfully added to " << role._to_string()
-             << " list. Size=" << list.size();
+    LOG_TRACE( "[DpidChecker] Dpid={}"
+               " was successfully added to {}"
+               " list. Size={}", dpid, role._to_string(), list.size());
     } // unlock
 
     emit this->switchListChanged(role);
@@ -164,10 +161,8 @@ json DpidChecker::switchJsonList(SwitchRole role)
 void DpidChecker::syncSwitchList(const json& switch_list, SwitchRole role)
 {
     CHECK(+SwitchRole::UNDEFINED != role);
-
-    VLOG(30) << "[DpidChecker] Switch list syncronization. For role="
-             << role._to_string()
-             << " input list=" << switch_list.dump();
+    LOG_TRACE( "[DpidChecker] Switch list syncronization. For role={}"
+               " input list={}", role._to_string(), switch_list.dump());
 
     if (switch_list.empty()) return;
 
@@ -185,9 +180,9 @@ void DpidChecker::syncSwitchList(const json& switch_list, SwitchRole role)
 
 void DpidChecker::syncSwitchLists(const json& ar_json, const json& dr_json)
 {
-    VLOG(30) << "[DpidChecker] Switch list syncronization."
-             << " AR list: " << ar_json.dump()
-             << " DR list: " << dr_json.dump();
+    LOG_TRACE( "[DpidChecker] Switch list syncronization."
+               " AR list: {}"
+               " DR list: {}", ar_json.dump(), dr_json.dump());
 
     auto&& ar_list = parse(ar_json, SwitchRole::AR);
     auto&& dr_list = parse(dr_json, SwitchRole::DR);
@@ -207,7 +202,7 @@ void DpidChecker::syncSwitchLists(const json& ar_json, const json& dr_json)
     unregister(removed_ar, SwitchRole::AR);
     unregister(removed_dr, SwitchRole::DR);
 
-    VLOG(20) << "[DpidChecker] Removed switches unregistered";
+    LOG_TRACE( "[DpidChecker] Removed switches unregistered" );
 }
 
 SwitchList DpidChecker::parse(const json& switch_list, SwitchRole role)

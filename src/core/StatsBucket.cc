@@ -153,8 +153,7 @@ void FlowStatsBucketImpl::start(OFServer* ofserver, std::chrono::milliseconds pe
 
     when_all_fix(futures.begin(), futures.end()).then(executor,
         [self = shared_from_this(), period](auto ret) {
-            VLOG(10) << "Activating stats bucket " << self->id()
-                << " (" << self->name() << ')';
+            LOG_TRACE( "Activating stats bucket {} ({})", self->id(), self->name());
 
             for (auto&& agent : ret.get()) {
                 self->agents_.push_back(agent.get());
@@ -191,7 +190,7 @@ void FlowStatsBucketImpl::update()
                 futures.push_back(std::move(f));
             } catch (OFAgent::request_error const& ex) {
                 futures.push_back(make_ready_future(per_request_stats_[j]));
-                VLOG(10) << "Failed to request flow stats " << j << ":";
+                LOG_TRACE( "Failed to request flow stats {}:", j );
                 //diagnostic_information::get().log();
             }
             ++j;
@@ -200,7 +199,7 @@ void FlowStatsBucketImpl::update()
 
     when_all_fix(futures.begin(), futures.end()).then(executor,
         [self = shared_from_this()](future< future_vector > result) {
-            VLOG(10) << "Entering flow stats continuation";
+            LOG_TRACE( "Entering flow stats continuation" );
 
             FlowMeasurement<uint64_t> acc;
             ranges::fill(acc, 0);
@@ -212,7 +211,7 @@ void FlowStatsBucketImpl::update()
                     stats = fstats.get();
                 } catch (OFAgent::openflow_error const& ex) {
                     stats = self->per_request_stats_[j];
-                    VLOG(10) << "Failed to get flow stats " << j << ":";
+                    LOG_TRACE( "Failed to get flow stats {}:", j );
                     diagnostic_information::get().log();
                 }
 
@@ -222,7 +221,7 @@ void FlowStatsBucketImpl::update()
                 ++j;
             }
 
-            VLOG(10) << "Bucket " << self->id() << " (" << self->name() << ") updated";
+            LOG_TRACE( "Bucket {} ({}) updated", self->id(), self->name());
             self->aggregated_stats_.append(self->clock_.now().time_since_epoch(), acc);
             emit self->updated();
         }

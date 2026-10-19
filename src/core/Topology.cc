@@ -434,7 +434,7 @@ data_link_route TopologyImpl::computePath(uint64_t from_dpid, uint64_t to_dpid,
             return g[ed].pl_metrics;
         default:
             // FIXME: should throw exception?
-            LOG(ERROR) << "[Topology] Incorrect metrics!";
+            LOG_ERROR( "[Topology] Incorrect metrics!" );
             return (uint64_t)0;
         }
     };
@@ -470,7 +470,7 @@ data_link_route TopologyImpl::computePath(uint64_t from_dpid, uint64_t to_dpid,
                     curr = link.pl_metrics;
                     break;
                 default:
-                    LOG(ERROR) << "[Topology] Incorrect metrics";
+                    LOG_ERROR( "[Topology] Incorrect metrics" );
                 }
 
                 if (!min_metrics || min_metrics > curr) {
@@ -550,9 +550,8 @@ data_link_route TopologyImpl::exactPath(switch_list exact) const
         });
 
         if (found == ports.end()) {
-            LOG(WARNING) << "[Topology] Creating path - Can't create exact path"
-                            "between <" << exact.front() <<
-                            "> and <" << exact.back() << ">";
+            LOG_WARN( "[Topology] Creating path - Can't create exact path" 
+                      "between <{}> and <{}>", exact.front(), exact.back());
             return data_link_route{};
         }
 
@@ -581,8 +580,8 @@ data_link_route TopologyImpl::inExPath(switch_list include, switch_list exclude,
     switch_list ends {from, to};
     if (include.size() > 0 && std::find_first_of(include.begin(), include.end(),
                            ends.begin(), ends.end()) != include.end()) {
-        LOG(WARNING) << "[Topology] Creating path - "
-                        "<from> and <to> DPIDs can't be in include list!";
+        LOG_WARN( "[Topology] Creating path - "
+                  "<from> and <to> DPIDs can't be in include list!" );
         return ret;
     }
     
@@ -592,9 +591,8 @@ data_link_route TopologyImpl::inExPath(switch_list include, switch_list exclude,
     for (auto dpid : include) {
         auto part = computePath(tfrom, dpid, m, g);
         if (part.size() == 0) {
-            VLOG(2) << "[Topology] Creating path - No path between <" 
-                    << from << "> and <" << to
-                    << "> via <" << dpid << ">";
+            LOG_TRACE( "[Topology] Creating path - No path between <{}> and <{}> via <{}>", 
+                       from, to, dpid );
             return data_link_route{};
         }
         for (auto it : part)
@@ -653,7 +651,7 @@ data_link_route TopologyImpl::findPath(RoutePtr route, RouteSelector selector) c
                 uint64_t allowed = max * util / 100;
 
                 if (tx > allowed || rx > allowed) {
-                    VLOG(7) << "[Topology] Overloaded link - " << sp;
+                    LOG_TRACE( "[Topology] Overloaded link - {}", sp );
                     auto e = edge(sp, tmp_graph);
                     if (e.second) {
                         remove_edge(e.first, tmp_graph);
@@ -739,15 +737,14 @@ void Topology::init(Loader *loader, const Config &rootConfig)
     /* Do logging */
     connect(this, &Topology::routeTriggerActive,
          [](uint32_t id, uint8_t path_id, TriggerFlag tf) {
-             LOG(WARNING) << "[Topology] Trigger " << tf._to_string()
-                          << " active - On route "
-                          << id << ":" << (int)path_id;
+             LOG_WARN( "[Topology] Trigger {}"
+                       " active - On route {}:{}", tf._to_string(), id, (int)path_id );
          });
     connect(this, &Topology::routeTriggerInactive,
          [](uint32_t id, uint8_t path_id, TriggerFlag tf) {
-             LOG(WARNING) << "[Topology] Trigger " << tf._to_string()
-                          << " inactive - On route "
-                          << id << ":" << (int)path_id;
+            LOG_WARN( "[Topology] Trigger {}"
+                      " inactive - On route {}:{}", 
+                      tf._to_string(), id, (int)path_id );
          });
 }
 
@@ -959,8 +956,8 @@ void Topology::reloadStats()
 
             uint64_t max = getSpeedRate(sp);
             if (max == 0) {
-                LOG(WARNING) << "[Topology] Incorrect port - "
-                             << sp << " has null current_speed!";
+                LOG_WARN( "[Topology] Incorrect port - {}" 
+                          " has null current_speed!", sp );
                 continue;
             }
 
@@ -1108,7 +1105,7 @@ void Topology::timerEvent(QTimerEvent *event)
 void Topology::addLink(switch_and_port from, switch_and_port to)
 {
     if (from.dpid == to.dpid) {
-        LOG(WARNING) << "[Topology] Ignoring loopback link - On " << from.dpid;
+        LOG_WARN( "[Topology] Ignoring loopback link - On {}", from.dpid );
         return;
     }
 
@@ -1227,7 +1224,7 @@ uint32_t Topology::newRoute(uint64_t from, uint64_t to, RouteSelector selector)
 
     if (m_switch_manager->switch_(from) == nullptr ||
             m_switch_manager->switch_(to) == nullptr) {
-        LOG(WARNING) << "[Topology] Creating route - No switch for route";
+        LOG_WARN( "[Topology] Creating route - No switch for route" );
         return 0;
     }
 
@@ -1240,8 +1237,8 @@ uint32_t Topology::newRoute(uint64_t from, uint64_t to, RouteSelector selector)
 
     auto path_id = newPath(route->id, selector);
     if (path_id == max_path_id) {
-        VLOG(1) << "[Topology] Creating route - Can't create route: "
-                << from << " -> " << to;
+        LOG_TRACE( "[Topology] Creating route - Can't create route: {} -> {}", 
+                   from, to );
         deleteRoute(route->id);
         return 0;
     }
@@ -1296,9 +1293,7 @@ uint8_t Topology::newPath(uint32_t route_id, RouteSelector selector)
 
     path->metrics = selector.get(metrics) ? *selector.get(metrics)
                                           : +MetricsFlag::Hop;
-
-    VLOG(2) << "[Topology] Created path - "
-            << route_id << ":" << (int)path->id;
+    LOG_TRACE( "[Topology] Created path - {}:{}", route_id, (int)path->id );
     update_database(route_id);
     return path->id;
 }
@@ -1319,9 +1314,7 @@ bool Topology::deletePath(uint32_t route_id, uint8_t path_id)
         } else {
             return false;
         }
-
-        VLOG(2) << "[Topology] Removed path - "
-                << route_id << ":" << (int)path_id;
+        LOG_TRACE( "[Topology] Removed path - {}:{}", route_id, (int)path_id );
         update_database(route_id);
         return true;
     }).get();
@@ -1387,8 +1380,8 @@ uint8_t Topology::getFlapping(uint32_t id, uint8_t path_id) const
     try {
         return m->route_map.at(id)->paths.at(path_id)->flap;
     } catch (const std::out_of_range& ex) {
-        LOG(WARNING) << "[Topology] Get info - Trying to get bad route";
-        LOG(WARNING) << ex.what();
+        LOG_WARN( "[Topology] Get info - Trying to get bad route" );
+        LOG_WARN( "{}", ex.what());
     }
     return 0;
 }
@@ -1406,8 +1399,8 @@ uint8_t Topology::getTriggerThreshold(uint32_t id, uint8_t path_id, TriggerFlag 
         else if (tf == +TriggerFlag::Util)
             return path->util_threshold;
     } catch (const std::out_of_range& ex) {
-        LOG(WARNING) << "[Topology] Get info - Trying to get bad route";
-        LOG(WARNING) << ex.what();
+        LOG_WARN( "[Topology] Get info - Trying to get bad route" );
+        LOG_WARN( "{}",ex.what());
     }
 
     return 0;
@@ -1418,8 +1411,8 @@ bool Topology::getStatus(uint32_t id, uint8_t path_id, TriggerFlag tf) const
     try {
         return m->route_map.at(id)->paths.at(path_id)->getTrigger(tf);
     } catch (const std::out_of_range& ex) {
-        LOG(WARNING) << "[Topology] Get info - Trying to get bad route or path";
-        LOG(WARNING) << ex.what();
+        LOG_WARN( "[Topology] Get info - Trying to get bad route or path" );
+        LOG_WARN( "{}", ex.what());
     }
 
     return false;
@@ -1432,7 +1425,7 @@ uint64_t Topology::getMinRouteRate(uint32_t id, uint8_t path_id) const
     auto route = m->route_map.at(id);
     auto path = route->getPath(path_id);
     if (!path) {
-        LOG(ERROR) << "[Topology] Get info - Trying to get bad path";
+        LOG_ERROR( "[Topology] Get info - Trying to get bad path" );
         return 0;
     }
 

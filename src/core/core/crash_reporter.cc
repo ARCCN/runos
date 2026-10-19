@@ -43,9 +43,9 @@ bool minidumpCallback(const char *dump_dir,
                       void *context, bool succeeded)
 {
     if (succeeded) {
-        LOG(INFO) << "Minidump saved: " << minidump_id;
+        LOG_INFO( "Minidump saved: {}", minidump_id );
     } else {
-        LOG(ERROR) << "Can't create minidump";
+        LOG_ERROR( "Can't create minidump" );
     }
     return true;
 }

@@ -18,7 +18,7 @@
 
 #include "SwitchImpl.hpp"
 #include <runos/core/assert.hpp>
-
+#include <runos/core/logging.hpp>
 #include <boost/lexical_cast.hpp>
 #include <range/v3/view/map.hpp>
 
@@ -105,7 +105,7 @@ void PortImpl::process_event(of13::Port& port)
     ASSERT(port.port_no() == number());
     ASSERT(port.name() == name());
     if (port.hw_addr().to_string() != hw_addr_)
-        LOG(WARNING)<<"port.hw_addr().to_string() != hw_addr_ (port address have changed)";
+        LOG_WARN( "port.hw_addr().to_string() != hw_addr_ (port address have changed)" );
 
     set_config(port.config());
 

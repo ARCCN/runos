@@ -149,8 +149,8 @@ struct SwitchManager::implementation final
                 sw->ntables() != fr.n_tables() ||
                 sw->capabilites() != fr.capabilities())
             {
-                LOG(ERROR) << "Switch features changed for dpid=" << dpid << ". "
-                           << "Assign new dpid or restart controller.";
+                LOG_ERROR( "Switch features changed for dpid={}. "
+                           "Assign new dpid or restart controller.", dpid );
                 conn->close();
             } else {
                 sw->set_up();
@@ -169,8 +169,8 @@ struct SwitchManager::implementation final
         if (auto sw = switch_(conn->dpid())) {
             sw->process_event(ps);
         } else {
-            LOG(WARNING) << "Ignoring port status from " << conn->dpid()
-                         << " because it Switch instance isn't yet created";
+            LOG_WARN( "Ignoring port status from {}"
+                      " because it Switch instance isn't yet created", conn->dpid());
         }
         return false;
     }

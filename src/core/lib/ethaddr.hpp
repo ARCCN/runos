@@ -23,6 +23,7 @@
 #include <stdexcept>
 
 #include "bits.hpp"
+#include <fmt/format.h>
 
 namespace runos { class ethaddr; }
 

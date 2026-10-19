@@ -1,23 +1,10 @@
 # Find dependencies
-find_package(PkgConfig REQUIRED)
-find_package(Boost 1.64 REQUIRED COMPONENTS thread filesystem)
-set(BOOST_THREAD_CONFIG
-    BOOST_THREAD_PROVIDES_FUTURE
-    BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
-    BOOST_THREAD_PROVIDES_SHARED_FUTURE_CONTINUATION
-    BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
-    BOOST_THREAD_PROVIDES_FUTURE_UNWRAP
-    BOOST_THREAD_PROVIDES_FUTURE_INVALID_AFTER_GET
-    BOOST_THREAD_PROVIDES_EXECUTORS)
-find_package(Hana 1.0.0 REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(Boost 1.69 REQUIRED COMPONENTS thread filesystem)
 
 if (NOT RUNOS_DISABLE_CRASH_REPORTING)
     find_package(Breakpad REQUIRED)
 endif()
-
-# TODO: To be replaced with spdlog
-pkg_check_modules(GLOG REQUIRED libglog)
-link_directories( ${GLOG_LIBRARY_DIRS} )
 
 # Add sources
 enable_language(ASM)
@@ -38,16 +25,16 @@ if (NOT RUNOS_DISABLE_CRASH_REPORTING)
 endif()
 
 # Configure target
-# set_target_properties(runos_core PROPERTIES
-#     LANGUAGE CXX
-#     )
+ set_target_properties(runos_core PROPERTIES
+     LANGUAGE CXX
+     )
 
 target_include_directories(runos_core
     PUBLIC
       ${CMAKE_SOURCE_DIR}/include
-      ${Hana_INCLUDE_DIRS}
+      ${spdlog_INCLUDE_DIRS}
+      ${Boost_INCLUDE_DIRS}
     PRIVATE
-      ${GLOG_INCLUDE_DIRS}
     )
 
 target_link_libraries(runos_core
@@ -55,15 +42,9 @@ target_link_libraries(runos_core
       Boost::boost
       Boost::filesystem
       Boost::thread
-      fmt
-    PRIVATE
-#      Breakpad::Breakpad
-      ${GLOG_LIBRARIES}
+      ${spdlog_LIBRARIES}
     )
 
-target_compile_definitions(runos_core
-    PUBLIC ${BOOST_THREAD_CONFIG}
-    )
 
 ##################
 # Crash reporter #

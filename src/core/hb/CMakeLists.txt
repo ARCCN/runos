@@ -1,7 +1,9 @@
-find_package(Qt5Network REQUIRED)
+find_package(Qt5 5.15.2 REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/src)
+    ${CMAKE_SOURCE_DIR}/src
+    ${spdlog_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS})
 
 add_library(heartbeatcore STATIC
     heartbeatcore.cc

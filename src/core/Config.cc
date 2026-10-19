@@ -15,9 +15,7 @@
  */
 
 #include "Config.hpp"
-
 #include <runos/core/logging.hpp>
-
 #include <fstream>
 #include <sstream>
 
@@ -33,7 +31,7 @@ Config loadConfig(const std::string& fileName)
                    .object_items();
 
     if (!parseMessage.empty()) {
-        LOG(FATAL) << "Can't parse config file : " << parseMessage;
+        LOG_FATAL( "Can't parse config file : {}", parseMessage );
     }
 
     return config;

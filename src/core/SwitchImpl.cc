@@ -342,7 +342,7 @@ void SwitchImpl::set_up()
                 emit this->switchUp(this->shared_from_this());
             });
     } catch (const OFAgent::request_error& e) {
-        LOG(ERROR) << "[SwitchImpl] - " << e.what();
+        LOG_ERROR( "[SwitchImpl] - {}", e.what());
     }
 }
 
@@ -431,11 +431,11 @@ void SwitchImpl::timerEvent(QTimerEvent*)
 
 void SwitchImpl::updateStats()
 {
-    VLOG(10) << "updateStats()";
+    LOG_TRACE( "updateStats()" );
     auto self = shared_from_this();
 
     if (not connection()->alive()) {
-        VLOG(3) << "Request to offline switch";
+        LOG_TRACE( "Request to offline switch" );
         return;
     }
 
@@ -444,19 +444,19 @@ void SwitchImpl::updateStats()
 
         agent->request_port_stats().then(executor,
             [self](future<OFAgent::sequence<of13::PortStats>> stats) {
-                VLOG(10) << "Entering port stats continuation";
+                LOG_TRACE( "Entering port stats continuation" );
 
                 for (auto& ps : stats.get()) try {
                     if (self->property("local_port", of13::OFPP_LOCAL) != ps.port_no())
                         self->port_impl(ps.port_no())->process_event(ps);
                 } catch (bad_pointer_access& ex) {
-                    LOG(WARNING) << "Can't find port " << ps.port_no();
+                    LOG_WARN( "Can't find port {}", ps.port_no());
                 }
             });
 
         agent->request_queue_stats().then(executor,
             [self](future<OFAgent::sequence<of13::QueueStats>> stats) {
-                VLOG(10) << "Entering queue stats continuation";
+                LOG_TRACE( "Entering queue stats continuation" );
 
                 using Stats = of13::QueueStats;
                 using namespace ranges;
@@ -485,7 +485,7 @@ void SwitchImpl::updateStats()
         request.table_id = tables.statistics;
         agent->request_flow_stats(request).then(executor,
             [self](future<OFAgent::sequence<of13::FlowStats>> flow_stats) {
-                VLOG(10) << "Entering traffic stats continuation";
+                LOG_TRACE( "Entering traffic stats continuation" );
 
                 using Stats = of13::FlowStats;
                 using namespace ranges;
@@ -515,7 +515,7 @@ void SwitchImpl::updateStats()
                 }
             });
     } catch (OFAgent::request_error const& ex) {
-        LOG(WARNING) << "Can't update stats:";
+        LOG_WARN( "Can't update stats:" );
         diagnostic_information::get().log();
     }
 }

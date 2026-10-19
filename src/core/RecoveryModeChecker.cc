@@ -18,6 +18,7 @@
 
 #include "Recovery.hpp"
 #include "DatabaseConnector.hpp"
+#include <runos/core/logging.hpp>
 
 #include <json.hpp>
 #include <algorithm>
@@ -66,7 +67,7 @@ void RecoveryModeChecker::save_to_database()
 
 void RecoveryModeChecker::startRecoveryCheck(seconds max_waiting_interval)
 {
-    LOG(ERROR) << "Start recovery on startup process!";
+    LOG_ERROR( "Start recovery on startup process!" );
     checker_->start(check_interval_);
 
     if (max_waiting_interval.count()) {
@@ -98,7 +99,7 @@ void RecoveryModeChecker::updateSwitch(uint64_t dpid, Action act)
 void RecoveryModeChecker::checkAllSwitchesConnected()
 {
     if (expire_time_ < std::chrono::steady_clock::now()) {
-        LOG(WARNING) << "Failed recovery process!";
+        LOG_WARN( "Failed recovery process!" );
         checker_->stop();
         save_to_database();
         emit failedRecover();
@@ -123,7 +124,7 @@ void RecoveryModeChecker::checkAllSwitchesConnected()
     } // unlock
 
     if (lacking_switches.empty()) {
-        LOG(WARNING) << "All switches connected!";
+        LOG_WARN( "All switches connected!" );
         checker_->stop();
         save_to_database();
         emit readyToRecover();
@@ -132,7 +133,7 @@ void RecoveryModeChecker::checkAllSwitchesConnected()
         for (auto dpid : lacking_switches) {
             ss << dpid << " ";
         }
-        LOG(WARNING) << "Waiting for switch: " << ss.str();
+        LOG_WARN( "Waiting for switch: {}", ss.str());
     }
 }
 

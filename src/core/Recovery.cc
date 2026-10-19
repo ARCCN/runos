@@ -68,23 +68,23 @@ void SwitchView::changeSwitchRole(fluid_msg::ofp_controller_role sending_role,
                            get_only_generation_id,
                            role_request_times);
     } catch (const switch_equal_error& e) {
-        LOG(ERROR) << "[RecoveryManager] Mastership view - "
-                   << "Switch with dpid=" << getDPID()
-                   << " returns EQUAL role. Disconnecting from the bad switch";
+        LOG_ERROR( "[RecoveryManager] Mastership view - Switch with dpid={}"
+                   " returns EQUAL role. Disconnecting from the bad switch", getDPID());
+                   
         detach_from_invalid_switch(getDPID());
     } catch (const switch_timeout_error& e) {
-        LOG(ERROR) << "[RecoveryManager] Role request time exceeded. Dpid="
-                   << sw_->dpid() << ", role="
-                   << SwitchView::convertRole(sending_role);
+        LOG_ERROR( "[RecoveryManager] Role request time exceeded. Dpid={}, role={}",
+                   sw_->dpid(), SwitchView::convertRole(sending_role));
     } catch (const OFAgent::openflow_error& e) {
-        LOG(ERROR) << "[RecoveryManager] openflow_error during role request."
-                   << "Switch dpid=" << e.dpid() << ", msg xid=" << e.xid()
-                   << ", type=" << e.type() << ", code=" << e.code();
+        LOG_ERROR( "[RecoveryManager] openflow_error during role request."
+                   "Switch dpid={}, msg xid={}, type={}, code={}",
+                   e.dpid(), e.xid(), e.type(), e.code());
+                   
     } catch (const OFAgent::request_error& e) {
-        LOG(ERROR) << "[RecoveryManager] request_error during role request."
-                   << "Switch dpid=" << e.dpid() << ", msg xid=" << e.xid();
+        LOG_ERROR( "[RecoveryManager] request_error during role request."
+                   "Switch dpid={}, msg xid={}", e.dpid(), e.xid());                   
     } catch (...) {
-        LOG(ERROR) << "[RecoveryManager] Undefined error in changeSwitchRole";
+        LOG_ERROR( "[RecoveryManager] Undefined error in changeSwitchRole" );
     }
 }
 
@@ -97,10 +97,9 @@ void SwitchView::change_switch_role(fluid_msg::ofp_controller_role sending_role,
     CHECK(fluid_msg::OFPCR_ROLE_NOCHANGE!= ret_role);
     if (fluid_msg::OFPCR_ROLE_NOCHANGE != sending_role &&
         ret_role != sending_role && role_request_times == -1) {
-        LOG(ERROR) << "[RecoveryManager] Mastership -"
-                   << " New role=" << SwitchView::convertRole(sending_role)
-                   << " wasn't set. Role=" << SwitchView::convertRole(ret_role)
-                   << " was recieved from switch";
+        LOG_ERROR( "[RecoveryManager] Mastership - New role={}"
+                   " wasn't set. Role={} was recieved from switch", 
+                   SwitchView::convertRole(sending_role), SwitchView::convertRole(ret_role));
     }
     process_role_reply(sending_role, std::move(ret),
                        get_only_generation_id, role_request_times);
@@ -173,11 +172,9 @@ void SwitchView::process_role_reply(fluid_msg::ofp_controller_role sending_role,
         default:
             CHECK(false);
         }
-        LOG(INFO) << "[RecoveryManager] Mastership view - "
-                  << "For switch with DPID=" << sw_->dpid()
-                  << " role has changed from "
-                  << SwitchView::convertRole(role_)
-                  << " to " << SwitchView::convertRole(returned_role);
+        LOG_INFO( "[RecoveryManager] Mastership view - For switch with DPID={}"
+                  " role has changed from {} to {}", sw_->dpid(), 
+            SwitchView::convertRole(role_), SwitchView::convertRole(returned_role));
         role_ = returned_role;
     }
 }
@@ -282,7 +279,7 @@ void MastershipView::setStatus(ControllerStatus status)
     if (+ControllerStatus::UNDEFINED != ctrl_status_ && not initialised_) {
         initialised_ = true;
         init_promise_.set_value();
-        VLOG(3) << "[RecoveryManager] Mastership view - Promise set";
+        LOG_TRACE( "[RecoveryManager] Mastership view - Promise set" );
     }
 }
 
@@ -580,11 +577,10 @@ void RecoveryManager::sendStartHeartbeat()
 
     emit toStartHeartbeatService(heartbeat_communication_type_,
                                  controller_status_);
-    LOG(WARNING) << "[RecoveryManager] Heartbeat - Start heartbeat in "
-                 << heartbeat_communication_type_._to_string()
-                 << " " << controller_status_._to_string()
-                 << " mode with address=" << heartbeat_address_
-                 << " and port=" << heartbeat_port_;
+
+    LOG_WARN( "[RecoveryManager] Heartbeat - Start heartbeat in {} {}"
+              " mode with address={} and port={}", heartbeat_communication_type_._to_string(), 
+              controller_status_._to_string(), heartbeat_address_, heartbeat_port_ );
 }
 
 void RecoveryManager::setInitControllerStatus()
@@ -636,27 +632,27 @@ void RecoveryManager::switchUp(SwitchPtr sw)
     try {
         switch(mastership_view_->getStatus()) {
         case ControllerStatus::UNDEFINED:
-            VLOG(3) << "[RecoveryManager] switchUp - "
-                       "mastership_view status is undefined";
+            LOG_TRACE( "[RecoveryManager] switchUp - "
+                       "mastership_view status is undefined" );
             break;
         case ControllerStatus::PRIMARY:
-            VLOG(3) << "[RecoveryManager] switchUp - "
-                       "mastership_view status is primary";
+            LOG_TRACE( "[RecoveryManager] switchUp - "
+                       "mastership_view status is primary" );
             switch_view_ptr->changeSwitchRole(fluid_msg::OFPCR_ROLE_MASTER);
             break;
         case ControllerStatus::BACKUP:
-            VLOG(3) << "[RecoveryManager] switchUp - "
-                       "mastership_view status is backup";
+            LOG_TRACE( "[RecoveryManager] switchUp - "
+                       "mastership_view status is backup" );
             switch_view_ptr->changeSwitchRole(fluid_msg::OFPCR_ROLE_SLAVE);
             break;
         case ControllerStatus::RECOVERY:
-            VLOG(3) << "[RecoveryManager] switchUp - "
-                       "mastership_view status is recovery";
+            LOG_TRACE( "[RecoveryManager] switchUp - "
+                       "mastership_view status is recovery" );
             break;
         }
     } catch(const std::future_error& e) {
-        LOG(ERROR) << "[RecoveryManager] switchUp - "
-                      "future error inside switchUp. error_code=" << e.code();
+        LOG_ERROR( "[RecoveryManager] switchUp - "
+                   "future error inside switchUp. error_code={}", e.code().message());
     }
 
     rm_checker_->updateSwitch(sw->dpid(), Action::ADD);
@@ -701,11 +697,11 @@ void RecoveryManager::recovery()
     }
 
     if (+ControllerStatus::BACKUP == controller_status_) {
-        LOG(ERROR) << "[RecoveryManager] Heartbeat - Primary "
-                      "controller has failed. Start recovery procedure";
+        LOG_ERROR( "[RecoveryManager] Heartbeat - Primary "
+                   "controller has failed. Start recovery procedure" );
     } else if (+ControllerStatus::RECOVERY == controller_status_) {
-        LOG(ERROR) << "[RecoveryManager] Heartbeat - "
-                   << "All switches are connected. Start recovery procedure";
+        LOG_ERROR( "[RecoveryManager] Heartbeat - "
+                   "All switches are connected. Start recovery procedure" );
     }
 
     controller_status_ = ControllerStatus::PRIMARY;
@@ -733,8 +729,9 @@ void RecoveryManager::recovery()
     // recovery datastore
     db_connector_->setupMasterRole();
     emit signalRecovery();
-    LOG(WARNING) << "[RecoveryManager] Heartbeat - Service restarted"
-                    " in Primary mode. Recovery is completed";
+
+    LOG_WARN( "[RecoveryManager] Heartbeat - Service restarted"
+              " in Primary mode. Recovery is completed" );
 }
 
 void RecoveryManager::backupDead(int backup_id)
@@ -747,8 +744,8 @@ void RecoveryManager::backupDead(int backup_id)
                                    backup_lamdba);
     CHECK(cluster_.end() != cluster_node_it);
     if (+ControllerStatus::BACKUP == (*cluster_node_it)->hbStatus()) {
-        LOG(WARNING) << "[RecoveryManager] Heartbeat - Backup controller with id="
-                     << backup_id << " failed";
+        LOG_WARN( "[RecoveryManager] Heartbeat - Backup controller with id={}"
+                  " failed", backup_id );
         (*cluster_node_it)->setState(ControllerState::NOT_ACTIVE);
     }
 }
@@ -784,8 +781,8 @@ void RecoveryManager::setPrimaryNode(int primary_id)
 
         cluster_.insert(cluster_node_it, new_cluster_node);
 
-        LOG(WARNING) << "[RecoveryManager] Cluster - New cluster node "
-                        "has been added. Cluster size=" << cluster_.size();
+        LOG_WARN( "[RecoveryManager] Cluster - New cluster node "
+                  "has been added. Cluster size={}", cluster_.size());
     } else {
         (*cluster_node_it)->setState(ControllerState::ACTIVE);
         (*cluster_node_it)->setHbStatus(ControllerStatus::PRIMARY);
@@ -802,8 +799,8 @@ void RecoveryManager::connectionToPrimaryEstablished(int primary_id)
         primary_controller_id_ = primary_id;
     }
 
-    LOG(WARNING) << "[RecoveryManager] Heartbeat - Connection to primary "
-                    "controller with id=" << primary_id << " established";
+    LOG_WARN( "[RecoveryManager] Heartbeat - Connection to primary "
+              "controller with id={} established", primary_id );
     this->setPrimaryNode(primary_id);
 
     if (primary_controller_id_ == primary_id) {
@@ -824,9 +821,8 @@ void RecoveryManager::setupPrimaryMode()
     }
 
     if (+ControllerStatus::RECOVERY == controller_status_) {
-        LOG(WARNING) << "[RecoveryManager] Heartbeat - "
-                        "No any primary controller. Staying in RECOVERY mode";
-
+        LOG_WARN( "[RecoveryManager] Heartbeat - "
+                  "No any primary controller. Staying in RECOVERY mode" );
         connect(rm_checker_.get(), &RecoveryModeChecker::readyToRecover,
                 [this]() {
                     controller_status_ = ControllerStatus::BACKUP;
@@ -848,8 +844,8 @@ void RecoveryManager::setupPrimaryMode()
     } else if (+ControllerStatus::BACKUP == controller_status_) {
         controller_status_ = ControllerStatus::PRIMARY;
 
-        LOG(WARNING) << "[RecoveryManager] Heartbeat - Switching from BACKUP "
-                        "to PRIMARY mode";
+        LOG_WARN( "[RecoveryManager] Heartbeat - Switching from BACKUP "
+                  "to PRIMARY mode" );
         // change role in MastershipView and on switches
         mastership_view_->setupNewRoleForAll(fluid_msg::OFPCR_ROLE_MASTER);
         mastership_view_->setStatus(controller_status_);
@@ -869,10 +865,9 @@ void RecoveryManager::setupBackupMode(uint64_t dpid_switch_slaved)
 
     auto log = "[RecoveryManager] Heartbeat - "
                "Switching from PRIMARY to BACKUP mode";
-
     (DEFAULT_DPID == dpid_switch_slaved)
-        ?  LOG(INFO) << log
-        :  LOG(INFO) << log << ". Failed switch dpid=" << dpid_switch_slaved;
+        ?  LOG_INFO( "{}", log )
+        :  LOG_INFO( "{}. Failed switch dpid={}", log, dpid_switch_slaved );
 
     // change role in MastershipView and on switches
     mastership_view_->setupNewRoleForAll(fluid_msg::OFPCR_ROLE_SLAVE);
@@ -906,14 +901,15 @@ void RecoveryManager::setParams(const ParamsMessage& p)
         return QHostAddress::Broadcast == ip ?
                     "broadcast" : ip.toString().toStdString();
     };
-
-    VLOG(10) << "[RecoveryManager] Parameters came. id=" << controller_id
-             << ", heartbeat_ip=" << b(p.heartbeat_connection_params.first)
-             << ", heartbeat_port=" << p.heartbeat_connection_params.second
-             << ", db_ip=" << b(p.db_connection_params.first)
-             << ", db_port=" << p.db_connection_params.second
-             << ", openflow_ip=" << b(p.openflow_connection_params.first)
-             << ", openflow_port=" << p.openflow_connection_params.second;
+             
+    LOG_TRACE( "[RecoveryManager] Parameters came. id={}, heartbeat_ip={}" 
+               ", heartbeat_port={}, db_ip={}, db_port={}"
+               ", openflow_ip={}, openflow_port={}", 
+               controller_id, b(p.heartbeat_connection_params.first), 
+               p.heartbeat_connection_params.second, b(p.db_connection_params.first),
+               p.db_connection_params.second, b(p.openflow_connection_params.first),
+               p.openflow_connection_params.second );
+             
 
     auto of_pair = std::make_pair(b(p.openflow_connection_params.first),
                                   p.openflow_connection_params.second);
@@ -936,23 +932,22 @@ void RecoveryManager::setParams(const ParamsMessage& p)
         if (cluster_.end() == primary_it) {
             // if 3 controllers, may be the situation when
             // one backup received params from another backup
-            VLOG(7) << "[RecoveryManager] Primary node not found";
+            LOG_TRACE( "[RecoveryManager] Primary node not found" );
             return;
         }
 
         db_connector_->setupSlaveOf((*primary_it)->dbIP().c_str(),
                                     (*primary_it)->dbPort());
 
-        VLOG(7) << "[RecoveryManager] Controller became slave of db_ip="
-                << (*primary_it)->dbIP()
-                << " and db_port=" << (*primary_it)->dbPort();
+        LOG_TRACE( "[RecoveryManager] Controller became slave of db_ip={} and db_port={}",
+                   (*primary_it)->dbIP(), (*primary_it)->dbPort());
     }
 }
 
 void RecoveryManager::connectionToBackupControllerEstablished(int backup_id)
 {
-    LOG(WARNING) << "[RecoveryManager] Heartbeat - Connection to backup "
-                    "controller with id=" << backup_id << " established";
+    LOG_WARN( "[RecoveryManager] Heartbeat - Connection to backup "
+              "controller with id={} established", backup_id );                    
     auto cluster_node_it = find_if(cluster_.begin(),
                                    cluster_.end(),
                                    [backup_id](ClusterNodePtr ptr)
@@ -995,22 +990,22 @@ bool RecoveryManager::processCommand(Config command)
     std::string command_str = config_get(command, "command", "");
 
     if ("changeRole" == command_str) {
-        VLOG(2) << "[RecoveryManager-REST] processCommand: modifyRole";
+        LOG_TRACE( "[RecoveryManager-REST] processCommand: modifyRole" );
         modifyRole(command);
     } else if ("changeHeartbeat" == command_str) {
-        LOG(ERROR) << "[RecoveryManager-REST] modify "
-                      "heartbeat button deprecated";
+        LOG_ERROR( "[RecoveryManager-REST] modify heartbeat button deprecated" );
+        
     } else if ("changeDatabase" == command_str) {
-        VLOG(2) << "[RecoveryManager-REST] processCommand: changeDatabase";
+        LOG_TRACE( "[RecoveryManager-REST] processCommand: changeDatabase" );
         modifyDatabase(command);
     } else if ("changeStatus" == command_str) {
-        VLOG(2) << "[RecoveryManager-REST] processCommand: changeStatus";
+        LOG_TRACE( "[RecoveryManager-REST] processCommand: changeStatus" );
         modifyStatus(command);
     } else if ("stopHeartbeat" == command_str) {
-        VLOG(2) << "[RecoveryManager-REST] processCommand: stopHeartbeat";
+        LOG_TRACE( "[RecoveryManager-REST] processCommand: stopHeartbeat" );
         stopHeartbeat();
     } else {
-        LOG(WARNING) << "[RecoveryManager-REST] Uknown command from WEB UI";
+        LOG_WARN( "[RecoveryManager-REST] Uknown command from WEB UI" );
     }
     return true;
 }
@@ -1028,7 +1023,7 @@ bool RecoveryManager::modifyRole(Config command)
     } else if ("SLAVE" == newRole) {
         mastership_view_->setupNewRoleForAll(fluid_msg::OFPCR_ROLE_SLAVE);
     } else {
-        LOG(WARNING) << "[RecoveryManager-REST] Unknown new role";
+        LOG_WARN( "[RecoveryManager-REST] Unknown new role" );
         return false;
     }
     return true;
@@ -1039,8 +1034,8 @@ bool RecoveryManager::modifyDatabase(Config command)
     auto new_db_ip = config_get(command, "db_IP", "127.0.0.1");
     auto new_db_port = std::stoi(config_get(command, "db_port", "6379"));
 
-    VLOG(10) << "[RecoveryManager] ModifyDatabase. Db address=" << new_db_ip
-             << ", db port=" << new_db_port;
+    LOG_TRACE( "[RecoveryManager] ModifyDatabase. Db address={}"
+               ", db port={}", new_db_ip, new_db_port );
 
     emit dbParamsChanged(new_db_ip, new_db_port);
     return true;
@@ -1057,8 +1052,7 @@ bool RecoveryManager::modifyStatus(Config command)
     } else if ("Backup" == new_status) {
         this->setupBackupMode();
     } else {
-        LOG(WARNING) << "[RecoveryManager] modifyStatus error. new_status="
-                     << new_status;
+        LOG_WARN( "[RecoveryManager] modifyStatus error. new_status={}", new_status );
         return false;
     }
     return true;

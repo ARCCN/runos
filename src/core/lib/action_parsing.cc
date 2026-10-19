@@ -77,7 +77,7 @@ void parsingSetField(of13::OXMTLV* tlv, std::string prefix, ptree& pt) {
                                         ip_to_string(((of13::IPv4Dst*)tlv)->value().getIPv4()));
         break;
     default:
-        LOG(ERROR) << "Unhandled SetField: " << (int)tlv->field();
+        LOG_ERROR( "Unhandled SetField: {}", (int)tlv->field());
     }
 }
   
@@ -104,10 +104,10 @@ void parsingAction(fluid_msg::Action* act, std::string prefix, rest::ptree& pt,
         pt.put(prefix + ".set_queue.queue_id", ((of13::SetQueueAction*)act)->queue_id());
         break;
     case of13::OFPAT_SET_FIELD:
-        parsingSetField(((of13::SetFieldAction*)act)->field(), prefix, pt);
+        parsingSetField(const_cast<of13::OXMTLV*>(((of13::SetFieldAction*)act)->field()), prefix, pt);
         break;
     default:
-        LOG(ERROR) << "Unhandled action type: " ;//<< act->type();
+        LOG_ERROR( "Unhandled action type: " ); //<< act->type();
         break;
     }
 }

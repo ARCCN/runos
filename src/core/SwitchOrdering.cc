@@ -138,8 +138,7 @@ void SwitchOrderingManager::run_handling(SwitchPtr sw, EventType type)
                                 });
                             }
                         }
-                        LOG(WARNING) << "link up - " << port->switch_()->dpid() 
-                                                     << ":" << port->number();
+                        LOG_WARN( "link up - {}:{}", port->switch_()->dpid(), port->number());
                     });
                 CHECK(cached_.at(sw->dpid()).size() == 0);
             }
@@ -159,7 +158,7 @@ void SwitchOrderingManager::run_handling(SwitchPtr sw, EventType type)
         });
         break;
     default:
-        LOG(ERROR) << "Unexpected event type!";
+        LOG_ERROR( "Unexpected event type!" );
     }
 
     // destructor events
@@ -190,7 +189,7 @@ void SwitchOrderingManager::onSwitchUp(SwitchPtr sw)
         try {
             sw->connection()->agent()->barrier();
         } catch (const OFAgent::request_error& e) {
-            LOG(ERROR) << "[SwitchOrderingManager] - " << e.what();
+            LOG_ERROR( "[SwitchOrderingManager] - {}", e.what());
         }
     });
     barrier_timer->start();
@@ -223,7 +222,7 @@ void SwitchOrderingManager::onLinkUp(PortPtr port)
                 });
             }
         }
-        LOG(WARNING) << "link up - " << dpid << ":" << port->number();
+        LOG_WARN( "link up - {}:{}", dpid, port->number());
     } else {
         std::lock_guard<std::mutex> lock(mut_);
         cached_[dpid].push_back(port);
@@ -256,7 +255,7 @@ void SwitchOrderingManager::onLinkDown(PortPtr port)
             });
         }
     }
-    LOG(WARNING) << "link down - " << dpid << ":" << port->number();
+    LOG_WARN( "link down - {}:{}", dpid, port->number());
 }
 
 // Handler's methods
@@ -270,7 +269,7 @@ void MainHandler::onSwitchUp()
             });
         }
 
-        LOG(WARNING) << "switch up, dpid: " << sw->dpid();
+        LOG_WARN( "switch up, dpid: {}", sw->dpid());
         emit finished(sw->dpid());
     }
 }
@@ -285,7 +284,7 @@ void MainHandler::onSwitchDown()
             });
         }
 
-        LOG(WARNING) << "switch down, dpid: " << sw->dpid();
+        LOG_WARN( "switch down, dpid: {}", sw->dpid());
         emit finished(sw->dpid());
     }
 }
@@ -304,7 +303,7 @@ void SwitchLocker::add_and_lock_switch_mutex(uint64_t dpid)
 
         sw_mut->lock();
     } catch (const std::bad_alloc& ex) { // incorrect std::make_unique
-        LOG(ERROR) << "Allocation failed: " << ex.what();
+        LOG_ERROR( "Allocation failed: {}", ex.what());
         mut_for_map_.unlock();
     }
 }

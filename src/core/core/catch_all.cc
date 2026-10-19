@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #include <runos/core/catch_all.hpp>
 #include <runos/core/logging.hpp>
 #include <runos/core/literals.hpp>
@@ -147,24 +148,24 @@ diagnostic_information::diagnostic_information( boost::exception const& e)
 static void log_extra_info(diagnostic_information const& self)
 {
     if (!self.condition.empty())
-        LOG(ERROR) << "  condition: " << self.condition;
+        LOG_ERROR( "  condition: {}", self.condition );
     if (!self.what.empty())
-        LOG(ERROR) << "  what: " << self.what;
+        LOG_ERROR( "  what: {}", self.what );
     if (!self.where.empty())
-        LOG(ERROR) << "  thrown at: " << self.where;
+        LOG_ERROR( "  thrown at: {}", self.where );
     for (auto& data : self.with) {
-        LOG(ERROR) << "  with: " << data;
+        LOG_ERROR( "  with: {}", data );
     }
     if (self.nested) {
         auto& nested = *self.nested;
-        LOG(ERROR) << "after nested exception of type `" << nested.exception_type << "`:";
+        LOG_ERROR( "after nested exception of type `{}`:", nested.exception_type );
         log_extra_info(nested);
     }
 }
 
 void diagnostic_information::log() const
 {
-    LOG(ERROR) << "Unhandled exception of type `" << exception_type << "`:";
+    LOG_ERROR( "Unhandled exception of type `{}`:", exception_type );
     log_extra_info(*this);
 }
 

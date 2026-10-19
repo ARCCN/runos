@@ -16,6 +16,7 @@
  
 #include "OFAgentImpl.hpp"
 
+#include <runos/core/logging.hpp>
 #include <utility>
 #include <algorithm>
 #include <iterator>
@@ -76,8 +77,9 @@ public:
             self->on_response(e.xid(), std::move(visitor));
         } catch (OFAgent::bad_reply& e) {
             // ignore (it's not our error)
-            LOG(ERROR) << "[OFAgent] Bad reply exception - Error on switch with dpid="
-                       << e.dpid() << " and xid=" << e.xid() << " has come";
+                       
+            LOG_ERROR( "[OFAgent] Bad reply exception - Error on switch with dpid={}"
+                        " and xid={} has come", e.dpid(), e.xid());
         }
     }
 

@@ -17,7 +17,8 @@
 #pragma once
 
 #include <tuple>
-#include <fmt/core.h>
+#include <fmt/format.h>
+#include <ostream>
 
 namespace runos {
 

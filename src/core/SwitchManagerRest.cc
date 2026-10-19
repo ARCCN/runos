@@ -22,7 +22,7 @@
 #include "Recovery.hpp"
 #include "api/Statistics.hpp"
 #include "json11.hpp"
-#include "runos/core/logging.hpp"
+#include <runos/core/logging.hpp>
 
 #include <boost/lexical_cast.hpp>
 #include <fluid/of13msg.hh>
@@ -136,9 +136,10 @@ struct SwitchRoles : rest::resource {
 
         // Block writing to db if it's not primary
         if (not recovery_manager->isPrimary()) {
-            LOG(ERROR) << "[SwitchManager-REST] Error during writing to db. "
-                          "The controller is not primary. "
-                          "Writing to database is blocked";
+            LOG_ERROR( "[SwitchManager-REST] Error during writing to db. "
+                       "[SwitchManager-REST] Error during writing to db. "
+                       "Writing to database is blocked" );
+            
             return error_lambda("The controller is NOT primary. "
                                 "Writing request to DB is blocked");
         }

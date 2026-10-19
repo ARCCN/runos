@@ -269,7 +269,7 @@ void HeartbeatCore::stopService()
 {
     impl_->timers.stopTimer(TimerType::ALL);
     impl_->is_connection_to_primary_established = false;
-    VLOG(5) << "[RecoveryManager] Heartbeat - Heartbeat stopped slot raised";
+    LOG_TRACE( "[RecoveryManager] Heartbeat - Heartbeat stopped slot raised" );
 }
 
 void HeartbeatCore::start_receiving(CommunicationType communication_type)
@@ -278,10 +278,10 @@ void HeartbeatCore::start_receiving(CommunicationType communication_type)
     if (not impl_->is_connection_to_primary_established and
             not impl_->is_link_between_controllers_down) {
         impl_->timers.startTimer(TimerType::PRIMARY_WAITING_TIMER);
-        VLOG(8) << "[HeartbeatCore] primary_waiting_timer start";
+        LOG_TRACE( "[HeartbeatCore] primary_waiting_timer start" );
     }
 
-    VLOG(5) << "[HeartbeatCore] Start receiving";
+    LOG_TRACE( "[HeartbeatCore] Start receiving" );
 }
 
 void HeartbeatCore::start_transmitting(CommunicationType communication_type)
@@ -289,7 +289,7 @@ void HeartbeatCore::start_transmitting(CommunicationType communication_type)
     prepare_connection(communication_type, ControllerStatus::PRIMARY);
     impl_->timers.startTimer(TimerType::HEARTBEAT);
 
-    VLOG(5) << "[HeartbeatCore] Start transmitting - heartbeat_timer start";
+    LOG_TRACE( "[HeartbeatCore] Start transmitting - heartbeat_timer start" );
 }
 
 void HeartbeatCore::send_request()
@@ -305,9 +305,10 @@ void HeartbeatCore::bind_socket(CommunicationType communication_type)
     }
 
     if (+CommunicationType::UNICAST == communication_type) {
-        VLOG(7) << "[RecoveryManager] Heartbeat core - Unicast binding. "
-           <<  "Host=" << impl_->settings.unicast_host.toString().toStdString()
-           << ", port=" << impl_->settings.unicast_port;
+        LOG_TRACE( "[RecoveryManager] Heartbeat core - Unicast binding. "
+                   "Host={}, port={}",
+                   impl_->settings.unicast_host.toString().toStdString(),
+                   impl_->settings.unicast_port );
         auto c = impl_->udp_socket->bind(impl_->settings.unicast_host,
                                          impl_->settings.unicast_port);
         CHECK(c);
@@ -380,7 +381,7 @@ void HeartbeatCore::primary_death()
     stopService();
     emit primaryDied();
 
-    VLOG(5) << "[HeartbeatCore] primaryDeath slot. Signal primaryDied emmited";
+    LOG_TRACE( "[HeartbeatCore] primaryDeath slot. Signal primaryDied emmited" );
 }
 
 void HeartbeatCore::check_primary()
@@ -392,20 +393,19 @@ void HeartbeatCore::check_primary()
         emit modeChangedToPrimary();
         start_transmitting(impl_->communication_type);
 
-        VLOG(5) << "[HeartbeatCore] checkPrimary slot. "
-                   "Signal setupPrimaryMode emmited";
+        LOG_TRACE( "[HeartbeatCore] checkPrimary slot. "
+                   "Signal setupPrimaryMode emmited" );
     }
 }
 
 void HeartbeatCore::backup_death(int backup_id)
 {
-    VLOG(3) << "[HeartbeatCore] backupDeath slot raised. backup_id="
-            << backup_id;
+    LOG_TRACE( "[HeartbeatCore] backupDeath slot raised. backup_id= {}", backup_id );
 
     impl_->timers.stopTimer(TimerType::BACKUP_DEAD, backup_id);
     emit backupDied(backup_id);
 
-    VLOG(3) << "[HeartbeatCore] backupDeath slot. Signal backupDied emmited";
+    LOG_TRACE( "[HeartbeatCore] backupDeath slot. Signal backupDied emmited" );
 }
 
 void HeartbeatCore::ready_read_handler()
@@ -438,9 +438,9 @@ void HeartbeatCore::ready_read_handler()
         }
 
         if (not stream.commitTransaction()) {
-            LOG(ERROR) << "[RecoveryManager] Heartbeat problem - "
-                          "Error during message receiving."
-                          "QDataStream transaction error";
+            LOG_ERROR( "[RecoveryManager] Heartbeat problem - "
+                       "Error during message receiving." 
+                       "QDataStream transaction error" );
             return;
         }
     }
@@ -451,11 +451,10 @@ void HeartbeatCore::process_message_request(QDataStream& stream)
     if (+ControllerStatus::BACKUP == impl_->heartbeat_mode) {
         EchoMessage msg;
         stream >> msg;
-        
-        VLOG(5) << "[RecoveryManager] Heartbeat message REQUEST received"
-                << ", unique_node_id=" << msg.unique_node_id
-                << ", number=" << msg.message_number;
-		
+        LOG_TRACE( "[RecoveryManager] Heartbeat message REQUEST received"
+                   ", unique_node_id={}, number={}", 
+                   msg.unique_node_id, msg.message_number );
+
         // Don't receive message from myself
         if (msg.unique_node_id == impl_->unique_node_id && msg.hb_start_time == impl_->hb_start_time) {
             return;
@@ -463,11 +462,9 @@ void HeartbeatCore::process_message_request(QDataStream& stream)
         
         // FATAL ERROR Controller ID is not unique
         if (msg.unique_node_id == impl_->unique_node_id && msg.hb_start_time != impl_->hb_start_time) {
-            
-            LOG(FATAL) << "[RecoveryManager] FATAL ERROR! Controller ID is not unique! A controller with ID =" 
-                       << msg.unique_node_id 
-                       << " already exists in the cluster. "
-                       << "Please, change ID in the network settings config file.";
+            LOG_FATAL( "[RecoveryManager] FATAL ERROR! Controller ID is not unique! A controller with ID = {} "
+                       "already exists in the cluster. " 
+                       "Please, change ID in the network settings config file.", msg.unique_node_id );
         }
 
         impl_->timers.startTimer(TimerType::PRIMARY_DEAD);
@@ -497,10 +494,9 @@ void HeartbeatCore::process_message_reply(QDataStream& stream)
 {
     EchoMessage msg;
     stream >> msg;
-
-    VLOG(5) << "[RecoveryManager] Heartbeat message REPLY received"
-            << ", unique_node_id=" << msg.unique_node_id
-            << ", number=" << msg.message_number;
+    LOG_TRACE( "[RecoveryManager] Heartbeat message REPLY received"
+               ", unique_node_id={}, number={}", 
+               msg.unique_node_id, msg.message_number );
 
     // Don't receive message from myself
     if (msg.unique_node_id == impl_->unique_node_id) {
@@ -529,13 +525,13 @@ void HeartbeatCore::process_message_params(QDataStream& stream)
 void HeartbeatCore::linkDown()
 {
     impl_->is_link_between_controllers_down = true;
-    VLOG(5) << "[RecoveryManager] Heartbeat - linkDown slot raised";
+    LOG_TRACE( "[RecoveryManager] Heartbeat - linkDown slot raised" );
 }
 
 void HeartbeatCore::dbParamsChanged(const std::string &db_ip, int db_port)
 {
-    VLOG(10) << "[HeartbeatCore] Database params changed. Db ip=" << db_ip
-             << ", db port=" << db_port;
+    LOG_TRACE( "[HeartbeatCore] Database params changed. Db ip={}" 
+               ", db port={}", db_ip, db_port );
 
     impl_->cached_params_message.db_connection_params =
             qMakePair(toHostAddress(db_ip), db_port);
@@ -660,8 +656,8 @@ void Timers::stop_backup_timer(qint32 unique_node_id)
             auto& backup_timer_data = pair.second;
             stop_timer(backup_timer_data);
 
-            VLOG(3) << "[RecoveryManager] HeartbeatCore - "
-                       "All backup timers stopped";
+            LOG_TRACE( "[RecoveryManager] HeartbeatCore - "
+                       "All backup timers stopped" );
         }
     } else {
         // stop the only one timer
@@ -670,8 +666,8 @@ void Timers::stop_backup_timer(qint32 unique_node_id)
         auto& backup_timer_data = (*backup_timer_it).second;
         stop_timer(backup_timer_data);
 
-        VLOG(3) << "[RecoveryManager] HeartbeatCore - Backup timer with id="
-                << unique_node_id << " stopped";
+        LOG_TRACE( "[RecoveryManager] HeartbeatCore - Backup timer with id={}"
+                   " stopped", unique_node_id );
     }
 }
 
