@@ -3,6 +3,13 @@
 file(GLOB_RECURSE app_configs
     "*/settings.json"
 )
+
+find_program(JQ_EXECUTABLE jq)
+if(NOT JQ_EXECUTABLE)
+    message(FATAL_ERROR
+        "jq not found in PATH. Please install jq: https://jqlang.github.io/jq/")
+endif()
+
 set(default_json "${CMAKE_SOURCE_DIR}/default-settings.json")
 set(out_json "${CMAKE_SOURCE_DIR}/runos-settings.json")
 set(tmp_json "${CMAKE_SOURCE_DIR}/runos-settings.tmp.json")
