@@ -79,7 +79,7 @@ conan build . -b missing -r publicarccn
 ### Install Application from Source
 1. Go to the apps folder:
 ```
-cd /runos/src/apps
+cd runos/src/apps
 ```
 
 2. Getting application sources:
