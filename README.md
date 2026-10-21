@@ -31,7 +31,7 @@ RUNOS is developed by [Applied Research Center for Computer Networks (ARCCN)](ht
 
 Prepare, Setting Up the Development Environment:
 ```
-sudo apt install g++ make autoconf automake cmake pkg-config libtool git perl
+sudo apt install g++ make autoconf automake cmake pkg-config libtool git perl jq
 ```
 
 1. Install Python and [Conan package manager](https://docs.conan.io/2/installation.html):
