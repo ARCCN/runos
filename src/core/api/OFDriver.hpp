@@ -17,6 +17,7 @@
 #pragma once
 
 #include "../lib/better_enum.hpp"
+#include <stdint.h>
 
 namespace runos {
 namespace drivers {

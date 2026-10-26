@@ -3,6 +3,13 @@
 file(GLOB_RECURSE app_configs
     "*/settings.json"
 )
+
+find_program(JQ_EXECUTABLE jq)
+if(NOT JQ_EXECUTABLE)
+    message(FATAL_ERROR
+        "jq not found in PATH. Please install jq: https://jqlang.github.io/jq/")
+endif()
+
 set(default_json "${CMAKE_SOURCE_DIR}/default-settings.json")
 set(out_json "${CMAKE_SOURCE_DIR}/runos-settings.json")
 set(tmp_json "${CMAKE_SOURCE_DIR}/runos-settings.tmp.json")
@@ -33,6 +40,7 @@ endmacro()
 #Get all subdirectories (applications)
 SUBDIRLIST(apps_dir_list ${CMAKE_CURRENT_SOURCE_DIR})
 #list(FILTER apps_dir_list EXCLUDE REGEX "include")
+list(FILTER apps_dir_list EXCLUDE REGEX "CMakeFiles")
 
 #process all applications: if there is CMakeLists.txt then include it, or add files to current build
 foreach(app_dir ${apps_dir_list})

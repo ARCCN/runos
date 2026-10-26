@@ -177,8 +177,7 @@ struct FlowTableCollection : rest::resource {
                                 ((of13::Meter*)instr)->meter_id());
                         break;
                     default:
-                        LOG(ERROR) << "Unhandled instruction type: "
-                                   << instr->type();
+                        LOG_ERROR( "Unhandled instruction type: {}", instr->type());
                         break;
                     }
                 }
@@ -186,7 +185,7 @@ struct FlowTableCollection : rest::resource {
                 flows.push_back(std::make_pair("", std::move(fpt)));
             }
         } catch (const OFAgent::request_error& e) {
-            LOG(ERROR) << "[FlowTableCollection] - " << e.what();
+            LOG_ERROR( "[FlowTableCollection] - {}", e.what());
         }
         ret.add_child("array", flows);
         ret.put("_size", flows.size());

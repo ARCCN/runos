@@ -73,7 +73,7 @@ void sendLLDP::handle(drivers::DefaultDriver& driver) const {
     }
     po.add_action(ofoutput);
 
-    VLOG(5) << "Sending LLDP packet to " << port->name();
+    LOG_TRACE( "Sending LLDP packet to {}", port->name());
     // Send packet 3 times to prevent drops
     sw->connection()->send(po);
     sw->connection()->send(po);

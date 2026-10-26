@@ -59,14 +59,12 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
     connect(this, &LinkDiscovery::linkDiscovered,
          [this](switch_and_port from, switch_and_port to) {
              save_to_database();
-             LOG(INFO) << "[LinkDiscovery] Link discovered - "
-                       << from << " <-> " << to;
+             LOG_INFO( "[LinkDiscovery] Link discovered - {} <-> {}", from, to );
          });
     connect(this, &LinkDiscovery::linkBroken,
          [this](switch_and_port from, switch_and_port to) {
              save_to_database();
-             LOG(INFO) << "[LinkDiscovery] Link broken - "
-                       << from << " <-> " << to;
+             LOG_INFO( "[LinkDiscovery] Link broken - {} <-> {}", from, to );
         });
 
     /* Connect with other applications */
@@ -78,14 +76,14 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
             if (not recovery->isPrimary()) return false;
 
             if (pi.cookie() == ~((uint64_t)0)) {
-                VLOG(15) << "LinkDiscovery: Receive PacketIn with cookie = -1";
+                LOG_TRACE( "LinkDiscovery: Receive PacketIn with cookie = -1" );
                 if (sizeof(lldp_packet) > pi.data_len()) {
                     return false;
                 }
                 // Look into packet to check if it is LLDP
                 auto lldp(static_cast<lldp_packet*>(pi.data()));
                 if (lldp->eth_type != 0x88cc) {
-                    VLOG(15) << "LinkDiscovery: PacketIn is not lldp packet";
+                    LOG_TRACE( "LinkDiscovery: PacketIn is not lldp packet" );
                     return false;
                 }
             }
@@ -93,7 +91,7 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
                 return false;
             }
             
-            VLOG(15) << "LLDP packet received on " << connection->dpid();
+            LOG_TRACE(  "LLDP packet received on {}", connection->dpid());
 
             switch_and_port source;
             auto lldp(static_cast<lldp_packet*>(pi.data()));
@@ -101,10 +99,10 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
                 auto tagged_lldp(static_cast<tagged_lldp_packet*>(pi.data()));
                 if (sizeof(tagged_lldp_packet) > pi.data_len()
                         or tagged_lldp->dpid_oui != 0x0026e1) {
-                    VLOG(15) << "[LinkDiscovery] LLDP error - "
-                             <<"Recieved incorrect LLDP on "
-                             << connection->dpid()
-                             << ":" << pi.match().in_port()->value();
+
+                    LOG_TRACE( "[LinkDiscovery] LLDP error - "
+                                "Recieved incorrect LLDP on {}:{}",
+                               connection->dpid(), pi.match().in_port()->value());
                     return false;
                 }
 
@@ -114,10 +112,10 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
             else { // untagged lldp
                 if (sizeof(lldp_packet) > pi.data_len()
                         or lldp->dpid_oui != 0x0026e1) {
-                    VLOG(15) << "[LinkDiscovery] LLDP error - "
-                             <<"Recieved incorrect LLDP on "
-                             << connection->dpid()
-                             << ":" << pi.match().in_port()->value();
+
+                    LOG_TRACE( "[LinkDiscovery] LLDP error - "
+                                "Recieved incorrect LLDP on {}:{}",
+                               connection->dpid(), pi.match().in_port()->value());
                     return false;
                 }
 
@@ -128,7 +126,7 @@ void LinkDiscovery::init(Loader *loader, const Config &rootConfig)
             switch_and_port target { connection->dpid(),
                                      pi.match().in_port()->value() };
 
-            VLOG(15) << "LLDP packet received on " << target;
+            LOG_TRACE( "LLDP packet received on {}", target );
 
             //handle lldp in libfluid threads
             handleBeacon(source, target);
@@ -173,8 +171,8 @@ void LinkDiscovery::handleBeacon(switch_and_port from, switch_and_port to)
 {
     if (m_switch_manager->switch_(from.dpid) == nullptr ||
         m_switch_manager->switch_(to.dpid) == nullptr) {
-        LOG(WARNING) << "[LinkDiscovery] LLDP warning - "
-                     <<"Arrived LLDP from another RUNOS network";
+        LOG_WARN( "[LinkDiscovery] LLDP warning - "
+                  "Arrived LLDP from another RUNOS network" );
         return;
     }
 
@@ -223,7 +221,7 @@ void LinkDiscovery::clearLinkAt(PortPtr port)
 {
     switch_and_port source{port->switch_()->dpid(), port->number()};
     std::optional<link_pair> to_remove;
-    VLOG(15) << "clearLinkAt " << source;
+    LOG_TRACE( "clearLinkAt {}", source );
 
     { // lock
     std::lock_guard<std::mutex> lock(links_mutex);

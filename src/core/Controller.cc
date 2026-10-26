@@ -75,10 +75,8 @@ struct ReceiveHandler
 
     void process(fluid_msg::OFMsg& msg) {
         if (not self->dispatch(msg, conn)) {
-            //LOG(WARNING) << "OpenFlow message of type " << (unsigned) msg.type()
-            //    << " from switch dpid="
-            //    << (conn ? std::to_string(conn->dpid()) : "(unknown)")
-            //    << " hasn't been dispatched";
+            // LOG_WARN( "OpenFlow message of type {} from switch dpid={}  hasn't been dispatched", 
+            // (unsigned) msg.type(), (conn ? std::to_string(conn->dpid()) : "(unknown)");
         }
     }
 };

@@ -20,11 +20,11 @@
 #include "Recovery.hpp"
 #include "DatabaseConnector.hpp"
 #include "Controller.hpp"
-#include "Logger.hpp"
+#include <runos/core/logging.hpp>
 #include "api/Switch.hpp"
 #include "api/OFAgent.hpp"
 
-#include <of13/of13match.hh>
+#include <fluid/of13/of13match.hh>
 
 #include <boost/functional/hash.hpp>
 
@@ -32,6 +32,14 @@
 #include <functional>
 #include <vector>
 #include <mutex>
+
+
+namespace nlohmann {
+auto format_as(const json& j)
+{
+    return std::string( j.dump()); }
+} // namespace nlohmann
+
 
 namespace runos {
 
@@ -245,13 +253,11 @@ private:
             uchar value = *(packed.get() + i);
             dump.push_back(value);
         }
-
-        VLOG(17) << "[FlowEntriesVerifier] Dumped Flow-Mod message is of type="
-                    << static_cast<unsigned>(fmp_->type())
-                 << ", of size=" << fmp_->length()
-                 << " and refers to the table="
-                    << static_cast<unsigned>(fmp_->table_id())
-                 << " with priority=" << fmp_->priority();
+                 
+        LOG_TRACE( "[FlowEntriesVerifier] Dumped Flow-Mod message is of type={}"
+                   ", of size={}"
+                   " and refers to the table={}"
+                   " with priority={}", static_cast<unsigned>(fmp_->type()), fmp_->length(), static_cast<unsigned>(fmp_->table_id()), fmp_->priority());
 
         return dump;
     }
@@ -265,13 +271,12 @@ private:
             parsed.push_back(std::move(value));
         }
         fmp->unpack(parsed.data());
-
-        VLOG(17) << "[FlowEntriesVerifier] Parsed Flow-Mod message is of type="
-                    << static_cast<unsigned>(fmp->type())
-                 << ", of size=" << fmp->length()
-                 << " and refers to the table="
-                     << static_cast<unsigned>(fmp->table_id())
-                 << " with priority=" << fmp->priority();
+                 
+        LOG_TRACE( "[FlowEntriesVerifier] Parsed Flow-Mod message is of type={}"
+                   ", of size={}" 
+                   " and refers to the table={}"
+                   " with priority={}", 
+                   static_cast<unsigned>(fmp->type()), fmp->length(), static_cast<unsigned>(fmp->table_id()), fmp->priority());
 
         return fmp;
     }
@@ -593,14 +598,12 @@ private:
     void save_states_list(const json& list) const
     {
         db_mgr_->putSValue(settings_prefix, states_list_key, list.dump());
-        VLOG(30) << "[FlowEntriesVerifier] Saved states list to db: "
-                 << list.dump();
+        LOG_TRACE( "[FlowEntriesVerifier] Saved states list to db: {}", list.dump());
     }
 
     void save_state(const std::string& dpid_str, const json& state) const
     {
-        VLOG(17) << "[FlowEntriesVerifier] Saving state #"
-                 << dpid_str << ": " << state;
+        LOG_TRACE( "[FlowEntriesVerifier] Saving state #{}: {}", dpid_str, state );
 
         for (size_t i = 1; i < state.size() + 1; ++i) {
             const auto& flow = state[i - 1];
@@ -614,8 +617,7 @@ private:
     {
         auto&& list_dump = db_mgr_->getSValue(settings_prefix, states_list_key);
 
-        VLOG(30) << "[FlowEntriesVerifier] Got states list from db: "
-                 << list_dump;
+        LOG_TRACE( "[FlowEntriesVerifier] Got states list from db: {}", list_dump );
 
         if (list_dump.empty()) {
             return json::array();
@@ -641,8 +643,7 @@ private:
 
             state.push_back(json::parse(flow));
         }
-        VLOG(17) << "[FlowEntriesVerifier] Got state #"
-                 << dpid_str << " from db: " << state;
+        LOG_TRACE( "[FlowEntriesVerifier] Got state #{}  from db: {}", dpid_str, state );
 
         return state;
     }
@@ -668,8 +669,8 @@ void VerifierDatabase::process(uint64_t dpid, of13::FlowMod& fm)
         shared_lock_t lock(states_mut_);
         auto it = states_.find(dpid);
         if (it == states_.end()) {
-            VLOG(5) << "[FlowEntriesVerifier] Processing Flow-Mod "
-                    << "to unknown switch dpid=" << dpid;
+            LOG_TRACE( "[FlowEntriesVerifier] Processing Flow-Mod "
+                       "to unknown switch dpid={}", dpid );
             return;
         }
         state_ptr = it->second;
@@ -680,13 +681,13 @@ void VerifierDatabase::process(uint64_t dpid, of13::FlowMod& fm)
 
 FlowModPtr VerifierDatabase::process(uint64_t dpid, of13::FlowRemoved& fr)
 {
-    VLOG(8) << "[FlowEntriesVerifier] Flow-Removed arrived from switch "
-            << "dpid=" << dpid;
+    LOG_TRACE( "[FlowEntriesVerifier] Flow-Removed arrived from switch "
+               "dpid={}", dpid );
 
     auto state_ptr = find_state(dpid);
     if (!state_ptr) {
-        VLOG(6) << "[FlowEntriesVerifier] Flow-Removed from unknown "
-               << "switch dpid=" << dpid << " arrived";
+        LOG_TRACE( "[FlowEntriesVerifier] Flow-Removed from unknown "
+                   "switch dpid={} arrived", dpid );
         return nullptr;
     }
 
@@ -728,16 +729,16 @@ void VerifierDatabase::restoreStates(const MessageSender* sender) const
         if (!flow_stats.empty()) {
             auto&& fmp_sequence = state_ptr->process(flow_stats);
             if (!fmp_sequence.empty()) {
-                LOG(WARNING) << "[FlowEntriesVerifier] No "
-                             << fmp_sequence.size() << "required flow entries "
-                             << "on switch dpid=" << dpid;
+                LOG_WARN( "[FlowEntriesVerifier] No {}"
+                          "required flow entries "
+                          "on switch dpid={}", fmp_sequence.size(), dpid );
             }
 
             sender->send(dpid, fmp_sequence);
 
             if (!fmp_sequence.empty()) {
-                VLOG(7) << "[FlowEntriesVerifier] " << fmp_sequence.size()
-                        << "Flow-Mod re-sent to switch dpid=" << dpid;
+                LOG_TRACE( "[FlowEntriesVerifier] {}"
+                           "Flow-Mod re-sent to switch dpid={}", fmp_sequence.size(), dpid );
             }
         }
     }
@@ -761,7 +762,7 @@ void VerifierDatabase::clear()
     unique_lock_t unique_lock(lock);
     states_.clear();
 
-    VLOG(8) << "[FlowEntriesVerifier] VerifierDatabase cleared";
+    LOG_TRACE( "[FlowEntriesVerifier] VerifierDatabase cleared" );
 }
 
 VerifierDatabase::SwitchStatePtr VerifierDatabase::find_state(uint64_t dpid) const
@@ -837,14 +838,13 @@ struct FlowEntriesVerifier::implementation final
         auto dpid = conn->dpid();
         auto&& fmp = data_ptr->process(dpid, fr);
         if (fmp) {
-            VLOG(7) << "[FlowEntriesVerifier] Unexpected flow removal "
-                    << "on switch dpid=" << dpid << ", table id="
-                    << static_cast<int>(fr.table_id());
+            LOG_TRACE( "[FlowEntriesVerifier] Unexpected flow removal "
+                       "on switch dpid={}, table id={}", dpid, static_cast<int>(fr.table_id()));
 
             sender.send(dpid, fmp);
 
-            VLOG(7) << "[FlowEntriesVerifier] Flow-Mod re-sent "
-                    << "to switch dpid=" << dpid;
+            LOG_TRACE( "[FlowEntriesVerifier] Flow-Mod re-sent "
+                       "to switch dpid={}", dpid );
         }
         return false;
     }
@@ -866,14 +866,14 @@ struct FlowEntriesVerifier::implementation final
         auto&& db_dump = data_ptr->toJson();
         recovery.save(db_dump);
 
-        VLOG(6) << "[FlowEntriesVerifier] States were saved to database";
+        LOG_TRACE( "[FlowEntriesVerifier] States were saved to database" );
     }
 
     void restoreStates() const
     {
         data_ptr->restoreStates(&sender);
 
-        VLOG(6) << "[FlowEntriesVerifier] States were verified";
+        LOG_TRACE( "[FlowEntriesVerifier] States were verified" );
     }
 
     bool isPrimary() const { return recovery.isPrimary(); }
@@ -900,7 +900,7 @@ void FlowEntriesVerifier::init(Loader* loader, const Config& rootConfig)
 
         connect(rc_mgr, &RecoveryManager::signalRecovery, this, [this]() {
             impl_->loadFromDatabase();
-            LOG(INFO) << "[FlowEntriesVerifier] FlowEntriesVerifier recovered";
+            LOG_INFO( "[FlowEntriesVerifier] FlowEntriesVerifier recovered" );
         });
 
         connect(rc_mgr, &RecoveryManager::signalSetupBackupMode,

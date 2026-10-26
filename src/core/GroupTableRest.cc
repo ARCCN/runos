@@ -66,7 +66,7 @@ struct GroupTableStats: rest::resource {
             ret.add_child("array", groups);
             ret.put("_size", groups.size());
         } catch (const OFAgent::request_error& e) {
-            LOG(WARNING) << "[GroupTableRest] - " << e.what();
+            LOG_WARN( "[GroupTableRest] - {}", e.what());
         }
         return ret;
     }
@@ -184,7 +184,7 @@ struct GroupTableDesc: rest::resource {
             ret.add_child("array", groups);
             ret.put("_size", groups.size());
         } catch (const OFAgent::request_error& e) {
-            LOG(ERROR) << "[GroupTableRest] - " << e.what();
+            LOG_ERROR( "[GroupTableRest] - {}", e.what());
         }
         return ret;
     }

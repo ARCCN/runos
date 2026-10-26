@@ -75,7 +75,7 @@ void MsgStatus::send_barrier()
     try {
         barrier = std::move(conn->agent()->barrier());
     } catch (const OFAgent::request_error& e) {
-        LOG(ERROR) << "[MsgStatus] - " << e.what();
+        LOG_ERROR( "[MsgStatus] - {}", e.what());
     }
     updated = boost::chrono::steady_clock::now();
 }
@@ -105,23 +105,22 @@ void MsgStatus::add_increase()
 {
     limit += additive_ratio;
 
-    VLOG(4) << "Switch " << conn->dpid() << " sent pack successfully";
-    VLOG(4) << "Increase limit on " << additive_ratio << " messages. "
-            << "Now: " << limit << " messages";
+    LOG_TRACE( "Switch  {} sent pack successfully", conn->dpid());
+    LOG_TRACE( "Increase limit on {} messages. "
+               "Now: {} messages", additive_ratio, limit );
 }
 
 void MsgStatus::mult_decrease()
 {
-    LOG(WARNING) << "Switch " << conn->dpid() << " don't reply on barrier";
+    LOG_WARN( "Switch {} don't reply on barrier", conn->dpid());
 
     if (limit >= multiplicative_ratio * min_rate) {
         limit /= multiplicative_ratio;
-        LOG(WARNING) << "Changed ofmsg limit for switch " << conn->dpid() 
-                     << " to " << limit << " messages";
+        LOG_WARN( "Changed ofmsg limit for switch {} to {} messages", conn->dpid(), limit );
+        
     } else {
         limit = min_rate;
-        LOG(WARNING) << "Ofmsg limit for switch " << conn->dpid()
-                     << " is min = " << min_rate << " messages";
+        LOG_WARN( "Ofmsg limit for switch {} is min = {} messages", conn->dpid(), min_rate );
     }
 }
 
@@ -217,7 +216,7 @@ void OFMsgSender::send_impl(uint64_t dpid, message& msg)
         std::lock_guard lock(status_iter->second->mut);
         status_iter->second->msgs.emplace(msg.pack(), msg.length());
     } catch (const invalid_argument& e) {
-        LOG(WARNING) << e.what();
+        LOG_WARN( "{}", e.what());
     }
 }
 

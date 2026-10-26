@@ -22,6 +22,8 @@
 #include <utility>
 #include <algorithm>
 #include <stdint.h>
+#include <fmt/core.h>
+#include <arpa/inet.h>
 
 namespace runos {
 
@@ -75,5 +77,16 @@ struct hash<runos::ipv4addr>
 };
 
 } // namespace std
+
+template<>
+struct fmt::formatter<runos::ipv4addr> : fmt::formatter<std::string>
+{
+    auto format(runos::ipv4addr addr, format_context &ctx) const -> decltype(ctx.out())
+    {
+        struct in_addr ip_addr;
+        ip_addr.s_addr = static_cast<uint32_t>(addr);
+        return format_to( ctx.out(), "{}", inet_ntoa(ip_addr));
+    }
+};
 
 #endif//_IPV4_ADDR_

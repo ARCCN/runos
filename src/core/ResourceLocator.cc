@@ -50,7 +50,7 @@ struct ResourceLocatorImpl final : ResourceLocator
             if (fs::is_directory(p_etcdir)) {
                 m_etcdir = p_etcdir;
             } else {
-                LOG(WARNING) << "Bad etcdir path: " << etcdir;
+                LOG_WARN( "Bad etcdir path: {}", etcdir );
             }
         }
 
@@ -58,7 +58,7 @@ struct ResourceLocatorImpl final : ResourceLocator
             if (fs::is_directory(p_tooldir)) {
                 m_tooldir = p_tooldir;
             } else {
-                LOG(WARNING) << "Bad tooldir path: " << tooldir;
+                LOG_WARN( "Bad tooldir path: {}", tooldir );
             }
         }
     }
@@ -81,9 +81,9 @@ struct ResourceLocatorImpl final : ResourceLocator
         std::string head = p.begin()->string();
 
         if (head == "$etcdir")
-            return fs::canonical(tail, m_etcdir);
+            return fs::canonical(tail, "etc/");
         else if (head == "$tooldir")
-            return fs::canonical(tail, m_tooldir);
+            return fs::canonical(tail, "tools/");
         else
             return fs::canonical(p);
 

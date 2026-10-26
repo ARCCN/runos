@@ -20,8 +20,8 @@
  */
 
 #include <runos/core/assert.hpp>
-
 #include <json11.hpp>
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
@@ -38,11 +38,20 @@ using std::make_shared;
 using std::initializer_list;
 using std::move;
 
+/* Helper for representing null - just a do-nothing struct, plus comparison
+ * operators so the helpers in JsonValue work. We can't use nullptr_t because
+ * it may not be orderable.
+ */
+struct NullStruct {
+    bool operator==(NullStruct) const { return true; }
+    bool operator<(NullStruct) const { return false; }
+};
+
 /* * * * * * * * * * * * * * * * * * * *
  * Serialization
  */
 
-static void dump(std::nullptr_t, string &out) {
+static void dump(NullStruct, string &out) {
     out += "null";
 }
 
@@ -209,9 +218,9 @@ public:
     explicit JsonObject(Json::object &&value)      : Value(move(value)) {}
 };
 
-class JsonNull final : public Value<Json::NUL, std::nullptr_t> {
+class JsonNull final : public Value<Json::NUL, NullStruct> {
 public:
-    JsonNull() : Value(nullptr) {}
+    JsonNull() : Value({}) {}
 };
 
 /* * * * * * * * * * * * * * * * * * * *
@@ -292,6 +301,8 @@ const Json & JsonArray::operator[] (size_t i) const {
  */
 
 bool Json::operator== (const Json &other) const {
+    if (m_ptr == other.m_ptr)
+        return true;
     if (m_ptr->type() != other.m_ptr->type())
         return false;
 
@@ -299,6 +310,8 @@ bool Json::operator== (const Json &other) const {
 }
 
 bool Json::operator< (const Json &other) const {
+    if (m_ptr == other.m_ptr)
+        return false;
     if (m_ptr->type() != other.m_ptr->type())
         return m_ptr->type() < other.m_ptr->type();
 
@@ -376,38 +389,31 @@ struct JsonParser final {
       if (str[i] == '/') {
         i++;
         if (i == str.size())
-          return fail("unexpected end of input inside comment", 0);
+          return fail("unexpected end of input after start of comment", false);
         if (str[i] == '/') { // inline comment
           i++;
-          if (i == str.size())
-            return fail("unexpected end of input inside inline comment", 0);
-          // advance until next line
-          while (str[i] != '\n') {
+          // advance until next line, or end of input
+          while (i < str.size() && str[i] != '\n') {
             i++;
-            if (i == str.size())
-              return fail("unexpected end of input inside inline comment", 0);
           }
           comment_found = true;
         }
         else if (str[i] == '*') { // multiline comment
           i++;
           if (i > str.size()-2)
-            return fail("unexpected end of input inside multi-line comment", 0);
+            return fail("unexpected end of input inside multi-line comment", false);
           // advance until closing tokens
           while (!(str[i] == '*' && str[i+1] == '/')) {
             i++;
             if (i > str.size()-2)
               return fail(
-                "unexpected end of input inside multi-line comment", 0);
+                "unexpected end of input inside multi-line comment", false);
           }
           i += 2;
-          if (i == str.size())
-            return fail(
-              "unexpected end of input inside multi-line comment", 0);
           comment_found = true;
         }
         else
-          return fail("malformed comment", 0);
+          return fail("malformed comment", false);
       }
       return comment_found;
     }
@@ -422,6 +428,7 @@ struct JsonParser final {
         bool comment_found = false;
         do {
           comment_found = consume_comment();
+          if (failed) return;
           consume_whitespace();
         }
         while(comment_found);
@@ -435,8 +442,9 @@ struct JsonParser final {
      */
     char get_next_token() {
         consume_garbage();
+        if (failed) return static_cast<char>(0);
         if (i == str.size())
-            return fail("unexpected end of input", 0);
+            return fail("unexpected end of input", static_cast<char>(0));
 
         return str[i++];
     }
@@ -510,7 +518,7 @@ struct JsonParser final {
                 if (esc.length() < 4) {
                     return fail("bad \\u escape: " + esc, "");
                 }
-                for (int j = 0; j < 4; j++) {
+                for (size_t j = 0; j < 4; j++) {
                     if (!in_range(esc[j], 'a', 'f') && !in_range(esc[j], 'A', 'F')
                             && !in_range(esc[j], '0', '9'))
                         return fail("bad \\u escape: " + esc, "");
@@ -728,6 +736,8 @@ Json Json::parse(const string &in, string &err, JsonParse strategy) {
 
     // Check for any trailing garbage
     parser.consume_garbage();
+    if (parser.failed)
+        return Json();
     if (parser.i != in.size())
         return parser.fail("unexpected trailing " + esc(in[parser.i]));
 
@@ -744,10 +754,14 @@ vector<Json> Json::parse_multi(const string &in,
     vector<Json> json_vec;
     while (parser.i != in.size() && !parser.failed) {
         json_vec.push_back(parser.parse_json(0));
+        if (parser.failed)
+            break;
+
         // Check for another object
         parser.consume_garbage();
-        if (!parser.failed)
-            parser_stop_pos = parser.i;
+        if (parser.failed)
+            break;
+        parser_stop_pos = parser.i;
     }
     return json_vec;
 }
@@ -762,8 +776,10 @@ bool Json::has_shape(const shape & types, string & err) const {
         return false;
     }
 
+    const auto& obj_items = object_items();
     for (auto & item : types) {
-        if ((*this)[item.first].type() != item.second) {
+        const auto it = obj_items.find(item.first);
+        if (it == obj_items.cend() || it->second.type() != item.second) {
             err = "bad type for " + item.first + " in " + dump();
             return false;
         }

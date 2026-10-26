@@ -83,8 +83,15 @@ private:
 #define SIMPLE_APPLICATION(klass, provides_val) \
     public: \
         std::string provides() const override final { return provides_val; } \
-        static runos::klass* get(Loader* loader) { \
+        static runos::klass* get_unsafe(Loader* loader) { \
             return dynamic_cast<runos::klass*>(loader->app(provides_val)); \
+        } \
+        static runos::klass* get(Loader* loader) { \
+            auto ptr = dynamic_cast<runos::klass*>(loader->app(provides_val)); \
+            if (ptr == nullptr) { \
+                throw std::runtime_error(std::string("failed to load app ") + provides_val); \
+            } \
+            return ptr; \
         } \
         DependencyList dependsOn(const Config&) const override final; \
     private:

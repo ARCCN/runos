@@ -67,7 +67,7 @@ size_t FluidOXMAdapter::pack(uint8_t* buffer)
     return 0;
 }
 
-of_error FluidOXMAdapter::unpack(uint8_t* buffer)
+of_error FluidOXMAdapter::unpack(const uint8_t* buffer)
 {
     OXMTLV::unpack(buffer);
     

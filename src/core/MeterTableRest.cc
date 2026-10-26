@@ -58,7 +58,7 @@ struct MeterTableCollection : rest::resource {
             ret.add_child("array", meters);
             ret.put("_size", meters.size());
         } catch (const OFAgent::request_error& e) {
-            LOG(ERROR) << "[MeterTableRest] - " << e.what();
+            LOG_ERROR( "[MeterTableRest] - {}", e.what());
         }
         return ret;
     }
@@ -109,7 +109,7 @@ struct MeterTableConfig : rest::resource {
             ret.add_child("array", meters);
             ret.put("_size", meters.size());
         } catch (const OFAgent::request_error& e) {
-            LOG(ERROR) << "[MeterTableRest] - " << e.what();
+            LOG_ERROR( "[MeterTableRest] - {}", e.what());
         }
         return ret;
     }
@@ -138,7 +138,7 @@ struct MeterTableFeatures : rest::resource {
             mpt.put("max_color", mf.max_color());
             ret.add_child("features", mpt);
         } catch (const OFAgent::request_error& e) {
-            LOG(ERROR) << "[MeterTableRest] - " << e.what();
+            LOG_ERROR( "[MeterTableRest] - {}", e.what());
         }
         return ret;
     }

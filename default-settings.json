@@ -80,7 +80,14 @@
     "rest-listener": {
         "address": "0.0.0.0",
         "port": "8000"
-    }
+    },
 
+    "spdlogger": {
+        "flush_policy": "1",
+        "stdout_verbose": "info",
+        "journal_verbose": "trace",
+        "journal_name": "journal.txt",
+        "journal_msize": "1"
+     }
 }
 

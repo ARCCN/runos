@@ -24,17 +24,36 @@ RUNOS is developed by [Applied Research Center for Computer Networks (ARCCN)](ht
 ### Minimal Requirements
 * RAM: 2Gb
 * HDD: 8Gb
-* Operating System: Ubuntu 18.04 and higher
+* Operating System: Ubuntu 22.04 and higher
 * Browser: Google Chrome
 
 ### Dependencies
 
-
-1. Install curl and [Nix package manager](https://nixos.org/nix/manual/):
-``` 
-sudo apt-get install curl
-curl -L https://nixos.org/nix/install | sh 
+Prepare, Setting Up the Development Environment:
 ```
+sudo apt install g++ make autoconf automake cmake pkg-config libtool git perl jq
+```
+
+1. Install Python and [Conan package manager](https://docs.conan.io/2/installation.html):
+```
+sudo apt install python3-pip
+sudo pip3 install conan
+```
+
+Init Conan package manager profile settings:
+```
+conan profile detect
+conan profile list
+```
+>Profiles found in the cache: default
+
+Init Conan package manager repository:
+```
+conan remote add publicarccn https://conan.arccn.ru --index 0
+conan remote list
+```
+>publicarccn: https://conan.arccn.ru [Verify SSL: True, Enabled: True]
+
 
 2. Install [Redis in-memory data store](https://redis.io/):
 ```
@@ -51,25 +70,16 @@ sudo apt install nginx
 git clone https://github.com/ARCCN/runos.git 
 ```
 
-2. Run `nix-shell` inside runos directory to build dependencies:
+2. Run conan build:
 ```
 cd runos
-nix-shell
-```
-
-3. Create build directory, run cmake and make:
-``` 
-mkdir build
-cd build
-cmake ..
-make
-cd ..
+conan build . -b missing -r publicarccn
 ```
 
 ### Install Application from Source
 1. Go to the apps folder:
 ```
-cd /runos/src/apps
+cd runos/src/apps
 ```
 
 2. Getting application sources:
@@ -79,18 +89,9 @@ git clone http://<application repository path>/app.git
 
 3. If it is necessary, edit application's configuration file (settings.json) inside application directory.
     
-4. Run `nix-shell` inside runos directory:
+4. Rebuild RUNOS with application inside build directory:
 ```
-cd ../..
-nix-shell
-```
-
-5. Rebuild RUNOS with application inside build directory:
-```
-cd build
-cmake ..
-make
-cd ..
+conan build .
 ```
 
 ### Start RUNOS
@@ -149,7 +150,6 @@ cd ..
 2. Start RUNOS controller:
 ```
 cd runos
-nix-shell
 ./build/runos
 ```
 

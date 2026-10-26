@@ -21,6 +21,7 @@
 
 #include <sys/wait.h>
 
+using namespace TinyProcessLib;
 namespace runos {
 
 struct ExecutionContext {

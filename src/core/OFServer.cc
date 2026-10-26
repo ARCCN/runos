@@ -245,9 +245,9 @@ public:
             { msg.pack(), deleter };
 
         //std::thread([this,len = msg.length(), buf = std::move(buf)] {
-        //LOG(ERROR)<<"-|- OFServer send("<<msg.length()<<")";
+        // LOG_ERROR( "-|- OFServer send({})", msg.length());
         fluid_conn_->send(buf.get(), msg.length());
-        //LOG(ERROR)<<"--- OFServer OK("<<msg.length()<<")";
+        // LOG_ERROR( "--- OFServer OK({})", msg.length());
         //}).detach();
         tx_of_packets_++;
     }
@@ -358,10 +358,9 @@ struct OFServer::implementation : fluid_base::OFServer
         defer_log_timer->setInterval(PRINT_LOGGING_TIMEOUT_MSEC);
         auto defer_log_timeout_lambda = [this]() {
             for (auto pair : connection_msgs_before_feature_reply) {
-                LOG(INFO) << "[OFServer] Switch with dpid=" << pair.first
-                    << " sent " << pair.second
-                    << " messages before FEATURES_REPLY during the last "
-                    << PRINT_LOGGING_TIMEOUT_MSEC.count()<< " ms";
+                LOG_INFO( "[OFServer] Switch with dpid={} sent {}"
+                          " messages before FEATURES_REPLY during the last {} ms",
+                    pair.first, pair.second, PRINT_LOGGING_TIMEOUT_MSEC.count());
             }
             connection_msgs_before_feature_reply.clear();
             if (defer_log_timer->isActive()) {
@@ -380,9 +379,9 @@ struct OFServer::implementation : fluid_base::OFServer
                 if (connections.end() != conn) {
                     (*conn).second->close();
                     emit this->app.connectionDown(conn->second);
-                    LOG(WARNING) << "[OFServer] Switch with dpid=" << dpid
-                        << " has been removed from registered role list."
-                        << " Connection is closed.";
+                    LOG_WARN( "[OFServer] Switch with dpid={}" 
+                              " has been removed from registered role list."
+                              " Connection is closed.", dpid );
                 }
             });
         };
@@ -480,10 +479,8 @@ OFServer::implementation::get_connection(FluidConnection *conn)
 
             if (ret->fluid_conn() != conn) {
                 if (ret->alive()) {
-                    LOG(ERROR) << "Duplicate dpid (" << dpid << ")"
-                        << " detected between connections "
-                        << ret->fluid_conn()->get_id()
-                        << " and " << conn->get_id();
+                    LOG_ERROR( "Duplicate dpid ({}) detected between connections {} and {}",
+                            dpid, ret->fluid_conn()->get_id(), conn->get_id());
                     conn->close();
                 } else {
                     ret->fluid_conn(conn);
@@ -553,8 +550,8 @@ OFServer::implementation::message_callback(FluidConnection *fluid_conn,
         = dynamic_cast<fluid_msg::OFMsg&>(*dispatchable);
 
     if (msg.unpack((uint8_t*) data_) != 0) {
-        LOG(WARNING) << "[OFServer] message_callback - Malformed "
-            "message received from connection " << fluid_conn->get_id();
+        LOG_WARN( "[OFServer] message_callback - Malformed "
+                  "message received from connection {}", fluid_conn->get_id());
         return;
     }
 
@@ -566,9 +563,10 @@ OFServer::implementation::message_callback(FluidConnection *fluid_conn,
             auto it = connection_msgs_before_feature_reply.find(dpid);
             if (connection_msgs_before_feature_reply.end() == it) {
                 // print log for dpid for the first time
-                LOG(ERROR) << "[OFServer] message_callback - Role of switch "
-                    "with dpid=" << dpid << " is undefined. Connection with id="
-                    << fluid_conn->get_id() << " dropped";
+                LOG_ERROR( "[OFServer] message_callback - Role of switch "
+                           "with dpid={} is undefined. Connection with id={}  dropped",
+                           dpid, fluid_conn->get_id());
+                    
                 // initialize connection attempts
                 connection_msgs_before_feature_reply.insert(std::make_pair(dpid, 1));
             } else {
@@ -588,8 +586,9 @@ OFServer::implementation::message_callback(FluidConnection *fluid_conn,
             if (limiter.enabled && limiter.limits.count(fluid_conn->get_id()) == 0)
                 limiter.limits.emplace(fluid_conn->get_id(), limiter::t_container());
             fluid_conn->set_application_data(new fluid_conn_data {dpid});
-            LOG(INFO) << "Connection id=" << fluid_conn->get_id()
-                      << " ends on switch dpid=" << dpid;
+            LOG_INFO( "Connection id={}"
+                      " ends on switch dpid={}",
+                      fluid_conn->get_id(), dpid );
         }
     }
 
@@ -600,8 +599,7 @@ OFServer::implementation::message_callback(FluidConnection *fluid_conn,
             this->print_error(error_msg, get_connection(fluid_conn));
         }
     } catch(const std::bad_cast& e) {
-        LOG(ERROR) << "[OFServer] Error message received - Bad cast message to of13::Error. What="
-                   << e.what();
+        LOG_ERROR( "[OFServer] Error message received - Bad cast message to of13::Error. What={}", e.what());
         throw;
     }
 
@@ -617,8 +615,8 @@ OFServer::implementation::message_callback(FluidConnection *fluid_conn,
 
         // drop exceeded packet (when timepoint's container is full)
         if (limits.size() > limiter.max_pps) {
-            VLOG(6) << "Drop message (" << (unsigned) msg.type() << ") "
-                       << "from connection id=" << fluid_conn->get_id();
+            LOG_TRACE( "Drop message ({}) from connection id={}", 
+                       (unsigned)msg.type(), fluid_conn->get_id());
             return;
         }
 
@@ -641,28 +639,29 @@ OFServer::implementation::connection_callback(FluidConnection *conn,
 {
     switch (type) {
     case FluidConnection::EVENT_STARTED:
-        VLOG(3) << "Connection id=" << conn->get_id() << " from "
-                << conn->get_peer_address() << " started";
+        LOG_TRACE( "Connection id={} from {}  started", 
+                   conn->get_id(), conn->get_peer_address());
         conn->set_application_data(nullptr);
     break;
     case FluidConnection::EVENT_ESTABLISHED:
-        VLOG(3) << "Connection id=" << conn->get_id() << " from "
-                << conn->get_peer_address() <<  " established";
+        LOG_TRACE( "Connection id={} from {}  established", 
+                   conn->get_id(), conn->get_peer_address());
     break;
     case FluidConnection::EVENT_FAILED_NEGOTIATION:
-        VLOG(3) << "Connection id=" << conn->get_id() << " from "
-                << conn->get_peer_address() << ": failed version negotiation";
+        LOG_TRACE( "Connection id={} from {}: failed version negotiation", 
+                   conn->get_id(), conn->get_peer_address());
     break;
     case FluidConnection::EVENT_CLOSED:
-        VLOG(3) << "Connection id=" << conn->get_id() << " from "
-                << conn->get_peer_address() << " closed by the user";
+        LOG_TRACE( "Connection id={} from {} closed by the user", 
+                   conn->get_id(), conn->get_peer_address());
+                
         if (auto ofconn = get_connection(conn)) {
             emit app.connectionDown(ofconn);
         }
     break;
     case FluidConnection::EVENT_DEAD:
-        VLOG(3) << "Connection id=" << conn->get_id() << " from "
-                << conn->get_peer_address() << " closed due to inactivity";
+        LOG_TRACE( "Connection id={} from {} closed due to inactivity", 
+                   conn->get_id(), conn->get_peer_address());
         if (auto ofconn = get_connection(conn)) {
             emit app.connectionDown(ofconn);
         }
@@ -681,10 +680,10 @@ void OFServer::init(Loader* loader, const Config& rootConfig)
     // If secure mode
     if(config_get(config, "secure", false))
     {
-        LOG(WARNING)<<"    TLS mode - ON";
-        LOG(WARNING)<<"    Controller public key  = "<<config_get(config, "ctl-cert", "").c_str();
-        LOG(WARNING)<<"    Controller private key = "<<config_get(config, "ctl-privkey", "").c_str();
-        LOG(WARNING)<<"    Switch certificate     = "<<config_get(config, "cacert", "").c_str();
+        LOG_WARN( "    TLS mode - ON" );
+        LOG_WARN( "    Controller public key  = {}", config_get( config, "ctl-cert", "").c_str());
+        LOG_WARN( "    Controller private key = {}", config_get( config, "ctl-privkey", "").c_str());
+        LOG_WARN( "    Switch certificate     = {}", config_get( config, "cacert", "").c_str());
 
         // Init controller private/public key and switch certificate
         fluid_base::libfluid_tls_init(config_get(config, "ctl-cert", "").c_str(),
@@ -924,14 +923,15 @@ void OFServer::implementation::print_error(of13::Error& error_msg, OFConnectionI
             error_description_str = this->meter_mod_failed_descr(error_code);
             break;
         default:
-            LOG(ERROR) << "[OFServer] Error message received "
-                       << switch_description << ". Type=" << error_type
-                       << ", description=" << error_code;
+            LOG_ERROR( "[OFServer] Error message received {} "
+                       ". Type={}"
+                       ", description={}", 
+                       switch_description, error_type, error_code );
             return;
     }
-    LOG(ERROR) << "[OFServer] Error message received " << switch_description
-               << ". Type=" << error_type_str
-               << ", description=" << error_description_str;
+               
+    LOG_ERROR( "[OFServer] Error message received {}. Type={}, description={}",
+                switch_description, error_type_str, error_description_str );
 }
 
 } // namespace runos

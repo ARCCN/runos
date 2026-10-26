@@ -1,17 +1,20 @@
 add_subdirectory(core)
 
-find_package(PkgConfig REQUIRED)
-find_package(Qt5Core REQUIRED)
-find_package(cppnetlib 0.12 EXACT REQUIRED)
+find_package(Qt5 5.15.2 REQUIRED)
+find_package(cpp-netlib REQUIRED)
 find_package(libtins REQUIRED)
-find_package(TinyProcess REQUIRED)
-find_package(fmt 10.0.0 REQUIRED)
+find_package(tiny-process-library REQUIRED)
+find_package(range-v3 REQUIRED)
+find_package(fmt 10.2.1 REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(Backward REQUIRED)
 
-pkg_check_modules(FLUID_BASE REQUIRED libfluid_base)
-pkg_check_modules(FLUID_MSG REQUIRED libfluid_msg)
-pkg_check_modules(EDITLINE REQUIRED libedit)
+find_package(libfluid_base CONFIG REQUIRED)
+find_package(libfluid_msg CONFIG REQUIRED)
+find_package(Libevent REQUIRED)
+find_package(editline REQUIRED)
 
-find_path(RANGE_V3_INCLUDE_DIRS
+find_path(range-v3_INCLUDE_DIRS
     NAMES meta/meta.hpp range/v3/all.hpp
 )
 
@@ -43,7 +46,7 @@ add_library(runos STATIC
     lib/action_parsing.hpp
     lib/poller.cc
     lib/poller.hpp
-    
+
     LinkDiscoveryDriver.cc
     LinkDiscoveryDriver.hpp
     Logger.cc
@@ -118,53 +121,45 @@ add_library(runos_rest STATIC
     GroupTableRest.cc
     MeterTableRest.cc
     AuxDevicesRest.cc
-   
 )
 
 # Instruct CMake to run moc automatically when needed.
 target_include_directories(runos SYSTEM
     PUBLIC
-      ${RANGE_V3_INCLUDE_DIRS}
-      ${FLUID_BASE_INCLUDE_DIRS}
-      ${FLUID_MSG_INCLUDE_DIRS}
+      ${range-v3_INCLUDE_DIRS}
+      ${libfluid_base_INCLUDE_DIRS}
+      ${libfluid_msg_INCLUDE_DIRS}
+      ${Libevent_INCLUDE_DIRS}
+      ${spdlog_INCLUDE_DIRS}
     PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR} # for Qt-generated moc files
-      ${GLOG_INCLUDE_DIRS}
+      ${libtins_INCLUDE_DIRS}
       ${fmt_INCLUDE_DIRS}
-      ${LIBTINS_INCLUDE_DIRS}
+      ${spdlog_INCLUDE_DIRS}
+      ${Backward_INCLUDE_DIRS}
+      ${tiny-process-library_INCLUDE_DIRS}
     )
 
 target_include_directories(runos_cli SYSTEM
     PRIVATE
-      ${EDITLINE_INCLUDE_DIRS}
+      ${editline_INCLUDE_DIRS}
     )
 
 target_include_directories(runos_rest SYSTEM
     PUBLIC
-      ${CPPNETLIB_INCLUDE_DIRS}
-    )
-
-link_directories(
-    ${EDITLINE_LIBRARY_DIRS}
-    ${FLUID_BASE_LIBRARY_DIRS}
-    ${FLUID_MSG_LIBRARY_DIRS}
-    ${GLOG_LIBRARY_DIRS}
-)
-
-target_compile_definitions(runos
-    PUBLIC ${BOOST_THREAD_CONFIG}
+      ${cpp-netlib_INCLUDE_DIRS}
     )
 
 target_link_libraries(runos
     PUBLIC
       Qt5::Core
       runos_core
+      ${libfluid_msg_LIB_DIRS_RELEASE}/libfluid_msg.a
+      ${libfluid_base_LIB_DIRS_RELEASE}/libfluid_base.a
+      ${Libevent_LIBRARIES}
     PRIVATE
-      ${FLUID_BASE_LIBRARIES}
-      ${FLUID_MSG_LIBRARIES}
-      ${GLOG_LIBRARIES}
-      ${LIBTINS_LIBRARIES}
-      TinyProcess::TinyProcess
+      ${libtins_LIBRARIES}
+      ${tiny-process-library_LIB_DIRS_RELEASE}/libtiny-process-library.a
       heartbeatcore
       redisdb
       cpqd_print
@@ -172,14 +167,14 @@ target_link_libraries(runos
 
 target_link_libraries(runos_cli
     PRIVATE
+      editline::editline
       runos
-      ${EDITLINE_LIBRARIES}
     )
 
 target_link_libraries(runos_rest
     PRIVATE
       runos
-      ${CPPNETLIB_LIBRARIES}
+      ${cpp-netlib_LIBRARIES}
     )
 
 set_target_properties(runos PROPERTIES

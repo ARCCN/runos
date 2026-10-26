@@ -33,7 +33,7 @@ public:
     bool equals(const OXMTLV& other) override;
 
     size_t pack(uint8_t* buffer) override;
-    fluid_msg::of_error unpack(uint8_t* buffer) override;
+    fluid_msg::of_error unpack(const uint8_t* buffer) override;
 };
 
 fluid_msg::of13::Match make_of_match(const oxm::field_set &match);

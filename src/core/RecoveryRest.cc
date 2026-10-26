@@ -101,15 +101,13 @@ struct RecoveryCollection : rest::resource
 
         std::ostringstream buffer;
         boost::property_tree::json_parser::write_json(buffer, pt);
-        LOG(ERROR) << "[RecoveryManager-REST] "
-                   << buffer.str();
+        LOG_ERROR(  "[RecoveryManager-REST] {}", buffer.str());
 
         Config obj = Json::parse(buffer.str(),
                                  parseMessage).object_items();
 
         if (!parseMessage.empty()) {
-            LOG(ERROR) << "[RecoveryManager-REST] Can't parse request : "
-                       << parseMessage;
+            LOG_ERROR( "[RecoveryManager-REST] Can't parse request : {}", parseMessage );
             ret.put("error", "Can't parse request");
             ret.put("msg", parseMessage);
         } else {
